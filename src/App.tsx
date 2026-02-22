@@ -10,12 +10,14 @@ import FormulasPage from './pages/FormulasPage';
 import UsersPage from './pages/UsersPage';
 import ProfilePage from './pages/ProfilePage';
 import StationSelectionPage from './pages/StationSelectionPage';
+import ForceChangePasswordPage from './pages/ForceChangePasswordPage';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.must_change_password) return <Navigate to="/force-change-password" replace />;
   return <>{children}</>;
 }
 
@@ -29,7 +31,10 @@ function RequireStation({ children }: { children: ReactNode }) {
 function PublicRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) {
+    if (user.must_change_password) return <Navigate to="/force-change-password" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
   return <>{children}</>;
 }
 
@@ -37,6 +42,11 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/force-change-password" element={
+        <RequireAuth>
+          <ForceChangePasswordPage />
+        </RequireAuth>
+      } />
       <Route path="/station-select" element={<ProtectedRoute><StationSelectionPage /></ProtectedRoute>} />
       
       <Route element={<ProtectedRoute><RequireStation><Layout /></RequireStation></ProtectedRoute>}>
@@ -50,6 +60,14 @@ function AppRoutes() {
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
+}
+
+// Simple wrapper just to ensure user is logged in, but allows must_change_password
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
 }
 
 export default function App() {

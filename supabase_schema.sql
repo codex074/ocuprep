@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     password TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
     active BOOLEAN DEFAULT true,
+    profile_image TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

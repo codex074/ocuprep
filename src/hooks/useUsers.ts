@@ -21,7 +21,7 @@ export function useUsers() {
   const createUser = async (u: Omit<User, 'id' | 'created_at'>): Promise<string | null> => {
     const exists = users.find(x => x.pha_id === u.pha_id);
     if (exists) return 'รหัสนี้มีอยู่แล้ว';
-    const { error } = await supabase.from('users').insert(u);
+    const { error } = await supabase.from('users').insert({ ...u, must_change_password: true });
     if (!error) { await fetchUsers(); return null; }
     return error.message;
   };

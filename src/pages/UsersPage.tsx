@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useUsers } from '../hooks/useUsers';
+import { resolvePath } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ProfileCard from '../components/ProfileCard';
 import type { User } from '../types';
@@ -35,7 +36,10 @@ export default function UsersPage() {
         role: form.role,
         profile_image: form.profile_image || null 
       };
-      if (form.password) updates.password = form.password; // Only update password if provided
+      if (form.password) {
+        updates.password = form.password; 
+        updates.must_change_password = true;
+      }
       
       const ok = await updateUser(editId, updates);
       toast(ok ? 'แก้ไขผู้ใช้สำเร็จ' : 'เกิดข้อผิดพลาด', ok ? 'success' : 'error');
@@ -124,7 +128,7 @@ export default function UsersPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div className="user-avatar-sm" style={{ padding: 0, overflow: 'hidden' }}>
                         {u.profile_image ? (
-                           <img src={u.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                           <img src={resolvePath(u.profile_image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                            <div style={{ width: '100%', height: '100%', background: cols[i % 6], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{u.name.charAt(0)}</div>
                         )}
@@ -222,14 +226,14 @@ export default function UsersPage() {
               className={`avatar-option ${form.profile_image === '/avatars/male-pharmacist.png' ? 'active' : ''}`}
               onClick={() => setForm(f => ({ ...f, profile_image: '/avatars/male-pharmacist.png' }))}
             >
-              <img src="/avatars/male-pharmacist.png" alt="ชาย" />
+              <img src={resolvePath('/avatars/male-pharmacist.png')} alt="ชาย" />
               <span>ชาย</span>
             </div>
             <div 
               className={`avatar-option ${form.profile_image === '/avatars/female-pharmacist.png' ? 'active' : ''}`}
               onClick={() => setForm(f => ({ ...f, profile_image: '/avatars/female-pharmacist.png' }))}
             >
-              <img src="/avatars/female-pharmacist.png" alt="หญิง" />
+              <img src={resolvePath('/avatars/female-pharmacist.png')} alt="หญิง" />
               <span>หญิง</span>
             </div>
           </div>

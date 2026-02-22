@@ -89,7 +89,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
         <div className="form-row">
           <div className="form-group">
             <label>HN</label>
-            <input className="form-input" value={form.hn} onChange={e => setForm(f => ({ ...f, hn: e.target.value }))} />
+            <input className="form-input" value={form.hn} onChange={e => setForm(f => ({ ...f, hn: e.target.value.replace(/\D/g, '') }))} />
           </div>
           <div className="form-group">
             <label>ชื่อผู้ป่วย</label>

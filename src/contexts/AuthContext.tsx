@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '../types';
 
@@ -23,7 +23,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem('ed-extemp-session');
     if (stored) {
       try {
-        const { user: u, location: loc } = JSON.parse(stored);
+        const { user: u, location: loc, timestamp } = JSON.parse(stored);
+        
+        const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
+        if (timestamp && Date.now() - timestamp > SESSION_TIMEOUT) {
+          localStorage.removeItem('ed-extemp-session');
+          setLoading(false);
+          return;
+        }
+
         if (u) {
           setUser(u);
           // Refresh user data from Supabase to ensure latest profile_image
@@ -40,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 created_at: data.created_at,
               };
               setUser(freshUser);
-              localStorage.setItem('ed-extemp-session', JSON.stringify({ user: freshUser, location: loc || '' }));
+              localStorage.setItem('ed-extemp-session', JSON.stringify({ user: freshUser, location: loc || '', timestamp: Date.now() }));
             }
           });
         }
@@ -72,24 +80,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: data.password,
       role: data.role,
       active: data.active,
+      must_change_password: data.must_change_password,
       profile_image: data.profile_image || undefined,
       created_at: data.created_at,
     };
 
     setUser(u);
-    // Do not set location here, it will be set in selectStation
-    // But we might want to check if they had a previous session? No, fresh login implies fresh station select usually.
-    // However, we need to save the user to local storage so they stay logged in.
-    // We'll update the session storage to just have user for now, or keep separate keys?
-    // The existing code uses a single object. Let's keep it but location might be empty initially.
-    localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location: '' }));
+    localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location: '', timestamp: Date.now() }));
     return null;
   };
 
   const selectStation = (loc: string) => {
     setLocation(loc);
     if (user) {
-        localStorage.setItem('ed-extemp-session', JSON.stringify({ user, location: loc }));
+        localStorage.setItem('ed-extemp-session', JSON.stringify({ user, location: loc, timestamp: Date.now() }));
     }
   };
 
@@ -112,15 +116,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         created_at: data.created_at,
       };
       setUser(u);
-      localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location }));
+      localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location, timestamp: Date.now() }));
     }
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setLocation('');
     localStorage.removeItem('ed-extemp-session');
-  };
+  }, []);
+
+  // Activity monitor for session timeout (1 hour of inactivity)
+  useEffect(() => {
+    if (!user) return;
+
+    let lastUpdate = Date.now();
+    const SESSION_TIMEOUT = 60 * 60 * 1000;
+
+    const updateActivity = () => {
+      const now = Date.now();
+      if (now - lastUpdate > 60000) { // Throttle to max once per minute
+        const sessionStr = localStorage.getItem('ed-extemp-session');
+        if (sessionStr) {
+          try {
+            const session = JSON.parse(sessionStr);
+            session.timestamp = now;
+            localStorage.setItem('ed-extemp-session', JSON.stringify(session));
+            lastUpdate = now;
+          } catch (e) {
+            console.error('Error updating session timestamp', e);
+          }
+        }
+      }
+    };
+
+    const handleUserActivity = () => updateActivity();
+
+    window.addEventListener('mousemove', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('click', handleUserActivity);
+    window.addEventListener('scroll', handleUserActivity);
+
+    const checkInterval = setInterval(() => {
+      const sessionStr = localStorage.getItem('ed-extemp-session');
+      if (sessionStr) {
+        try {
+          const session = JSON.parse(sessionStr);
+          if (session.timestamp && Date.now() - session.timestamp > SESSION_TIMEOUT) {
+            logout(); // Session expired
+          }
+        } catch (e) {}
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => {
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+      clearInterval(checkInterval);
+    };
+  }, [user, logout]);
 
   return (
     <AuthContext.Provider value={{ user, location, loading, login, logout, selectStation, refreshUser }}>

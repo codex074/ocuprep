@@ -45,7 +45,7 @@ export default function PreparePage() {
   useEffect(() => {
     if (mode === 'stock') {
       if (curLoc === 'ห้องจ่ายยาผู้ป่วยนอก') setRoom('คลินิกตา');
-      else if (curLoc === 'ห้องยาในศัลยกรรม') setRoom('ห้องจ่ายยาอุบัติเหตุฉุกเฉิน');
+      else if (curLoc === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || curLoc === 'ห้องยาในศัลยกรรม') setRoom('ห้องจ่ายยาอุบัติเหตุฉุกเฉิน');
       else setRoom('');
     }
   }, [mode, curLoc]);
@@ -135,6 +135,7 @@ export default function PreparePage() {
       qty,
       note: note.trim(),
       prepared_by: user?.name || '',
+      user_pha_id: user?.pha_id || '',
       location: curLoc,
     });
 
@@ -191,9 +192,9 @@ export default function PreparePage() {
         hn: mode === 'patient' ? hn : '', patient_name: mode === 'patient' ? patientName : '',
         dest_room: mode === 'stock' ? room : '',
         lot_no: lotNo, date: d, expiry_date: exp, qty, note: '',
-        prepared_by: user?.name || '-', location: curLoc,
+        prepared_by: user?.name || '-', user_pha_id: user?.pha_id || '', location: curLoc,
       };
-      const patientHtml = generateLabelHtml(mockPrep);
+      const patientHtml = generateLabelHtml(mockPrep, selectedFormula);
       const bottleHtml = generateBottleLabelsHtml(mockPrep, selectedFormula);
       printAllLabels(patientHtml, bottleHtml);
     } else {
@@ -233,7 +234,7 @@ export default function PreparePage() {
             <div className="form-row">
               <div className="form-group">
                 <label>HN ผู้ป่วย <span className="req">*</span></label>
-                <input className="form-input" placeholder="เช่น 12345678" value={hn} onChange={e => setHn(e.target.value)} />
+                <input className="form-input" placeholder="เช่น 12345678" value={hn} onChange={e => setHn(e.target.value.replace(/\D/g, ''))} />
               </div>
               <div className="form-group">
                 <label>ชื่อ-นามสกุล <span className="req">*</span></label>

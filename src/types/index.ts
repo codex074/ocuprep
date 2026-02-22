@@ -5,6 +5,7 @@ export interface User {
   password: string;
   role: "admin" | "user";
   active: boolean;
+  must_change_password?: boolean;
   profile_image?: string;
   created_at?: string;
 }
@@ -22,6 +23,8 @@ export interface Formula {
   storage?: string;
   ingredients: string | null;
   method: string | null;
+  short_prep?: string | null;
+  package_size?: string;
   created_at?: string;
 }
 
@@ -41,6 +44,7 @@ export interface Prep {
   qty: number;
   note: string;
   prepared_by: string;
+  user_pha_id?: string;
   location: string;
   created_at?: string;
 }

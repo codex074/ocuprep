@@ -29,10 +29,14 @@ export default function FormulasPage() {
     storage: string;
     ingredients: { name: string; amount: string }[];
     method: string[];
+    short_prep: string;
+    package_size: string;
   }>({ 
     code: '', name: '', short_name: '', description: '', concentration: '', expiry_days: 7, expiry_unit: 'days', price: 0, category: 'antibiotic', storage: 'เก็บในตู้เย็น 2-8°C',
     ingredients: [{ name: '', amount: '' }],
-    method: ['']
+    method: [''],
+    short_prep: '',
+    package_size: ''
   });
 
   const cc: Record<string, string> = { antibiotic: 'blue', antifungal: 'purple', steroid: 'amber', lubricant: 'green', other: 'teal' };
@@ -63,7 +67,9 @@ export default function FormulasPage() {
     setForm({ 
       code: '', name: '', short_name: '', description: '', concentration: '', expiry_days: 7, expiry_unit: 'days', price: 0, category: 'antibiotic', storage: 'เก็บในตู้เย็น 2-8°C',
       ingredients: [{ name: '', amount: '' }],
-      method: ['']
+      method: [''],
+      short_prep: '',
+      package_size: ''
     });
     setModalOpen(true);
   };
@@ -78,7 +84,9 @@ export default function FormulasPage() {
       expiry_unit: isHours ? 'hours' : 'days',
       price: f.price, category: f.category || 'other', storage: f.storage || 'เก็บในตู้เย็น 2-8°C',
       ingredients: parseIngredients(f.ingredients),
-      method: parseMethod(f.method)
+      method: parseMethod(f.method),
+      short_prep: f.short_prep || '',
+      package_size: f.package_size || ''
     });
     setModalOpen(true);
   };
@@ -121,7 +129,9 @@ export default function FormulasPage() {
       expiry_days: finalExpiry, 
       price: form.price || 0, category: form.category, storage: form.storage.trim(),
       ingredients: JSON.stringify(validIngredients),
-      method: JSON.stringify(validMethod)
+      method: JSON.stringify(validMethod),
+      short_prep: form.short_prep.trim(),
+      package_size: form.package_size.trim()
     };
 
     let ok: boolean;
@@ -248,14 +258,18 @@ export default function FormulasPage() {
             <input className="form-input" value={form.concentration} onChange={e => setForm(f => ({ ...f, concentration: e.target.value }))} disabled={user?.role !== 'admin'} />
           </div>
           <div className="form-group">
-            <label>อายุยา ({form.expiry_unit === 'days' ? 'วัน' : 'ชั่วโมง'})</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input className="form-input" type="number" value={form.expiry_days} onChange={e => setForm(f => ({ ...f, expiry_days: +e.target.value || 0 }))} style={{ flex: 1 }} disabled={user?.role !== 'admin'} />
-              <select className="form-select" value={form.expiry_unit} onChange={e => setForm(f => ({ ...f, expiry_unit: e.target.value as 'days' | 'hours' }))} style={{ width: '100px' }} disabled={user?.role !== 'admin'}>
-                <option value="days">วัน</option>
-                <option value="hours">ชม.</option>
-              </select>
-            </div>
+            <label>ขนาดบรรจุ</label>
+            <input className="form-input" placeholder="เช่น 5 ml" value={form.package_size} onChange={e => setForm(f => ({ ...f, package_size: e.target.value }))} disabled={user?.role !== 'admin'} />
+          </div>
+        </div>
+        <div className="form-group">
+          <label>อายุยา ({form.expiry_unit === 'days' ? 'วัน' : 'ชั่วโมง'})</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input className="form-input" type="number" value={form.expiry_days} onChange={e => setForm(f => ({ ...f, expiry_days: +e.target.value || 0 }))} style={{ flex: 1 }} disabled={user?.role !== 'admin'} />
+            <select className="form-select" value={form.expiry_unit} onChange={e => setForm(f => ({ ...f, expiry_unit: e.target.value as 'days' | 'hours' }))} style={{ width: '100px' }} disabled={user?.role !== 'admin'}>
+              <option value="days">วัน</option>
+              <option value="hours">ชม.</option>
+            </select>
           </div>
         </div>
         
@@ -299,6 +313,11 @@ export default function FormulasPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="form-group">
+          <label>วิธีการเตรียมอย่างย่อ (สำหรับพิมพ์ลงฉลาก)</label>
+          <textarea className="form-input" rows={3} placeholder="เช่น ละลายยาด้วย SWFI 10ml..." value={form.short_prep} onChange={e => setForm(f => ({ ...f, short_prep: e.target.value }))} disabled={user?.role !== 'admin'} />
         </div>
 
         <div className="form-row">

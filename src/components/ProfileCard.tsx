@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useUsers } from '../hooks/useUsers';
 import { usePreps } from '../hooks/usePreps';
+import { resolvePath } from '../lib/utils';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -42,7 +43,7 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     setShowAvatarPicker(true);
   };
 
-  const activeAvatarSrc = showAvatarPicker && tempAvatar ? tempAvatar : (targetUser.profile_image || '/avatars/male-pharmacist.png');
+  const activeAvatarSrc = showAvatarPicker && tempAvatar ? tempAvatar : resolvePath(targetUser.profile_image || '/avatars/male-pharmacist.png');
 
   // Stats
   const myPreps = useMemo(
@@ -210,14 +211,14 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
               className={`avatar-option ${tempAvatar === '/avatars/male-pharmacist.png' ? 'active' : ''}`}
               onClick={() => setTempAvatar('/avatars/male-pharmacist.png')}
             >
-              <img src="/avatars/male-pharmacist.png" alt="ชาย" />
+              <img src={resolvePath('/avatars/male-pharmacist.png')} alt="ชาย" />
               <span>ชาย</span>
             </div>
             <div 
               className={`avatar-option ${tempAvatar === '/avatars/female-pharmacist.png' ? 'active' : ''}`}
               onClick={() => setTempAvatar('/avatars/female-pharmacist.png')}
             >
-              <img src="/avatars/female-pharmacist.png" alt="หญิง" />
+              <img src={resolvePath('/avatars/female-pharmacist.png')} alt="หญิง" />
               <span>หญิง</span>
             </div>
           </div>
