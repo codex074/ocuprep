@@ -81,3 +81,18 @@ export const genLot = (nextId: number): string => {
   const now = new Date();
   return `LOT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(nextId).padStart(3, '0')}`;
 };
+
+export const multiplyAmount = (str: string | undefined | null, multiplier: number): string => {
+  if (!str) return '';
+  if (multiplier <= 1 || isNaN(multiplier)) return str;
+  const match = str.match(/^([\d.,]+)\s*(.*)$/);
+  if (match) {
+    const rawNum = match[1].replace(/,/g, '');
+    const num = parseFloat(rawNum);
+    if (!isNaN(num)) {
+      const resultNum = parseFloat((num * multiplier).toFixed(3));
+      return `${resultNum.toLocaleString('en-US')} ${match[2]}`.trim();
+    }
+  }
+  return str;
+};

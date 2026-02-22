@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
-import { today, addDays, fmtDate, fmtDateTime } from '../lib/utils';
+import { today, addDays, fmtDate, fmtDateTime, multiplyAmount } from '../lib/utils';
 import { generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
@@ -61,7 +61,7 @@ export default function PreparePage() {
         return (
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
             {parsed.map((p, i) => (
-              <li key={i}>{p.name} {p.amount ? `(${p.amount})` : ''}</li>
+              <li key={i}>{p.name} {p.amount ? `(${multiplyAmount(p.amount, qty)})` : ''}</li>
             ))}
           </ul>
         );
@@ -91,7 +91,7 @@ export default function PreparePage() {
     try {
       const parsed = JSON.parse(str);
       if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
-        return `<ul style="margin:0;padding-left:20px">${parsed.map(p => `<li>${p.name} ${p.amount ? `(${p.amount})` : ''}</li>`).join('')}</ul>`;
+        return `<ul style="margin:0;padding-left:20px">${parsed.map(p => `<li>${p.name} ${p.amount ? `(${multiplyAmount(p.amount, qty)})` : ''}</li>`).join('')}</ul>`;
       }
     } catch {}
     return `<pre style="font-family:Sarabun,sans-serif;white-space:pre-wrap;margin:0">${str}</pre>`;

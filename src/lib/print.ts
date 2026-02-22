@@ -1,4 +1,4 @@
-import { fmtDate, fmtDateTime } from './utils';
+import { fmtDate, fmtDateTime, multiplyAmount } from './utils';
 import type { Prep, Formula } from '../types';
 
 export const printHtml = (html: string) => {
@@ -43,12 +43,12 @@ export const generateLabelHtml = (prep: Prep, formula: Formula) => {
   return `<div class="lb"><div class="row"><span>ชื่อยา:</span><strong style="max-width:65%">${fullName}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration || '-'}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong style="max-width:65%">${pn}${hnVal !== '-' ? ' (' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${prep.lot_no}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:#000;font-weight:700"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>ใช้ยาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${preparer} | ${prep.location}</div>`;
 };
 
-const getIngredientsHtml = (str: string | null) => {
+const getIngredientsHtml = (str: string | null, qty: number = 1) => {
   if (!str) return '-';
   try {
     const parsed = JSON.parse(str);
     if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
-      return `<ul style="margin:0;padding-left:20px">${parsed.map((p: any) => `<li>${p.name} ${p.amount ? `(${p.amount})` : ''}</li>`).join('')}</ul>`;
+      return `<ul style="margin:0;padding-left:20px">${parsed.map((p: any) => `<li>${p.name} ${p.amount ? `(${multiplyAmount(p.amount, qty)})` : ''}</li>`).join('')}</ul>`;
     }
   } catch {}
   return `<pre style="font-family:Sarabun,sans-serif;white-space:pre-wrap;margin:0">${str}</pre>`;
@@ -69,7 +69,7 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
   const dateStr = fmtDate(prep.date);
   const expStr = prep.expiry_date.includes('T') ? fmtDateTime(prep.expiry_date) : fmtDate(prep.expiry_date);
   
-  const ingHtml = getIngredientsHtml(formula.ingredients);
+  const ingHtml = getIngredientsHtml(formula.ingredients, prep.qty);
   const metHtml = getMethodHtml(formula.method);
   
   const storage = formula.storage?.trim() || 'เก็บในตู้เย็น 2-8°C';
@@ -278,7 +278,7 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
                 ${ingredients.map((ing: any) => `
                   <tr style="border-bottom:1px solid #ddd;">
                     <td style="padding:2px;">${ing.name}</td>
-                    <td style="text-align:right;padding:2px;">${ing.amount}</td>
+                    <td style="text-align:right;padding:2px;">${multiplyAmount(ing.amount, prep.qty)}</td>
                   </tr>
                 `).join('')}
               </tbody>
