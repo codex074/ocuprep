@@ -4,7 +4,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
 import { today, addDays, fmtDate, fmtDateTime } from '../lib/utils';
-import { generateLabelHtml, generateBottleLabelsHtml, printAllLabels } from '../lib/print';
+import { generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 
@@ -196,7 +196,8 @@ export default function PreparePage() {
       };
       const patientHtml = generateLabelHtml(mockPrep, selectedFormula);
       const bottleHtml = generateBottleLabelsHtml(mockPrep, selectedFormula);
-      printAllLabels(patientHtml, bottleHtml);
+      const prepStickersHtml = generatePrepStickersHtml(mockPrep, selectedFormula);
+      printAllLabels(patientHtml, bottleHtml, prepStickersHtml);
     } else {
       // Batch sheet — existing behavior
       const w = window.open('', '_blank', 'width=600,height=800');

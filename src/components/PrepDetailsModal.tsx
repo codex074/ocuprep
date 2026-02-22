@@ -1,5 +1,5 @@
 import type { Prep, Formula } from '../types';
-import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, printAllLabels, printA4Html } from '../lib/print';
+import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels, printA4Html } from '../lib/print';
 import { useFormulas } from '../hooks/useFormulas';
 import Modal from './ui/Modal';
 
@@ -25,7 +25,8 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
   const handlePrintLabel = () => {
     const patientHtml = generateLabelHtml(prep, formula);
     const bottleHtml = generateBottleLabelsHtml(prep, formula);
-    printAllLabels(patientHtml, bottleHtml);
+    const prepStickersHtml = generatePrepStickersHtml(prep, formula);
+    printAllLabels(patientHtml, bottleHtml, prepStickersHtml);
   };
 
   const handlePrintBatchSheet = () => {

@@ -243,7 +243,56 @@ export const generatePrepDetailsHtml = (prep: Prep, formula: Formula): string =>
   return ingredientsHtml + methodHtml + shortPrepHtml;
 };
 
-export const printAllLabels = (patientHtml: string, bottleHtml: string, detailsHtml: string = '') => {
+export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string => {
+  const ingredients = formula.ingredients ? JSON.parse(formula.ingredients) : [];
+  
+  let shortPrepHtml = '';
+  if (formula.short_prep) {
+     shortPrepHtml = `
+      <div class="pp">
+        <div class="lb" style="height:100%;display:flex;flex-direction:column;">
+            <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">วิธีการเตรียมอย่างย่อ</div>
+             <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name}</div>
+            <div style="padding:0;font-size:10px;white-space:pre-wrap;flex-grow:1;">${formula.short_prep}</div>
+             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  let ingredientsHtml = '';
+  if (Array.isArray(ingredients) && ingredients.length > 0) {
+    ingredientsHtml = `
+      <div class="pp">
+        <div class="lb" style="height:100%;display:flex;flex-direction:column;">
+            <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">รายการส่วนประกอบ</div>
+            <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name} (${formula.concentration})</div>
+            <table style="width:100%;border-collapse:collapse;font-size:10px;">
+              <thead>
+                <tr style="border-bottom:1px solid #000;">
+                  <th style="text-align:left;padding:2px;">รายการ</th>
+                  <th style="text-align:right;padding:2px;">ปริมาณ</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ingredients.map((ing: any) => `
+                  <tr style="border-bottom:1px solid #ddd;">
+                    <td style="padding:2px;">${ing.name}</td>
+                    <td style="text-align:right;padding:2px;">${ing.amount}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  return shortPrepHtml + ingredientsHtml;
+};
+
+export const printAllLabels = (patientHtml: string, bottleHtml: string, prepStickersHtml: string = '') => {
   const w = window.open('', '_blank', 'width=400,height=600');
   if (!w) return;
   w.document.write(`<html><head><title>พิมพ์ฉลาก</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
@@ -279,7 +328,7 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 
 .bl-num{display:none} 
 .bl-qr{display:none}
-</style></head><body><div class="pp"><div class="lb">${patientHtml}</div></div>${bottleHtml}${detailsHtml}</body></html>`);
+</style></head><body><div class="pp"><div class="lb">${patientHtml}</div></div>${prepStickersHtml}${bottleHtml}</body></html>`);
   w.document.close();
   w.onload = () => w.print();
 };
