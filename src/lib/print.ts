@@ -38,7 +38,7 @@ export const generateLabelHtml = (prep: Prep, formula: Formula) => {
 
   const preparer = prep.user_pha_id || prep.prepared_by;
   const pkgSize = formula.package_size ? ` (${formula.package_size})` : '';
-  const fullName = `${prep.formula_name}${pkgSize}`;
+  const fullName = `${prep.formula_name}${pkgSize} (${prep.qty} ขวด)`;
   
   return `<div class="lb"><div class="row"><span>ชื่อยา:</span><strong style="max-width:65%">${fullName}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration || '-'}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong style="max-width:65%">${pn}${hnVal !== '-' ? ' (' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${prep.lot_no}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:#000;font-weight:700"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>ใช้ยาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${preparer} | ${prep.location}</div>`;
 };
@@ -134,7 +134,7 @@ export const generateBottleLabelsHtml = (
 ): string => {
   const mfgStr = fmtDate(prep.date);
   const expStr = prep.expiry_date.includes('T') ? fmtDateTime(prep.expiry_date) : fmtDate(prep.expiry_date);
-  const drugName = (formula.short_name?.trim() || prep.formula_name) + (formula.package_size ? ` (${formula.package_size})` : '');
+  const drugName = (formula.short_name?.trim() || prep.formula_name) + (formula.package_size ? ` (${formula.package_size})` : '') + ` (${prep.qty} ขวด)`;
   const storage = formula.storage?.trim() || 'เก็บในตู้เย็น 2-8°C';
   const qty = prep.qty;
   const totalPages = Math.ceil(qty / 3);
@@ -252,7 +252,7 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
       <div class="pp">
         <div class="lb" style="height:100%;display:flex;flex-direction:column;">
             <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">วิธีการเตรียมอย่างย่อ</div>
-             <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name}</div>
+             <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name} (${prep.qty} ขวด)</div>
             <div style="padding:0;font-size:10px;white-space:pre-wrap;flex-grow:1;">${formula.short_prep}</div>
              <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
         </div>
@@ -266,7 +266,7 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
       <div class="pp">
         <div class="lb" style="height:100%;display:flex;flex-direction:column;">
             <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">รายการส่วนประกอบ</div>
-            <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name} (${formula.concentration})</div>
+            <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name} (${formula.concentration}) (${prep.qty} ขวด)</div>
             <table style="width:100%;border-collapse:collapse;font-size:10px;">
               <thead>
                 <tr style="border-bottom:1px solid #000;">
