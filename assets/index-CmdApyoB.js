@@ -160,7 +160,7 @@ https://sweetalert2.github.io/#ajax-request`),ek(e),typeof e.title=="string"&&(e
         <div style="color:#666;font-size:11px;margin-top:4px;">วันที่: ____/____/____</div>
       </div>
     </div>
-  </div>`},Zy=(e,t)=>{const r=Zn(e.date),a=e.expiry_date.includes("T")?Xo(e.expiry_date):Zn(e.expiry_date),s=(t.short_name?.trim()||e.formula_name)+(t.package_size?` (${t.package_size})`:""),o=t.storage?.trim()||"เก็บในตู้เย็น 2-8°C",c=e.qty,f=Math.ceil(c/3),h=[];for(let d=0;d<f;d++){let v="";for(let x=0;x<3&&!(d*3+x>=c);x++){const w=e.user_pha_id||e.prepared_by,S=`https://barcode.tec-it.com/barcode.ashx?data=${e.lot_no}&code=Code128&dpi=96&datamajor=0&dataminor=0&hideText=1`;v+=`<div class="bl">
+  </div>`},Zy=(e,t)=>{const r=Zn(e.date),a=e.expiry_date.includes("T")?Xo(e.expiry_date):Zn(e.expiry_date),s=(t.short_name?.trim()||e.formula_name)+(t.package_size?` (${t.package_size})`:""),o=t.storage?.trim()||"เก็บในตู้เย็น 2-8°C",c=e.qty,f=Math.ceil(c/3),h=[];for(let d=0;d<f;d++){let v="";for(let x=0;x<3;x++){const y=d*3+x;if(y>=c)break;const w=e.user_pha_id||e.prepared_by,S=`https://barcode.tec-it.com/barcode.ashx?data=${e.lot_no}&code=Code128&dpi=96&datamajor=0&dataminor=0&hideText=1`;v+=`<div class="bl">
         <div class="bl-text">
           <div class="bl-name">${s}</div>
           <div class="bl-row"><span>Mfg: ${r}</span></div>
@@ -169,7 +169,7 @@ https://sweetalert2.github.io/#ajax-request`),ek(e),typeof e.title=="string"&&(e
           <div class="bl-storage">${o}</div>
         </div>
         <div class="bl-right">
-             <div class="bl-count">${x+1}/${c}</div>
+             <div class="bl-count">${y+1}/${c}</div>
              <div class="bl-barcode">
                 <img src="${S}" />
                 <div class="bl-lot">${e.lot_no}</div>
@@ -185,9 +185,9 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 .lb span,.lb strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lf{border-top:1px solid #000;margin-top:4px;padding-top:2px;font-size:8px;text-align:center;color:#000;width:100%;}
 /* Bottle label pages */
-.bp{width:8.5cm;height:6cm;box-sizing:border-box;padding:2mm;page-break-after:always;display:flex;flex-direction:column;gap:2mm;justify-content:flex-start;align-items:center}
-/* .bl size: 7cm x 1.8cm */
-.bl{width:7cm;height:1.8cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:row;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
+.bp{width:8.5cm;height:6cm;box-sizing:border-box;padding:8mm 2mm 0 2mm;page-break-after:always;display:flex;flex-direction:column;gap:0;justify-content:flex-start;align-items:center}
+/* .bl size: 7cm x 1.7cm */
+.bl{width:7cm;height:1.7cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:row;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
 
 /* Left side text - Maximize space */
 .bl-text{flex:1;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;padding-right:1mm}
