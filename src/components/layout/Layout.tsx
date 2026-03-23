@@ -116,7 +116,7 @@ export default function Layout() {
 
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             {stationName && (
-              <div style={{
+              <div className="header-station" style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 background: stationStyle.bg, color: stationStyle.text,
                 padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
@@ -130,7 +130,7 @@ export default function Layout() {
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ textAlign: 'right' }}>
+              <div className="header-user-text" style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.name || 'User'}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   {user?.role === 'admin' ? 'Admin' : 'Pharmacist'}
@@ -188,6 +188,45 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Bottom Navigation (Mobile) */}
+      <nav className="bottom-nav">
+        <NavLink to="/dashboard" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+          <span>หน้าหลัก</span>
+        </NavLink>
+        <NavLink to="/prepare" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+          <span>เตรียมยา</span>
+        </NavLink>
+        <NavLink to="/history" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+          </svg>
+          <span>ประวัติ</span>
+        </NavLink>
+        <NavLink to="/formulas" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+          <span>สูตรยา</span>
+        </NavLink>
+        {user?.role === 'admin' && (
+          <NavLink to="/users" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span>ผู้ใช้</span>
+          </NavLink>
+        )}
+      </nav>
     </div>
   );
 }

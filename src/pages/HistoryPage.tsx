@@ -191,8 +191,8 @@ export default function HistoryPage() {
             )}
           </div>
         </div>
-        <div className="table-wrapper" style={{ padding: '0 24px 24px' }}>
-          <table style={{ minWidth: '1000px' }}>
+        <div className="table-wrapper history-table-wrapper" style={{ padding: '0 24px 24px' }}>
+          <table className="responsive-table" style={{ minWidth: '1000px' }}>
             <thead>
               <tr>
                 <th style={{ width: '50px' }}>#</th>
@@ -208,35 +208,35 @@ export default function HistoryPage() {
             </thead>
             <tbody>
               {filtered.length ? filtered.map(p => (
-                <tr 
-                  key={p.id} 
-                  onClick={() => setSelectedPrep(p)} 
+                <tr
+                  key={p.id}
+                  onClick={() => setSelectedPrep(p)}
                   style={{ cursor: 'pointer', transition: 'background 0.2s', borderBottom: '1px solid #f1f5f9' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <td style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{p.id}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)' }}>
+                  <td data-label="#" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{p.id}</td>
+                  <td data-label="วันที่" style={{ fontFamily: 'var(--font-mono)' }}>
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{fmtShort(p.date)}</div>
                     {p.created_at && (
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{fmtTime(p.created_at)}</div>
                     )}
                   </td>
-                  <td>
+                  <td data-label="สูตรยา">
                     <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{p.formula_name}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{p.concentration}</div>
                   </td>
-                  <td>
+                  <td data-label="ประเภท">
                     <span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
                       {p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}
                     </span>
                   </td>
-                  <td>
-                    <div style={{ fontSize: '13px', lineHeight: '1.4', maxWidth: '190px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <td data-label="ผู้ป่วย/ห้อง">
+                    <div style={{ fontSize: '13px', lineHeight: '1.4' }}>
                       {p.target}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Lot / จำนวน">
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       {p.lot_no.replace('LOT-', '')}
                     </div>
@@ -244,13 +244,13 @@ export default function HistoryPage() {
                       จำนวน: {p.qty}
                     </div>
                   </td>
-                  <td style={{ fontSize: '13px' }}>{p.prepared_by}</td>
-                  <td>
+                  <td data-label="ผู้เตรียม" style={{ fontSize: '13px' }}>{p.prepared_by}</td>
+                  <td data-label="สถานที่">
                     <span className="badge-tag green" style={{ fontSize: '11px', padding: '2px 8px' }}>
                       {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : p.location)}
                     </span>
                   </td>
-                  <td>
+                  <td className="td-actions">
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
                       {(user?.role === 'admin' || user?.name === p.prepared_by) && (
                         <button className="btn btn-sm btn-ghost" onClick={(e) => openEdit(p.id, e)} title="แก้ไขรายการ" style={{ padding: '4px' }}>
@@ -274,7 +274,7 @@ export default function HistoryPage() {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>ไม่พบรายการ</td></tr>
+                <tr><td colSpan={9} className="td-empty" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>ไม่พบรายการ</td></tr>
               )}
             </tbody>
           </table>
