@@ -43,13 +43,18 @@ export default function DashboardPage() {
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
-    const [start, end] = getMonthRange();
-    const data = await api.getPreps();
-    const filtered = data
-      .map(toPrep)
-      .filter(p => p.date >= start && p.date <= end)
-      .sort((a, b) => b.id - a.id);
-    setPreps(filtered);
+    try {
+      const [start, end] = getMonthRange();
+      const data = await api.getPreps();
+      const filtered = data
+        .map(toPrep)
+        .filter(p => p.date >= start && p.date <= end)
+        .sort((a, b) => b.id - a.id);
+      setPreps(filtered);
+    } catch (error) {
+      console.error('fetch dashboard preps error', error);
+      setPreps([]);
+    }
   }, []);
 
   useEffect(() => {

@@ -11,7 +11,7 @@ export function resolvePath(path: string | undefined | null) {
   // Remove leading slash if present
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   
-  // Get base URL from Vite (defaults to / in dev, /ocuprep/ in prod)
+  // Get base URL from Vite (defaults to / in dev and ./ in production)
   const baseUrl = import.meta.env.BASE_URL;
   
   // Ensure baseUrl ends with slash

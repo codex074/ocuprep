@@ -34,9 +34,10 @@ export function useUsers() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const createUser = async (u: Omit<User, 'id' | 'created_at'>): Promise<string | null> => {
-    const exists = users.find(x => x.pha_id === u.pha_id);
+    const normalizedPhaId = u.pha_id.trim().toLowerCase();
+    const exists = users.find(x => x.pha_id.trim().toLowerCase() === normalizedPhaId);
     if (exists) return 'รหัสนี้มีอยู่แล้ว';
-    const res = await api.createUser({ ...u, must_change_password: true });
+    const res = await api.createUser({ ...u, pha_id: normalizedPhaId, must_change_password: true });
     if (res.success) { await fetchUsers(); return null; }
     return res.error ?? 'เกิดข้อผิดพลาด';
   };
