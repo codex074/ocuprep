@@ -1,30 +1,8 @@
-// ============================================================
 // UTTH ED-Extemp - Google Apps Script Backend
-//
-// โครงสร้างการใช้งาน:
-// - Frontend: React/Vite static site บน GitHub Pages
-// - Backend: Google Apps Script Web App
-// - Database: Google Spreadsheet ที่ GAS สร้างให้อัตโนมัติ
-//
-// การติดตั้งแบบเร็ว:
-// 1. เปิด https://script.google.com แล้วสร้าง Standalone project ใหม่
-// 2. วางไฟล์นี้ทับ Code.gs
-// 3. Deploy > New deployment > Web app
-// 4. Execute as: Me
-// 5. Who has access: Anyone
-// 6. คัดลอก Web app URL ไปใส่ใน VITE_GAS_URL ของ frontend
-//
-// หมายเหตุ:
-// - เมื่อมี request แรกเข้ามา ระบบจะสร้าง Spreadsheet ให้อัตโนมัติ
-// - ระบบจะสร้างบัญชี admin กลางแยกจากบัญชีเภสัชกร
-// ============================================================
 
-const APP_NAME = 'UTTH ED-Extemp';
-const DEFAULT_SPREADSHEET_NAME = `${APP_NAME} Database`;
-const SHEET_ID_PROPERTY = 'UTTH_ED_SHEET_ID';
+const SPREADSHEET_ID = '1aICDq9Ag0AECN2nIuJAnlmXx8pQvGcuLHOVI4T0-Kws';
 const DEFAULT_PASSWORD = '1234';
 const SYSTEM_ADMIN = { pha_id: 'admin', name: 'ผู้ดูแลระบบ', role: 'admin' };
-const PROFILE_IMAGE_FOLDER_ID = '1oOW82ZmnrOj0uRSobHqZEkomrWPcZasR';
 
 const HEADERS = {
   users: ['id', 'name', 'pha_id', 'password', 'role', 'active', 'must_change_password', 'profile_image', 'created_at'],
@@ -100,46 +78,12 @@ function isAdminUser_(user) {
   return String(user.role || '').toLowerCase() === 'admin' && normalizeBoolean_(user.active);
 }
 
-function styleHeader_(sheet, numCols) {
-  sheet.getRange(1, 1, 1, numCols)
-    .setFontWeight('bold')
-    .setBackground('#2563EB')
-    .setFontColor('#FFFFFF');
-  sheet.setFrozenRows(1);
-  sheet.autoResizeColumns(1, numCols);
-}
-
 function getSpreadsheet_() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const sheetId = scriptProperties.getProperty(SHEET_ID_PROPERTY);
-
-  if (sheetId) {
-    try {
-      return SpreadsheetApp.openById(sheetId);
-    } catch (error) {
-      throw new Error(`เปิด Spreadsheet ไม่สำเร็จ กรุณาตรวจสอบ Script Property ${SHEET_ID_PROPERTY}: ${error.message}`);
-    }
+  try {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  } catch (error) {
+    throw new Error(`เปิด Spreadsheet ไม่สำเร็จ: ${error.message}`);
   }
-
-  const ss = SpreadsheetApp.create(DEFAULT_SPREADSHEET_NAME);
-  scriptProperties.setProperty(SHEET_ID_PROPERTY, ss.getId());
-  return ss;
-}
-
-function ensureSheets_(ss) {
-  Object.keys(HEADERS).forEach(function(name) {
-    let sheet = ss.getSheetByName(name);
-    if (!sheet) {
-      sheet = ss.insertSheet(name);
-    }
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(HEADERS[name]);
-      styleHeader_(sheet, HEADERS[name].length);
-    } else if (sheet.getLastColumn() !== HEADERS[name].length) {
-      sheet.getRange(1, 1, 1, HEADERS[name].length).setValues([HEADERS[name]]);
-      styleHeader_(sheet, HEADERS[name].length);
-    }
-  });
 }
 
 function ensureAdmin_(ss) {
@@ -245,18 +189,6 @@ function ensureSystemAdminAccount_(ss) {
   }
 }
 
-function setupSpreadsheet() {
-  const ss = getSpreadsheet_();
-  ensureSheets_(ss);
-  ensureAdmin_(ss);
-  Logger.log(JSON.stringify({
-    spreadsheetId: ss.getId(),
-    spreadsheetUrl: ss.getUrl(),
-    adminUser: SYSTEM_ADMIN.pha_id,
-    defaultPassword: DEFAULT_PASSWORD,
-  }, null, 2));
-}
-
 function getSheet_(ss, name) {
   const sheet = ss.getSheetByName(name);
   if (!sheet) throw new Error(`Sheet not found: ${name}`);
@@ -312,120 +244,6 @@ function sanitizeData_(sheetName, data) {
   });
 
   return clean;
-}
-
-function getDriveFileIdFromUrl_(url) {
-  const value = String(url == null ? '' : url).trim();
-  if (!value) return '';
-
-  let match = value.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) return match[1];
-
-  match = value.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) return match[1];
-
-  match = value.match(/[-\w]{25,}/);
-  return match && match[0] ? match[0] : '';
-}
-
-function getProfileImageFolder_() {
-  try {
-    return DriveApp.getFolderById(PROFILE_IMAGE_FOLDER_ID);
-  } catch (error) {
-    throw new Error('ไม่สามารถเข้าถึงโฟลเดอร์รูปโปรไฟล์ใน Google Drive ได้');
-  }
-}
-
-function getFileExtensionFromMimeType_(mimeType) {
-  const normalized = String(mimeType == null ? '' : mimeType).toLowerCase();
-  switch (normalized) {
-    case 'image/jpeg':
-    case 'image/jpg':
-      return 'jpg';
-    case 'image/png':
-      return 'png';
-    case 'image/webp':
-      return 'webp';
-    case 'image/gif':
-      return 'gif';
-    default:
-      return 'png';
-  }
-}
-
-function parseDataUrl_(dataUrl) {
-  const value = String(dataUrl == null ? '' : dataUrl).trim();
-  const match = value.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) {
-    throw new Error('รูปโปรไฟล์ไม่อยู่ในรูปแบบที่รองรับ');
-  }
-
-  return {
-    mimeType: match[1],
-    bytes: Utilities.base64Decode(match[2]),
-  };
-}
-
-function trashExistingProfileImages_(phaId, keepFileId) {
-  const folder = getProfileImageFolder_();
-  const normalizedPhaId = normalizePhaId_(phaId);
-  const files = folder.getFiles();
-
-  while (files.hasNext()) {
-    const file = files.next();
-    const fileName = String(file.getName() || '').toLowerCase();
-    const belongsToUser = fileName === normalizedPhaId || fileName.indexOf(normalizedPhaId + '.') === 0;
-    if (!belongsToUser) continue;
-    if (keepFileId && file.getId() === keepFileId) continue;
-    file.setTrashed(true);
-  }
-}
-
-function deleteProfileImageByUrl_(url) {
-  const fileId = getDriveFileIdFromUrl_(url);
-  if (!fileId) return;
-
-  try {
-    DriveApp.getFileById(fileId).setTrashed(true);
-  } catch (error) {}
-}
-
-function buildDriveImageUrl_(fileId) {
-  return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1200';
-}
-
-function handleProfileImageUpdate_(existingUser, cleanData, rawData) {
-  if (!rawData || !rawData.profile_image_upload) return;
-
-  const upload = rawData.profile_image_upload || {};
-  const nextPhaId = cleanData.pha_id != null ? cleanData.pha_id : existingUser.pha_id;
-  const parsed = parseDataUrl_(upload.data_url);
-  const extension = getFileExtensionFromMimeType_(upload.mime_type || parsed.mimeType);
-  const fileName = normalizePhaId_(nextPhaId) + '.' + extension;
-  const blob = Utilities.newBlob(parsed.bytes, upload.mime_type || parsed.mimeType, fileName);
-  const folder = getProfileImageFolder_();
-  const file = folder.createFile(blob);
-
-  file.setName(fileName);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-  trashExistingProfileImages_(nextPhaId, file.getId());
-
-  if (existingUser.profile_image && /^https:\/\/drive\.google\.com\//.test(String(existingUser.profile_image))) {
-    deleteProfileImageByUrl_(existingUser.profile_image);
-  }
-
-  cleanData.profile_image = buildDriveImageUrl_(file.getId());
-}
-
-function handleProfileImageCleanup_(existingUser, cleanData) {
-  if (cleanData.profile_image == null) return;
-  if (String(cleanData.profile_image).indexOf('/avatars/') === 0) {
-    trashExistingProfileImages_(existingUser.pha_id);
-    if (existingUser.profile_image && /^https:\/\/drive\.google\.com\//.test(String(existingUser.profile_image))) {
-      deleteProfileImageByUrl_(existingUser.profile_image);
-    }
-  }
 }
 
 function ensureUniquePhaId_(ss, phaId, excludeId) {
@@ -485,17 +303,14 @@ function update_(ss, sheetName, id, data) {
     const rowIndex = allRows.findIndex(function(row) { return Number(row.id) === Number(id); });
     if (rowIndex === -1) return { error: 'Not found' };
 
-    const existing = allRows[rowIndex];
     const cleanData = sanitizeData_(sheetName, data || {});
 
     if (sheetName === 'users') {
-      handleProfileImageUpdate_(existing, cleanData, data || {});
-      handleProfileImageCleanup_(existing, cleanData);
-
       if (cleanData.pha_id != null) {
         ensureUniquePhaId_(ss, cleanData.pha_id, id);
       }
 
+      const existing = allRows[rowIndex];
       const nextRole = cleanData.role != null ? String(cleanData.role).toLowerCase() : String(existing.role || '').toLowerCase();
       const nextActive = cleanData.active != null ? normalizeBoolean_(cleanData.active) : normalizeBoolean_(existing.active);
 
@@ -540,7 +355,6 @@ function remove_(ss, sheetName, id) {
 
 function handle_(params) {
   const ss = getSpreadsheet_();
-  ensureSheets_(ss);
   ensureAdmin_(ss);
 
   const action = params.action || 'ping';

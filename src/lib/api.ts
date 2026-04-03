@@ -56,38 +56,6 @@ async function gasGet<T>(params: Record<string, string>): Promise<T> {
   }
 }
 
-async function gasPost<T>(payload: Record<string, unknown>): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(getGasUrl(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      cache: 'no-store',
-    });
-  } catch (error) {
-    throw new Error(`ไม่สามารถเชื่อมต่อ Google Apps Script ได้: ${getApiErrorMessage(error)}`);
-  }
-
-  const rawText = await res.text();
-  if (!res.ok) {
-    throw new Error(`Google Apps Script ตอบกลับผิดพลาด (${res.status})`);
-  }
-
-  try {
-    const json = JSON.parse(rawText) as T;
-    if (import.meta.env.DEV) {
-      console.log('[GAS]', payload.action, json);
-    }
-    return json;
-  } catch (error) {
-    throw new Error(`Google Apps Script ส่งข้อมูลไม่ถูกต้อง: ${getApiErrorMessage(error, rawText)}`);
-  }
-}
-
 async function withErrorResult<T extends { error?: string }>(promise: Promise<T>): Promise<T> {
   try {
     return await promise;
@@ -123,7 +91,7 @@ export const api = {
     withErrorResult(gasGet<OkResult>({ action: 'createUser', data: JSON.stringify(data) })),
 
   updateUser: (id: number, data: object) =>
-    withErrorResult(gasPost<OkResult>({ action: 'updateUser', id: String(id), data: JSON.stringify(data) })),
+    withErrorResult(gasGet<OkResult>({ action: 'updateUser', id: String(id), data: JSON.stringify(data) })),
 
   deleteUser: (id: number) =>
     withErrorResult(gasGet<OkResult>({ action: 'deleteUser', id: String(id) })),
