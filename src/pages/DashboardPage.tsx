@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
 import { fmtShort, fmtTime, today, getMonthRange, getCurrentThaiMonthYear } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -8,64 +7,27 @@ import EditPrepModal from '../components/EditPrepModal';
 import PrepDetailsModal from '../components/PrepDetailsModal';
 import SummaryDetailsModal from '../components/SummaryDetailsModal';
 import type { Prep } from '../types';
+import LoadingState from '../components/ui/LoadingState';
+import { usePreps } from '../hooks/usePreps';
 import Swal from 'sweetalert2';
 
-function toPrep(r: Record<string, unknown>): Prep {
-  return {
-    id: Number(r.id),
-    formula_id: Number(r.formula_id),
-    formula_name: String(r.formula_name ?? ''),
-    concentration: r.concentration != null ? String(r.concentration) : null,
-    mode: (r.mode as 'patient' | 'stock') ?? 'patient',
-    target: String(r.target ?? ''),
-    hn: String(r.hn ?? ''),
-    patient_name: String(r.patient_name ?? ''),
-    dest_room: String(r.dest_room ?? ''),
-    lot_no: String(r.lot_no ?? ''),
-    date: String(r.date ?? ''),
-    expiry_date: String(r.expiry_date ?? ''),
-    qty: Number(r.qty),
-    note: String(r.note ?? ''),
-    prepared_by: String(r.prepared_by ?? ''),
-    user_pha_id: r.user_pha_id != null ? String(r.user_pha_id) : undefined,
-    location: String(r.location ?? ''),
-    created_at: r.created_at != null ? String(r.created_at) : undefined,
-  };
-}
-
 export default function DashboardPage() {
-  const [preps, setPreps] = useState<Prep[]>([]);
   const [editPrep, setEditPrep] = useState<Prep | null>(null);
   const [selectedPrep, setSelectedPrep] = useState<Prep | null>(null);
   const [selectedSummary, setSelectedSummary] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [start, end] = getMonthRange();
-      const data = await api.getPreps();
-      const filtered = data
-        .map(toPrep)
-        .filter(p => p.date >= start && p.date <= end)
-        .sort((a, b) => b.id - a.id);
-      setPreps(filtered);
-    } catch (error) {
-      console.error('fetch dashboard preps error', error);
-      setPreps([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { preps: allPreps, loading, refreshing, fetchPreps, updatePrep, deletePrep } = usePreps();
+  const [start, end] = getMonthRange();
+  const preps = allPreps
+    .filter(p => p.date >= start && p.date <= end)
+    .sort((a, b) => b.id - a.id);
 
   const handleUpdate = async (id: number, updates: Partial<Prep>) => {
-    const res = await api.updatePrep(id, updates);
-    if (res.success) {
+    const ok = await updatePrep(id, updates);
+    if (ok) {
       toast('แก้ไขรายการสำเร็จ', 'success');
-      await fetchData();
       return true;
     }
     toast('เกิดข้อผิดพลาดในการแก้ไข', 'error');
@@ -87,10 +49,9 @@ export default function DashboardPage() {
     });
 
     if (result.isConfirmed) {
-      const res = await api.deletePrep(id);
-      if (res.success) {
+      const ok = await deletePrep(id);
+      if (ok) {
         toast('ลบข้อมูลสำเร็จ', 'success');
-        fetchData();
       } else {
         toast('เกิดข้อผิดพลาดในการลบข้อมูล', 'error');
       }
@@ -118,6 +79,16 @@ export default function DashboardPage() {
 
   return (
     <div className="page-section">
+      <div className="page-actions">
+        <button className="btn btn-sm btn-outline" onClick={() => fetchPreps(true)} disabled={refreshing}>
+          {refreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
+        </button>
+      </div>
+
+      {loading ? (
+        <LoadingState title="กำลังโหลดภาพรวมการผลิต" description="ดึงข้อมูลรายการเตรียมยาประจำเดือนจาก Google Sheet" />
+      ) : (
+        <>
       <div className="stats-grid">
         {stats.map((s, i) => (
           <div className="stat-card" key={i}>
@@ -232,6 +203,8 @@ export default function DashboardPage() {
         formulaName={selectedSummary}
         preps={preps}
       />
+        </>
+      )}
     </div>
   );
 }

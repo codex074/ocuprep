@@ -5,13 +5,14 @@ import { useUsers } from '../hooks/useUsers';
 import { resolvePath } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ProfileCard from '../components/ProfileCard';
+import LoadingState from '../components/ui/LoadingState';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
 export default function UsersPage() {
   const { user: curUser } = useAuth();
   const { toast } = useToast();
-  const { users, createUser, updateUser, toggleUser, deleteUser } = useUsers();
+  const { users, loading, refreshing, fetchUsers, createUser, updateUser, toggleUser, deleteUser } = useUsers();
   
   // Edit/Create state
   const [modalOpen, setModalOpen] = useState(false);
@@ -113,6 +114,16 @@ export default function UsersPage() {
 
   return (
     <div className="page-section">
+      <div className="page-actions">
+        <button className="btn btn-sm btn-outline" onClick={() => fetchUsers(true)} disabled={refreshing}>
+          {refreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
+        </button>
+      </div>
+
+      {loading ? (
+        <LoadingState title="กำลังโหลดข้อมูลผู้ใช้" description="ระบบกำลังดึงรายชื่อผู้ใช้งานจาก Google Sheet" />
+      ) : (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>จัดการผู้ใช้งาน</h3>
@@ -252,6 +263,8 @@ export default function UsersPage() {
            </div>
         )}
       </Modal>
+        </>
+      )}
     </div>
   );
 }

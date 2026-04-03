@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { getCachedResource, loadCachedResource } from '../lib/resourceCache';
 import type { Prep } from '../types';
+
+const PREPS_CACHE_KEY = 'preps';
 
 function toPrep(r: Record<string, unknown>): Prep {
   return {
@@ -26,39 +29,46 @@ function toPrep(r: Record<string, unknown>): Prep {
 }
 
 export function usePreps() {
-  const [preps, setPreps] = useState<Prep[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [preps, setPreps] = useState<Prep[]>(() => getCachedResource<Prep[]>(PREPS_CACHE_KEY) ?? []);
+  const [loading, setLoading] = useState(preps.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchPreps = useCallback(async () => {
-    setLoading(true);
+  const fetchPreps = useCallback(async (force = false) => {
+    if (force) setRefreshing(true);
+    else if (preps.length === 0) setLoading(true);
     try {
-      const data = await api.getPreps();
-      setPreps(data.map(toPrep).sort((a, b) => b.id - a.id));
+      const mapped = await loadCachedResource(PREPS_CACHE_KEY, async () => {
+        const data = await api.getPreps();
+        return data.map(toPrep).sort((a, b) => b.id - a.id);
+      }, { force });
+      setPreps(mapped);
     } catch (e) {
       console.error('fetchPreps error', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
-  }, []);
+  }, [preps.length]);
 
   useEffect(() => { fetchPreps(); }, [fetchPreps]);
 
   const createPrep = async (p: Omit<Prep, 'id' | 'created_at'>): Promise<boolean> => {
     const res = await api.createPrep(p);
-    if (res.success) { await fetchPreps(); return true; }
+    if (res.success) { await fetchPreps(true); return true; }
     return false;
   };
 
   const updatePrep = async (id: number, p: Partial<Prep>): Promise<boolean> => {
     const res = await api.updatePrep(id, p);
-    if (res.success) { await fetchPreps(); return true; }
+    if (res.success) { await fetchPreps(true); return true; }
     return false;
   };
 
   const deletePrep = async (id: number): Promise<boolean> => {
     const res = await api.deletePrep(id);
-    if (res.success) { await fetchPreps(); return true; }
+    if (res.success) { await fetchPreps(true); return true; }
     return false;
   };
 
-  return { preps, loading, fetchPreps, createPrep, updatePrep, deletePrep };
+  return { preps, loading, refreshing, fetchPreps, createPrep, updatePrep, deletePrep };
 }

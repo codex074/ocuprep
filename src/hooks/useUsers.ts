@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { getCachedResource, loadCachedResource } from '../lib/resourceCache';
 import type { User } from '../types';
+
+const USERS_CACHE_KEY = 'users';
 
 function toUser(r: Record<string, unknown>): User {
   return {
@@ -17,19 +20,26 @@ function toUser(r: Record<string, unknown>): User {
 }
 
 export function useUsers() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>(() => getCachedResource<User[]>(USERS_CACHE_KEY) ?? []);
+  const [loading, setLoading] = useState(users.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  const fetchUsers = useCallback(async (force = false) => {
+    if (force) setRefreshing(true);
+    else if (users.length === 0) setLoading(true);
     try {
-      const data = await api.getUsers();
-      setUsers(data.map(toUser).sort((a, b) => a.id - b.id));
+      const mapped = await loadCachedResource(USERS_CACHE_KEY, async () => {
+        const data = await api.getUsers();
+        return data.map(toUser).sort((a, b) => a.id - b.id);
+      }, { force });
+      setUsers(mapped);
     } catch (e) {
       console.error('fetchUsers error', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
-  }, []);
+  }, [users.length]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -38,7 +48,7 @@ export function useUsers() {
     const exists = users.find(x => x.pha_id.trim().toLowerCase() === normalizedPhaId);
     if (exists) return 'รหัสนี้มีอยู่แล้ว';
     const res = await api.createUser({ ...u, pha_id: normalizedPhaId, must_change_password: true });
-    if (res.success) { await fetchUsers(); return null; }
+    if (res.success) { await fetchUsers(true); return null; }
     return res.error ?? 'เกิดข้อผิดพลาด';
   };
 
@@ -46,21 +56,21 @@ export function useUsers() {
     const u = users.find(x => x.id === id);
     if (!u) return false;
     const res = await api.updateUser(id, { active: !u.active });
-    if (res.success) { await fetchUsers(); return true; }
+    if (res.success) { await fetchUsers(true); return true; }
     return false;
   };
 
   const deleteUser = async (id: number): Promise<boolean> => {
     const res = await api.deleteUser(id);
-    if (res.success) { await fetchUsers(); return true; }
+    if (res.success) { await fetchUsers(true); return true; }
     return false;
   };
 
   const updateUser = async (id: number, updates: Partial<User>): Promise<boolean> => {
     const res = await api.updateUser(id, updates);
-    if (res.success) { await fetchUsers(); return true; }
+    if (res.success) { await fetchUsers(true); return true; }
     return false;
   };
 
-  return { users, loading, fetchUsers, createUser, updateUser, toggleUser, deleteUser };
+  return { users, loading, refreshing, fetchUsers, createUser, updateUser, toggleUser, deleteUser };
 }

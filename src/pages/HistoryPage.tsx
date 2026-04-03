@@ -6,6 +6,7 @@ import { usePreps } from '../hooks/usePreps';
 import { useFormulas } from '../hooks/useFormulas';
 import { fmtShort, fmtTime, today, isTimeInRange } from '../lib/utils';
 import { useLocation as useRouterLocation } from 'react-router-dom';
+import LoadingState from '../components/ui/LoadingState';
 import Swal from 'sweetalert2';
 import PrepDetailsModal from '../components/PrepDetailsModal';
 import EditPrepModal from '../components/EditPrepModal';
@@ -14,8 +15,8 @@ import type { Prep } from '../types';
 export default function HistoryPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { preps, updatePrep, deletePrep } = usePreps();
-  const { formulas } = useFormulas();
+  const { preps, loading: prepsLoading, refreshing: prepsRefreshing, fetchPreps, updatePrep, deletePrep } = usePreps();
+  const { formulas, loading: formulasLoading, refreshing: formulasRefreshing, fetchFormulas } = useFormulas();
   const routerLocation = useRouterLocation();
   const filterByState = (routerLocation.state as { filterBy?: string } | null)?.filterBy || '';
   const [search, setSearch] = useState(filterByState);
@@ -144,6 +145,23 @@ export default function HistoryPage() {
 
   return (
     <div className="page-section">
+      <div className="page-actions">
+        <button
+          className="btn btn-sm btn-outline"
+          onClick={() => {
+            fetchPreps(true);
+            fetchFormulas(true);
+          }}
+          disabled={prepsRefreshing || formulasRefreshing}
+        >
+          {prepsRefreshing || formulasRefreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
+        </button>
+      </div>
+
+      {prepsLoading || formulasLoading ? (
+        <LoadingState title="กำลังโหลดประวัติการผลิต" description="ดึงข้อมูลประวัติและสูตรยาจาก Google Sheet" />
+      ) : (
+        <>
       <div className="card">
         <div className="card-header">
           <h3>ประวัติการผลิต</h3>
@@ -293,6 +311,8 @@ export default function HistoryPage() {
         onClose={() => setSelectedPrep(null)}
         prep={selectedPrep}
       />
+        </>
+      )}
     </div>
   );
 }

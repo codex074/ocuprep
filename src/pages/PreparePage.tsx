@@ -7,12 +7,13 @@ import { today, addDays, fmtDate, fmtDateTime, multiplyAmount } from '../lib/uti
 import { generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
+import LoadingState from '../components/ui/LoadingState';
 
 export default function PreparePage() {
   const { user, location: curLoc } = useAuth();
   const { toast } = useToast();
-  const { formulas } = useFormulas();
-  const { preps, createPrep } = usePreps();
+  const { formulas, loading: formulasLoading, refreshing: formulasRefreshing, fetchFormulas } = useFormulas();
+  const { preps, loading: prepsLoading, refreshing: prepsRefreshing, fetchPreps, createPrep } = usePreps();
   const [formulaId, setFormulaId] = useState('');
   const [mode, setMode] = useState<'patient' | 'stock'>('patient');
   const [hn, setHn] = useState('');
@@ -25,16 +26,6 @@ export default function PreparePage() {
   const [printModal, setPrintModal] = useState(false);
   const [printContent, setPrintContent] = useState('');
   const [printTitle, setPrintTitle] = useState('');
-
-  // ... (existing code for useEffect, helpers, etc. stays the same, I will use replace_file_content carefully)
-
-  // Wait, I should not replace the whole file or large chunks if not needed.
-  // The tool instructions say: "StartLine and EndLine should specify a range of lines containing precisely the instances of TargetContent that you wish to edit."
-  // I will make two separate edits: one for import, one for the usage.
-  // Actually, I can do it in two steps or use multi_replace if I was using that tool, but here I will use replace_file_content for each.
-  
-  // Let's do the import first.
-
 
   useEffect(() => {
     const nextId = preps.length > 0 ? Math.max(...preps.map(p => p.id)) + 1 : 1;
@@ -210,6 +201,23 @@ export default function PreparePage() {
 
   return (
     <div className="page-section">
+      <div className="page-actions">
+        <button
+          className="btn btn-sm btn-outline"
+          onClick={() => {
+            fetchFormulas(true);
+            fetchPreps(true);
+          }}
+          disabled={formulasRefreshing || prepsRefreshing}
+        >
+          {formulasRefreshing || prepsRefreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
+        </button>
+      </div>
+
+      {formulasLoading || prepsLoading ? (
+        <LoadingState title="กำลังเตรียมข้อมูลสำหรับบันทึกยา" description="กำลังโหลดสูตรตำรับและเลขล็อตล่าสุดจาก Google Sheet" />
+      ) : (
+        <>
       <div className="card">
         <div className="card-header"><h3>เตรียมยาตาเฉพาะราย</h3></div>
         <div className="card-body">
@@ -327,6 +335,8 @@ export default function PreparePage() {
       >
         <div dangerouslySetInnerHTML={{ __html: printContent }} />
       </Modal>
+        </>
+      )}
     </div>
   );
 }

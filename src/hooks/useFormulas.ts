@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { getCachedResource, loadCachedResource } from '../lib/resourceCache';
 import type { Formula } from '../types';
+
+const FORMULAS_CACHE_KEY = 'formulas';
 
 function toFormula(r: Record<string, unknown>): Formula {
   return {
@@ -23,41 +26,48 @@ function toFormula(r: Record<string, unknown>): Formula {
 }
 
 export function useFormulas() {
-  const [formulas, setFormulas] = useState<Formula[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [formulas, setFormulas] = useState<Formula[]>(() => getCachedResource<Formula[]>(FORMULAS_CACHE_KEY) ?? []);
+  const [loading, setLoading] = useState(formulas.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchFormulas = useCallback(async () => {
-    setLoading(true);
+  const fetchFormulas = useCallback(async (force = false) => {
+    if (force) setRefreshing(true);
+    else if (formulas.length === 0) setLoading(true);
     try {
-      const data = await api.getFormulas();
-      setFormulas(data.map(toFormula).sort((a, b) => a.id - b.id));
+      const mapped = await loadCachedResource(FORMULAS_CACHE_KEY, async () => {
+        const data = await api.getFormulas();
+        return data.map(toFormula).sort((a, b) => a.id - b.id);
+      }, { force });
+      setFormulas(mapped);
     } catch (e) {
       console.error('fetchFormulas error', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
-  }, []);
+  }, [formulas.length]);
 
   useEffect(() => { fetchFormulas(); }, [fetchFormulas]);
 
   const createFormula = async (f: Omit<Formula, 'id' | 'created_at'>): Promise<boolean> => {
     const res = await api.createFormula(f);
-    if (res.success) { await fetchFormulas(); return true; }
+    if (res.success) { await fetchFormulas(true); return true; }
     return false;
   };
 
   const updateFormula = async (id: number, f: Partial<Formula>): Promise<boolean> => {
     const res = await api.updateFormula(id, f);
     if (!res.success) { console.error('Error updating formula:', res.error); return false; }
-    await fetchFormulas();
+    await fetchFormulas(true);
     return true;
   };
 
   const deleteFormula = async (id: number): Promise<boolean> => {
     const res = await api.deleteFormula(id);
     if (!res.success) { console.error('Error deleting formula:', res.error); return false; }
-    await fetchFormulas();
+    await fetchFormulas(true);
     return true;
   };
 
-  return { formulas, loading, fetchFormulas, createFormula, updateFormula, deleteFormula };
+  return { formulas, loading, refreshing, fetchFormulas, createFormula, updateFormula, deleteFormula };
 }

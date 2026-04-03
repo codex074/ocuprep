@@ -3,12 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import Modal from '../components/ui/Modal';
+import LoadingState from '../components/ui/LoadingState';
 import type { Formula } from '../types';
 
 export default function FormulasPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { formulas, createFormula, updateFormula, deleteFormula } = useFormulas();
+  const { formulas, loading, refreshing, fetchFormulas, createFormula, updateFormula, deleteFormula } = useFormulas();
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   
@@ -194,28 +195,37 @@ export default function FormulasPage() {
           <h3 style={{ fontSize: '16px', fontWeight: 600 }}>สูตรตำรับยาทั้งหมด</h3>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>เพิ่ม แก้ไข หรือลบสูตรตำรับ</p>
         </div>
-        {user?.role === 'admin' && (
-          <button className="btn btn-primary" onClick={openAdd}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            เพิ่มสูตรตำรับ
+        <div className="page-actions" style={{ marginBottom: 0 }}>
+          <button className="btn btn-sm btn-outline" onClick={() => fetchFormulas(true)} disabled={refreshing}>
+            {refreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
           </button>
-        )}
+          {user?.role === 'admin' && (
+            <button className="btn btn-primary" onClick={openAdd}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              เพิ่มสูตรตำรับ
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="formula-grid">
-        {formulas.map(f => (
-          <div className="formula-card" key={f.id} onClick={() => openEdit(f)}>
-            <h4>{f.code ? <span style={{ color: 'var(--primary)', marginRight: '6px' }}>[{f.code}]</span> : null}{f.name}</h4>
-            <div className="fdesc">{f.description || '-'}</div>
-            <div className="fmeta">
-              <span className={`badge-tag ${cc[f.category || 'other'] || 'teal'}`}>{cl[f.category || 'other'] || f.category}</span>
-              <span className="badge-tag amber">{f.concentration}</span>
-              <span className="badge-tag green">อายุ {Math.abs(f.expiry_days)} {f.expiry_days < 0 ? 'ชม.' : 'วัน'}</span>
-              {f.price > 0 && <span className="badge-tag red">{f.price} ฿</span>}
+      {loading ? (
+        <LoadingState title="กำลังโหลดสูตรตำรับยา" description="ระบบกำลังอ่านรายการสูตรยาจาก Google Sheet" />
+      ) : (
+        <div className="formula-grid">
+          {formulas.map(f => (
+            <div className="formula-card" key={f.id} onClick={() => openEdit(f)}>
+              <h4>{f.code ? <span style={{ color: 'var(--primary)', marginRight: '6px' }}>[{f.code}]</span> : null}{f.name}</h4>
+              <div className="fdesc">{f.description || '-'}</div>
+              <div className="fmeta">
+                <span className={`badge-tag ${cc[f.category || 'other'] || 'teal'}`}>{cl[f.category || 'other'] || f.category}</span>
+                <span className="badge-tag amber">{f.concentration}</span>
+                <span className="badge-tag green">อายุ {Math.abs(f.expiry_days)} {f.expiry_days < 0 ? 'ชม.' : 'วัน'}</span>
+                {f.price > 0 && <span className="badge-tag red">{f.price} ฿</span>}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}
         title={editId ? (user?.role === 'admin' ? 'แก้ไขสูตรตำรับ' : 'รายละเอียดสูตรตำรับ') : 'เพิ่มสูตรตำรับยา'}
