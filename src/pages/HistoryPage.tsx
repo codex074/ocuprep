@@ -7,6 +7,7 @@ import { useFormulas } from '../hooks/useFormulas';
 import { fmtShort, fmtTime, today, isTimeInRange } from '../lib/utils';
 import { useLocation as useRouterLocation } from 'react-router-dom';
 import LoadingState from '../components/ui/LoadingState';
+import RefreshButton from '../components/ui/RefreshButton';
 import Swal from 'sweetalert2';
 import PrepDetailsModal from '../components/PrepDetailsModal';
 import EditPrepModal from '../components/EditPrepModal';
@@ -31,6 +32,7 @@ export default function HistoryPage() {
   
   // Details Modal State
   const [selectedPrep, setSelectedPrep] = useState<Prep | null>(null);
+  const isRefreshing = prepsRefreshing || formulasRefreshing;
 
   const filtered = useMemo(() => {
     let list = [...preps];
@@ -146,16 +148,13 @@ export default function HistoryPage() {
   return (
     <div className="page-section">
       <div className="page-actions">
-        <button
-          className="btn btn-sm btn-outline"
+        <RefreshButton
+          refreshing={isRefreshing}
           onClick={() => {
             fetchPreps(true);
             fetchFormulas(true);
           }}
-          disabled={prepsRefreshing || formulasRefreshing}
-        >
-          {prepsRefreshing || formulasRefreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
-        </button>
+        />
       </div>
 
       {prepsLoading || formulasLoading ? (

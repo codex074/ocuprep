@@ -4,6 +4,13 @@ import { getCachedResource, loadCachedResource } from '../lib/resourceCache';
 import type { User } from '../types';
 
 const USERS_CACHE_KEY = 'users';
+type UserUpdateInput = Partial<User> & {
+  profile_image_upload?: {
+    data_url: string;
+    file_name?: string;
+    mime_type?: string;
+  };
+};
 
 function toUser(r: Record<string, unknown>): User {
   return {
@@ -66,7 +73,7 @@ export function useUsers() {
     return false;
   };
 
-  const updateUser = async (id: number, updates: Partial<User>): Promise<boolean> => {
+  const updateUser = async (id: number, updates: UserUpdateInput): Promise<boolean> => {
     const res = await api.updateUser(id, updates);
     if (res.success) { await fetchUsers(true); return true; }
     return false;

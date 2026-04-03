@@ -4,6 +4,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import Modal from '../components/ui/Modal';
 import LoadingState from '../components/ui/LoadingState';
+import RefreshButton from '../components/ui/RefreshButton';
 import type { Formula } from '../types';
 
 export default function FormulasPage() {
@@ -196,9 +197,7 @@ export default function FormulasPage() {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>เพิ่ม แก้ไข หรือลบสูตรตำรับ</p>
         </div>
         <div className="page-actions" style={{ marginBottom: 0 }}>
-          <button className="btn btn-sm btn-outline" onClick={() => fetchFormulas(true)} disabled={refreshing}>
-            {refreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
-          </button>
+          <RefreshButton refreshing={refreshing} onClick={() => fetchFormulas(true)} />
           {user?.role === 'admin' && (
             <button className="btn btn-primary" onClick={openAdd}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>

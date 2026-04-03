@@ -6,6 +6,7 @@ import { resolvePath } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ProfileCard from '../components/ProfileCard';
 import LoadingState from '../components/ui/LoadingState';
+import RefreshButton from '../components/ui/RefreshButton';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -115,9 +116,7 @@ export default function UsersPage() {
   return (
     <div className="page-section">
       <div className="page-actions">
-        <button className="btn btn-sm btn-outline" onClick={() => fetchUsers(true)} disabled={refreshing}>
-          {refreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
-        </button>
+        <RefreshButton refreshing={refreshing} onClick={() => fetchUsers(true)} />
       </div>
 
       {loading ? (

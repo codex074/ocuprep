@@ -8,6 +8,7 @@ import PrepDetailsModal from '../components/PrepDetailsModal';
 import SummaryDetailsModal from '../components/SummaryDetailsModal';
 import type { Prep } from '../types';
 import LoadingState from '../components/ui/LoadingState';
+import RefreshButton from '../components/ui/RefreshButton';
 import { usePreps } from '../hooks/usePreps';
 import Swal from 'sweetalert2';
 
@@ -80,9 +81,7 @@ export default function DashboardPage() {
   return (
     <div className="page-section">
       <div className="page-actions">
-        <button className="btn btn-sm btn-outline" onClick={() => fetchPreps(true)} disabled={refreshing}>
-          {refreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
-        </button>
+        <RefreshButton refreshing={refreshing} onClick={() => fetchPreps(true)} />
       </div>
 
       {loading ? (

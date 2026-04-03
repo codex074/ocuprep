@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { useGasInit } from './hooks/useGasInit';
+import { useAppWarmup } from './hooks/useAppWarmup';
 import Layout from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -41,6 +42,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
 
 function AppRoutes() {
   useGasInit();   // ← ping GAS ครั้งเดียวตอน boot → auto-create sheets
+  useAppWarmup();
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />

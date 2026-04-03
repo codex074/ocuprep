@@ -15,7 +15,68 @@ interface ProfileCardProps {
   onClose?: () => void;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SOURCE_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_AVATAR_DIMENSION = 1400;
+
+function loadImageFromUrl(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้'));
+    img.src = src;
+  });
+}
+
+function scaleAvatarSize(width: number, height: number) {
+  const longestSide = Math.max(width, height);
+  if (longestSide <= MAX_AVATAR_DIMENSION) {
+    return { width, height };
+  }
+
+  const ratio = MAX_AVATAR_DIMENSION / longestSide;
+  return {
+    width: Math.round(width * ratio),
+    height: Math.round(height * ratio),
+  };
+}
+
+async function optimizeAvatarFile(file: File) {
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await loadImageFromUrl(objectUrl);
+    const size = scaleAvatarSize(image.naturalWidth || image.width, image.naturalHeight || image.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = size.height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('ไม่สามารถประมวลผลรูปภาพได้');
+    }
+
+    context.drawImage(image, 0, 0, size.width, size.height);
+
+    let quality = 0.9;
+    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+    while (dataUrl.length > 2_500_000 && quality > 0.55) {
+      quality -= 0.1;
+      dataUrl = canvas.toDataURL('image/jpeg', quality);
+    }
+
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'avatar';
+    return {
+      previewUrl: dataUrl,
+      upload: {
+        data_url: dataUrl,
+        file_name: `${baseName}.jpg`,
+        mime_type: 'image/jpeg',
+      },
+    };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose }: ProfileCardProps) {
   const { refreshUser } = useAuth();
@@ -35,11 +96,19 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
 
   // Temp avatar state for preview before saving
   const [tempAvatar, setTempAvatar] = useState<string | null>(null);
+  const [avatarProcessing, setAvatarProcessing] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [tempAvatarUpload, setTempAvatarUpload] = useState<{
+    data_url: string;
+    file_name: string;
+    mime_type: string;
+  } | null>(null);
 
   const canEdit = isOwnProfile || isAdmin;
 
   const startAvatarEdit = () => {
     setTempAvatar(targetUser.profile_image || '/avatars/male-pharmacist.png');
+    setTempAvatarUpload(null);
     setShowAvatarPicker(true);
   };
 
@@ -61,26 +130,34 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     [myPreps]
   );
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!canEdit) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > MAX_FILE_SIZE) {
-      toast('ขนาดไฟล์ต้องไม่เกิน 5 MB', 'error');
+    if (file.size > MAX_SOURCE_FILE_SIZE) {
+      toast('ขนาดไฟล์ต้นฉบับต้องไม่เกิน 20 MB', 'error');
+      e.target.value = '';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setTempAvatar(base64); // Just set preview
-    };
-    reader.readAsDataURL(file);
+    try {
+      setAvatarProcessing(true);
+      const optimized = await optimizeAvatarFile(file);
+      setTempAvatar(optimized.previewUrl);
+      setTempAvatarUpload(optimized.upload);
+      toast('เตรียมรูปโปรไฟล์เรียบร้อยแล้ว', 'success');
+    } catch (error) {
+      console.error('handleImageUpload error', error);
+      toast('ไฟล์รูปจากอุปกรณ์นี้ไม่สามารถประมวลผลได้ ลองเลือกรูปอื่นหรือแปลงเป็น JPG ก่อน', 'error');
+    } finally {
+      setAvatarProcessing(false);
+      e.target.value = '';
+    }
   };
 
   const saveAvatar = async () => {
-    if (!tempAvatar || !canEdit) return;
+    if (!tempAvatar || !canEdit || avatarSaving) return;
     
     // confirm
     const result = await Swal.fire({
@@ -93,12 +170,17 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
 
     if (!result.isConfirmed) return;
 
-    const ok = await updateUser(targetUser.id, { profile_image: tempAvatar });
+    setAvatarSaving(true);
+    const ok = tempAvatarUpload
+      ? await updateUser(targetUser.id, { profile_image_upload: tempAvatarUpload })
+      : await updateUser(targetUser.id, { profile_image: tempAvatar });
+    setAvatarSaving(false);
     if (ok) {
       toast('เปลี่ยนรูปโปรไฟล์สำเร็จ', 'success');
       refreshUser();
       setShowAvatarPicker(false);
       setTempAvatar(null);
+      setTempAvatarUpload(null);
     } else {
       toast('เกิดข้อผิดพลาดในการบันทึก', 'error');
     }
@@ -107,6 +189,7 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
   const cancelAvatarEdit = () => {
     setShowAvatarPicker(false);
     setTempAvatar(null);
+    setTempAvatarUpload(null);
   };
 
   const handleNameChange = async () => {
@@ -209,14 +292,20 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
           <div className="avatar-picker-options">
             <div 
               className={`avatar-option ${tempAvatar === '/avatars/male-pharmacist.png' ? 'active' : ''}`}
-              onClick={() => setTempAvatar('/avatars/male-pharmacist.png')}
+              onClick={() => {
+                setTempAvatar('/avatars/male-pharmacist.png');
+                setTempAvatarUpload(null);
+              }}
             >
               <img src={resolvePath('/avatars/male-pharmacist.png')} alt="ชาย" />
               <span>ชาย</span>
             </div>
             <div 
               className={`avatar-option ${tempAvatar === '/avatars/female-pharmacist.png' ? 'active' : ''}`}
-              onClick={() => setTempAvatar('/avatars/female-pharmacist.png')}
+              onClick={() => {
+                setTempAvatar('/avatars/female-pharmacist.png');
+                setTempAvatarUpload(null);
+              }}
             >
               <img src={resolvePath('/avatars/female-pharmacist.png')} alt="หญิง" />
               <span>หญิง</span>
@@ -225,24 +314,29 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
           <div className="avatar-picker-divider">
             <span>หรืออัพโหลดรูปของคุณ</span>
           </div>
-          <button className="avatar-upload-btn" onClick={() => fileInputRef.current?.click()}>
+          <button className="avatar-upload-btn" type="button" onClick={() => fileInputRef.current?.click()} disabled={avatarProcessing || avatarSaving}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            อัพโหลดรูป (สูงสุด 5 MB)
+            {avatarProcessing ? 'กำลังเตรียมรูปจากอุปกรณ์...' : 'อัพโหลดรูปจากมือถือ/คอมพิวเตอร์'}
           </button>
           <input 
             ref={fileInputRef}
             type="file" 
-            accept="image/*" 
+            accept="image/*,.heic,.heif" 
             style={{ display: 'none' }}
             onChange={handleImageUpload}
           />
+          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+            ระบบจะย่อและแปลงรูปเป็น JPG อัตโนมัติก่อนอัปโหลด เพื่อให้ใช้กับรูปจาก iPhone ได้ง่ายขึ้น
+          </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-            <button className="btn btn-sm btn-primary" onClick={saveAvatar} style={{ flex: 1 }}>ยืนยันเปลี่ยนรูป</button>
-            <button className="btn btn-sm btn-outline" onClick={cancelAvatarEdit}>ยกเลิก</button>
+            <button className="btn btn-sm btn-primary" onClick={saveAvatar} style={{ flex: 1 }} disabled={avatarProcessing || avatarSaving}>
+              {avatarSaving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'ยืนยันเปลี่ยนรูป'}
+            </button>
+            <button className="btn btn-sm btn-outline" onClick={cancelAvatarEdit} disabled={avatarProcessing || avatarSaving}>ยกเลิก</button>
           </div>
         </div>
       )}

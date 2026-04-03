@@ -8,6 +8,7 @@ import { generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, 
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 import LoadingState from '../components/ui/LoadingState';
+import RefreshButton from '../components/ui/RefreshButton';
 
 export default function PreparePage() {
   const { user, location: curLoc } = useAuth();
@@ -26,6 +27,7 @@ export default function PreparePage() {
   const [printModal, setPrintModal] = useState(false);
   const [printContent, setPrintContent] = useState('');
   const [printTitle, setPrintTitle] = useState('');
+  const isRefreshing = formulasRefreshing || prepsRefreshing;
 
   useEffect(() => {
     const nextId = preps.length > 0 ? Math.max(...preps.map(p => p.id)) + 1 : 1;
@@ -202,16 +204,13 @@ export default function PreparePage() {
   return (
     <div className="page-section">
       <div className="page-actions">
-        <button
-          className="btn btn-sm btn-outline"
+        <RefreshButton
+          refreshing={isRefreshing}
           onClick={() => {
             fetchFormulas(true);
             fetchPreps(true);
           }}
-          disabled={formulasRefreshing || prepsRefreshing}
-        >
-          {formulasRefreshing || prepsRefreshing ? 'กำลังรีเฟรช...' : 'รีเฟรชข้อมูล'}
-        </button>
+        />
       </div>
 
       {formulasLoading || prepsLoading ? (
