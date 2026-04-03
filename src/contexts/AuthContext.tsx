@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import type { User } from '../types';
 
 interface AuthState {
@@ -14,6 +14,20 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
+function rowToUser(r: Record<string, unknown>): User {
+  return {
+    id: Number(r.id),
+    name: String(r.name ?? ''),
+    pha_id: String(r.pha_id ?? ''),
+    password: String(r.password ?? ''),
+    role: (r.role as 'admin' | 'user') ?? 'user',
+    active: r.active === true || r.active === 'TRUE',
+    must_change_password: r.must_change_password === true || r.must_change_password === 'TRUE',
+    profile_image: r.profile_image != null && r.profile_image !== '' ? String(r.profile_image) : undefined,
+    created_at: r.created_at != null ? String(r.created_at) : undefined,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [location, setLocation] = useState('');
@@ -24,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try {
         const { user: u, location: loc, timestamp } = JSON.parse(stored);
-        
-        const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
+
+        const SESSION_TIMEOUT = 60 * 60 * 1000;
         if (timestamp && Date.now() - timestamp > SESSION_TIMEOUT) {
           localStorage.removeItem('ed-extemp-session');
           setLoading(false);
@@ -34,19 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (u) {
           setUser(u);
-          // Refresh user data from Supabase to ensure latest profile_image
-          supabase.from('users').select('*').eq('id', u.id).single().then(({ data, error }) => {
+          // Refresh user data from GAS
+          api.getUserById(u.id).then(({ data, error }) => {
             if (!error && data) {
-              const freshUser: User = {
-                id: data.id,
-                name: data.name,
-                pha_id: data.pha_id,
-                password: data.password,
-                role: data.role,
-                active: data.active,
-                profile_image: data.profile_image || undefined,
-                created_at: data.created_at,
-              };
+              const freshUser = rowToUser(data);
               setUser(freshUser);
               localStorage.setItem('ed-extemp-session', JSON.stringify({ user: freshUser, location: loc || '', timestamp: Date.now() }));
             }
@@ -61,30 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (phaId: string, password: string): Promise<string | null> => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('pha_id', phaId)
-      .eq('password', password)
-      .eq('active', true)
-      .single();
-
-    if (error || !data) {
-      return 'รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    const res = await api.login(phaId, password);
+    if (res.error || !res.data) {
+      return res.error ?? 'รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
 
-    const u: User = {
-      id: data.id,
-      name: data.name,
-      pha_id: data.pha_id,
-      password: data.password,
-      role: data.role,
-      active: data.active,
-      must_change_password: data.must_change_password,
-      profile_image: data.profile_image || undefined,
-      created_at: data.created_at,
-    };
-
+    const u = rowToUser(res.data);
     setUser(u);
     localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location: '', timestamp: Date.now() }));
     return null;
@@ -93,28 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const selectStation = (loc: string) => {
     setLocation(loc);
     if (user) {
-        localStorage.setItem('ed-extemp-session', JSON.stringify({ user, location: loc, timestamp: Date.now() }));
+      localStorage.setItem('ed-extemp-session', JSON.stringify({ user, location: loc, timestamp: Date.now() }));
     }
   };
 
   const refreshUser = async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (!error && data) {
-      const u: User = {
-        id: data.id,
-        name: data.name,
-        pha_id: data.pha_id,
-        password: data.password,
-        role: data.role,
-        active: data.active,
-        profile_image: data.profile_image || undefined,
-        created_at: data.created_at,
-      };
+    const res = await api.getUserById(user.id);
+    if (!res.error && res.data) {
+      const u = rowToUser(res.data);
       setUser(u);
       localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location, timestamp: Date.now() }));
     }
@@ -135,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const updateActivity = () => {
       const now = Date.now();
-      if (now - lastUpdate > 60000) { // Throttle to max once per minute
+      if (now - lastUpdate > 60000) {
         const sessionStr = localStorage.getItem('ed-extemp-session');
         if (sessionStr) {
           try {
@@ -163,11 +137,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const session = JSON.parse(sessionStr);
           if (session.timestamp && Date.now() - session.timestamp > SESSION_TIMEOUT) {
-            logout(); // Session expired
+            logout();
           }
         } catch (e) {}
       }
-    }, 10000); // Check every 10 seconds
+    }, 10000);
 
     return () => {
       window.removeEventListener('mousemove', handleUserActivity);

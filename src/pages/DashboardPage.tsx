@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { fmtShort, fmtTime, today, getMonthRange, getCurrentThaiMonthYear } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -9,6 +9,29 @@ import PrepDetailsModal from '../components/PrepDetailsModal';
 import SummaryDetailsModal from '../components/SummaryDetailsModal';
 import type { Prep } from '../types';
 import Swal from 'sweetalert2';
+
+function toPrep(r: Record<string, unknown>): Prep {
+  return {
+    id: Number(r.id),
+    formula_id: Number(r.formula_id),
+    formula_name: String(r.formula_name ?? ''),
+    concentration: r.concentration != null ? String(r.concentration) : null,
+    mode: (r.mode as 'patient' | 'stock') ?? 'patient',
+    target: String(r.target ?? ''),
+    hn: String(r.hn ?? ''),
+    patient_name: String(r.patient_name ?? ''),
+    dest_room: String(r.dest_room ?? ''),
+    lot_no: String(r.lot_no ?? ''),
+    date: String(r.date ?? ''),
+    expiry_date: String(r.expiry_date ?? ''),
+    qty: Number(r.qty),
+    note: String(r.note ?? ''),
+    prepared_by: String(r.prepared_by ?? ''),
+    user_pha_id: r.user_pha_id != null ? String(r.user_pha_id) : undefined,
+    location: String(r.location ?? ''),
+    created_at: r.created_at != null ? String(r.created_at) : undefined,
+  };
+}
 
 export default function DashboardPage() {
   const [preps, setPreps] = useState<Prep[]>([]);
@@ -21,14 +44,12 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     const [start, end] = getMonthRange();
-    const { data: p } = await supabase
-      .from('preps')
-      .select('*')
-      .gte('date', start)
-      .lte('date', end)
-      .order('id', { ascending: false });
-    
-    if (p) setPreps(p as Prep[]);
+    const data = await api.getPreps();
+    const filtered = data
+      .map(toPrep)
+      .filter(p => p.date >= start && p.date <= end)
+      .sort((a, b) => b.id - a.id);
+    setPreps(filtered);
   }, []);
 
   useEffect(() => {
@@ -36,8 +57,8 @@ export default function DashboardPage() {
   }, [fetchData]);
 
   const handleUpdate = async (id: number, updates: Partial<Prep>) => {
-    const { error } = await supabase.from('preps').update(updates).eq('id', id);
-    if (!error) {
+    const res = await api.updatePrep(id, updates);
+    if (res.success) {
       toast('แก้ไขรายการสำเร็จ', 'success');
       await fetchData();
       return true;
@@ -59,10 +80,10 @@ export default function DashboardPage() {
       cancelButtonText: 'ยกเลิก',
       reverseButtons: true
     });
-    
+
     if (result.isConfirmed) {
-      const { error } = await supabase.from('preps').delete().eq('id', id);
-      if (!error) {
+      const res = await api.deletePrep(id);
+      if (res.success) {
         toast('ลบข้อมูลสำเร็จ', 'success');
         fetchData();
       } else {
@@ -78,7 +99,6 @@ export default function DashboardPage() {
   const stockBottles = preps.filter(p => p.mode === 'stock').reduce((sum, p) => sum + p.qty, 0);
   const recent = preps.slice(0, 5);
 
-  // Summary count
   const cnt: Record<string, number> = {};
   preps.forEach(p => { cnt[p.formula_name] = (cnt[p.formula_name] || 0) + p.qty; });
   const sorted = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
@@ -116,7 +136,7 @@ export default function DashboardPage() {
                 <thead><tr><th>วันที่</th><th>สูตรยา</th><th>จำนวน</th><th>ประเภท</th><th>ผู้เตรียม</th><th></th></tr></thead>
                 <tbody>
                   {recent.length ? recent.map(p => (
-                    <tr 
+                    <tr
                       key={p.id}
                       onClick={() => setSelectedPrep(p)}
                       style={{ cursor: 'pointer', transition: 'background 0.2s', borderBottom: '1px solid #f1f5f9' }}
@@ -166,8 +186,8 @@ export default function DashboardPage() {
           <div className="card-header"><h3>สรุปสูตรยา ประจำเดือน {currentMonthYear}</h3></div>
           <div className="card-body">
             {sorted.length ? sorted.map(([n, c], i) => (
-              <div 
-                key={n} 
+              <div
+                key={n}
                 onClick={() => setSelectedSummary(n)}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px',
@@ -187,13 +207,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      <EditPrepModal 
-        isOpen={!!editPrep} 
-        onClose={() => setEditPrep(null)} 
-        prep={editPrep} 
-        onUpdate={handleUpdate} 
+
+      <EditPrepModal
+        isOpen={!!editPrep}
+        onClose={() => setEditPrep(null)}
+        prep={editPrep}
+        onUpdate={handleUpdate}
       />
-      
+
       <PrepDetailsModal
         isOpen={!!selectedPrep}
         prep={selectedPrep}

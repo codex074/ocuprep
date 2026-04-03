@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function ForceChangePasswordPage() {
   const [password, setPassword] = useState('');
@@ -21,16 +21,13 @@ export default function ForceChangePasswordPage() {
     setSubmitting(true);
     
     // Update password and clear the flag
-    const { error } = await supabase
-      .from('users')
-      .update({ 
-        password: password,
-        must_change_password: false 
-      })
-      .eq('id', user?.id || 0);
+    const res = await api.updateUser(user?.id || 0, {
+      password: password,
+      must_change_password: false,
+    });
 
-    if (error) {
-      toast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+    if (res.error) {
+      toast('เกิดข้อผิดพลาด: ' + res.error, 'error');
       setSubmitting(false);
       return;
     }
