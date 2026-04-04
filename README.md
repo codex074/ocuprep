@@ -20,51 +20,50 @@
 
 **UTTH ED-Extemp** is a web application for recording and tracking the production of custom-compounded (extemporaneous) eye drop medications in the Pharmacy Department of Uttaradit Hospital.
 
-The system manages the full preparation workflow — from formula selection and lot number generation to label printing, historical auditing, and monthly workload reporting — with role-based access for pharmacists and administrators.
+The system manages the full preparation workflow — from formula selection and lot number generation to label printing, historical auditing, and monthly workload analysis — with role-based access for pharmacists and administrators.
 
 ---
 
 ## ✨ Features
 
-| Category | Features |
+| Category | Details |
 |---|---|
 | 🔐 **Authentication** | Login with pharmacist ID, forced password change on first login, 1-hour session timeout |
-| 📊 **Dashboard** | Monthly prep overview with 5 stat cards (count, today, patient, stock bottles, production value), server-side date filter, inline edit/delete, load-more pagination |
-| 🧪 **Preparation Recording** | Patient or stock mode, auto lot number, auto expiry calculation, quantity multiplier, detailed error messages on save failure |
-| 🖨️ **Label Printing** | Batch sheets, standard labels, bottle labels, prep stickers — all browser-printable |
-| 💡 **Formula Management** | Admin: create/edit/delete drug formulas with short names, ingredients, and preparation methods |
-| 👥 **User Management** | Admin: manage pharmacist accounts, roles, profile images, and active status |
-| 📜 **History** | Full audit log with search/filter, note column, paginated 20 per page, Export to Excel |
-| 📈 **Workload Report** | Monthly workload by day and time slot (เช้า/บ่าย/นอกเวลา), location filter, proportion bars, mini stacked bar chart, Export to Excel |
-| 📱 **PWA** | Installable on iOS/Android, offline-capable, home screen icon |
-| ⚡ **Performance** | Server-side date filter, GAS formula cache (1 hr), optimistic UI updates, load-more pagination |
+| 📊 **Dashboard** | Selectable month & location filter · 6 stat cards · recent list with inline edit/delete · formula summary · built-in workload analysis section · Export to Excel |
+| 🧪 **Preparation Recording** | Patient or stock mode · auto lot number · auto expiry calculation · quantity multiplier · actual GAS error messages surfaced on save failure |
+| 🖨️ **Label Printing** | Batch sheets · standard patient labels · bottle labels · prep stickers — all browser-printable |
+| 💡 **Formula Management** | Admin: create/edit/delete formulas with short names, ingredients, preparation methods, pricing |
+| 👥 **User Management** | Admin: manage pharmacist accounts, roles, profile images, active status |
+| 📜 **History** | Full audit log · search/filter by date range, mode, and keyword · note column · paginated 20 per load · Export to Excel |
+| 📱 **PWA** | Installable on iOS/Android · offline-capable · home screen icon |
+| ⚡ **Performance** | Server-side date filter · GAS formula cache (1 hr) · optimistic UI updates · load-more pagination |
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Frontend (React PWA)                 │
-│              Hosted on GitHub Pages                     │
-│                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │  Pages   │  │  Hooks   │  │  Context │             │
-│  │ (Routes) │  │(Data/API)│  │(Auth/UI) │             │
-│  └──────────┘  └──────────┘  └──────────┘             │
-└───────────────────────┬─────────────────────────────────┘
-                        │ HTTP GET (query params)
-                        ▼
-┌─────────────────────────────────────────────────────────┐
-│            Backend (Google Apps Script)                 │
-│              gas/Code.gs                                │
-└───────────────────────┬─────────────────────────────────┘
-                        │ Sheets API
-                        ▼
-┌─────────────────────────────────────────────────────────┐
-│              Database (Google Sheets)                   │
-│          users │ formulas │ preps                       │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                   Frontend (React PWA)                   │
+│              Hosted on GitHub Pages                      │
+│                                                          │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────────────┐  │
+│  │  Pages   │  │  Hooks   │  │  Contexts / Cache     │  │
+│  │ (Routes) │  │(Data/API)│  │  Auth · Toast · Prep  │  │
+│  └──────────┘  └──────────┘  └───────────────────────┘  │
+└──────────────────────────┬───────────────────────────────┘
+                           │ HTTP GET (query params)
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│             Backend (Google Apps Script)                 │
+│                    gas/Code.gs                           │
+└──────────────────────────┬───────────────────────────────┘
+                           │ Sheets API
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│              Database (Google Sheets)                    │
+│            users  │  formulas  │  preps                 │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -74,36 +73,38 @@ The system manages the full preparation workflow — from formula selection and 
 ```
 utth-ed/
 ├── 📁 src/
-│   ├── 📁 components/         # Reusable UI components
-│   │   ├── 📁 layout/         # App shell / layout wrapper
-│   │   ├── 📁 ui/             # Modal, Combobox, LoadingState, Toast…
+│   ├── 📁 components/
+│   │   ├── 📁 layout/          # App shell (sidebar, header, bottom nav)
+│   │   ├── 📁 ui/              # Modal, Combobox, LoadingState, Toast…
 │   │   ├── EditPrepModal.tsx
 │   │   ├── PrepDetailsModal.tsx
 │   │   ├── ProfileCard.tsx
 │   │   └── SummaryDetailsModal.tsx
-│   ├── 📁 contexts/           # AuthContext, ToastContext
-│   ├── 📁 hooks/              # usePreps, useFormulas, useUsers, useGasInit…
+│   ├── 📁 contexts/            # AuthContext, ToastContext
+│   ├── 📁 hooks/               # usePreps, useFormulas, useUsers, useGasInit…
 │   ├── 📁 lib/
-│   │   ├── api.ts             # GAS API connector (all HTTP calls)
-│   │   ├── print.ts           # Label / batch sheet HTML generation
-│   │   ├── resourceCache.ts   # In-memory cache with invalidation
-│   │   └── utils.ts           # Date formatting, helpers
-│   ├── 📁 pages/              # LoginPage, DashboardPage, PreparePage…
-│   │   ├── DashboardPage.tsx  # Monthly overview + 5 stat cards
-│   │   ├── HistoryPage.tsx    # Full audit log with note column
-│   │   ├── WorkloadPage.tsx   # Workload report by day & time slot
-│   │   └── …
-│   ├── 📁 types/              # TypeScript interfaces (User, Formula, Prep)
-│   └── App.tsx                # Routing & auth guards
+│   │   ├── api.ts              # GAS API connector (all HTTP calls)
+│   │   ├── print.ts            # Label / batch sheet HTML generation
+│   │   ├── resourceCache.ts    # In-memory cache with TTL & invalidation
+│   │   └── utils.ts            # Date formatting, helpers
+│   ├── 📁 pages/
+│   │   ├── DashboardPage.tsx   # Overview + workload analysis (combined)
+│   │   ├── HistoryPage.tsx     # Full audit log with note column
+│   │   ├── PreparePage.tsx     # Preparation recording & label printing
+│   │   ├── FormulasPage.tsx    # Formula management
+│   │   ├── UsersPage.tsx       # User management (admin)
+│   │   └── ProfilePage.tsx     # User profile
+│   ├── 📁 types/               # TypeScript interfaces (User, Formula, Prep)
+│   └── App.tsx                 # Routing & auth guards
 ├── 📁 gas/
-│   └── Code.gs                # Google Apps Script backend
+│   └── Code.gs                 # Google Apps Script backend
 ├── 📁 scripts/
-│   └── import-formulas.mjs    # Bulk-import formula data to GAS
+│   └── import-formulas.mjs     # Bulk-import formulas via GAS API
 ├── 📁 public/
-│   ├── 📁 icons/              # PWA icons (192, 512, maskable)
-│   └── 📁 avatars/            # User profile avatar images
+│   ├── 📁 icons/               # PWA icons (192, 512, maskable)
+│   └── 📁 avatars/             # User profile avatar images
 ├── 📁 .github/workflows/
-│   └── deploy-pages.yml       # CI/CD — auto deploy on push to main
+│   └── deploy-pages.yml        # CI/CD — auto deploy on push to main
 ├── .env.example
 ├── vite.config.ts
 └── package.json
@@ -116,7 +117,7 @@ utth-ed/
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) ≥ 18
-- A Google account (for Apps Script backend)
+- A Google account (for Google Apps Script backend)
 
 ### 1 — Clone & Install
 
@@ -138,13 +139,12 @@ Edit `.env` and set your GAS Web App URL:
 VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
 ```
 
-### 3 — Run Development Server
+### 3 — Start Development Server
 
 ```bash
 npm run dev
+# App available at http://localhost:5173
 ```
-
-The app will be available at `http://localhost:5173`.
 
 ---
 
@@ -153,27 +153,24 @@ The app will be available at `http://localhost:5173`.
 ### Step 1 — Deploy the Backend (Google Apps Script)
 
 1. Open [Google Apps Script](https://script.google.com/) and create a **new standalone project**.
-2. Copy the entire contents of `gas/Code.gs` into the script editor.
+2. Copy the full contents of `gas/Code.gs` into the editor.
 3. Click **Deploy → New Deployment → Web app**.
-4. Set the following:
+4. Configure:
    - **Execute as:** `Me`
    - **Who has access:** `Anyone`
-5. Click **Deploy** and grant the required Google permissions.
-6. Copy the **Web App URL** — you'll need it in the next step.
+5. Click **Deploy**, grant the required permissions, and copy the **Web App URL**.
 
-> **Note:** You don't need to create a Google Sheet manually. The backend automatically creates and seeds the spreadsheet on first run.
+> **Note:** No manual Google Sheet setup is required — the backend auto-creates and seeds the spreadsheet on the first request.
 
-> ⚠️ **Important — Updating GAS:** Pushing to GitHub does **not** auto-deploy the GAS backend. Whenever `gas/Code.gs` changes, you must manually re-deploy:
+> ⚠️ **Updating GAS:** Pushing to GitHub does **not** redeploy the GAS backend. After any change to `gas/Code.gs`, you must manually redeploy:
 > **Deploy → Manage deployments → ✏️ Edit → New version → Deploy**
-> The Web App URL stays the same after re-deployment.
+> The Web App URL remains the same.
 
-#### Verify the backend is working:
-
+**Verify deployment:**
 ```
 https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=ping
+# Should return: {"ok": true, ...}
 ```
-
-You should receive a JSON response like `{"ok": true, ...}`.
 
 ---
 
@@ -181,16 +178,15 @@ You should receive a JSON response like `{"ok": true, ...}`.
 
 #### Option A — Automated (Recommended)
 
-1. Push your code to a GitHub repository.
-2. Go to **Settings → Pages** and set **Source = GitHub Actions**.
+1. Push to a GitHub repository.
+2. Go to **Settings → Pages**, set **Source = GitHub Actions**.
 3. Go to **Settings → Secrets and variables → Actions → Variables**.
-4. Create a repository variable named `VITE_GAS_URL` with your GAS Web App URL.
-5. Push to the `main` branch — GitHub Actions will build and deploy automatically.
+4. Add a variable `VITE_GAS_URL` with your GAS Web App URL.
+5. Push to `main` — GitHub Actions builds and deploys automatically.
 
 #### Option B — Manual Deploy
 
 ```bash
-# Build and deploy to the gh-pages branch
 npm run deploy
 ```
 
@@ -198,126 +194,158 @@ npm run deploy
 
 ### Step 3 — First Login
 
-After deployment, open the app and sign in with the default admin credentials:
-
 | Field | Value |
 |---|---|
 | Pharmacist ID | `admin` |
 | Password | `1234` |
 
-> ⚠️ **You will be forced to change the password immediately on first login.**
+> ⚠️ **You will be forced to change the password on first login. Do it immediately.**
+
+---
+
+## 📊 Dashboard
+
+The Dashboard is the central hub, combining real-time overview and monthly workload analysis in a single page.
+
+### Toolbar
+
+| Control | Description |
+|---|---|
+| **Month selector** | Dropdown built from all historical prep records — shows every month that has data, plus the current month |
+| **Location filter** | Appears automatically when the selected month has records from more than one station/ward |
+| **Refresh** | Force-refresh data from GAS, bypassing the client-side cache |
+
+### Stat Cards (6 cards)
+
+| Card | Metric |
+|---|---|
+| 🔵 จำนวนขวดทั้งหมด | Total bottles produced in the selected month / filter |
+| 🟡 จำนวนขวดเฉพาะราย | Bottles for patient-specific (เฉพาะราย) preparations |
+| 🟣 จำนวนขวด Stock | Bottles for stock preparations |
+| 🟢 ขวดเฉลี่ย/วันที่ผลิต | Average bottles per active production day |
+| 🔴 จำนวนขวดวันสูงสุด | Busiest day — total bottles with the date shown |
+| 🩵 มูลค่ายาที่ผลิต | Total production value `฿` calculated as `formula.price × qty` |
+
+### Recent List
+
+- Displays the **20 most recent** preparations in the selected month/filter
+- Click any row to open full prep details (PrepDetailsModal)
+- Inline **Edit** and **Delete** buttons — visible to the record owner or any admin
+- **"โหลดเพิ่มอีก 20 รายการ"** button appears when more records remain
+- Resets to 20 automatically when the month or location filter changes
+
+### Formula Summary
+
+- Lists all formulas prepared in the selected month, sorted by total bottles (descending)
+- Displays **`short_name`** (abbreviated) with the full name available on hover
+- Click any formula to open SummaryDetailsModal showing individual prep records
+
+### Workload Analysis Section
+
+Embedded below the main grid — uses the same month/location filter as the rest of the page.
+
+#### Time-slot Proportion
+
+| Slot | Condition | Colour |
+|---|---|---|
+| 🟡 เช้า (Morning) | Mon–Fri 08:00–12:00 | Amber |
+| 🔵 บ่าย (Afternoon) | Mon–Fri 12:00–16:30 | Blue |
+| 🔴 นอกเวลา (Overtime) | Saturday/Sunday (all day) **or** weekday before 08:00 / after 16:30 | Red |
+
+> Classification uses the `created_at` timestamp. Records without a timestamp are counted as นอกเวลา.
+
+#### Daily Breakdown Table
+
+- Per-day counts for each time slot, total records, total bottles, and a mini stacked bar chart
+- Toggle between **"เฉพาะวันที่ผลิต"** (days with data only) and **"แสดงทุกวัน"** (all days in month)
+
+#### Export Excel
+
+- Downloads a `.xlsx` file (`workload-YYYY-MM.xlsx`) with the daily breakdown table and a summary totals row
+- Export reflects the active month and location filter
 
 ---
 
 ## 🛢️ Database Schema
 
-The backend uses **Google Sheets** as a database. Three sheets are created automatically:
+Three sheets are created automatically on first run.
 
 ### `users`
 | Column | Description |
 |---|---|
 | `id` | Unique user ID |
 | `name` | Full name |
-| `pha_id` | Pharmacist ID (login username) |
-| `password` | Hashed password |
+| `pha_id` | Pharmacist ID (login username, stored lowercase) |
+| `password` | Password (plaintext — change immediately in production) |
 | `role` | `admin` or `user` |
-| `active` | Account active status |
-| `must_change_password` | Force password change flag |
-| `profile_image` | Avatar URL |
-| `created_at` | Timestamp |
+| `active` | Account enabled flag |
+| `must_change_password` | Force password change on next login |
+| `profile_image` | Avatar image path |
+| `created_at` | ISO timestamp |
 
 ### `formulas`
 | Column | Description |
 |---|---|
 | `id` | Unique formula ID |
-| `code` | Formula code |
+| `code` | Short formula code |
 | `name` | Full formula name |
-| `short_name` | Abbreviated name shown in Dashboard summary |
+| `short_name` | Abbreviated name — displayed in Dashboard formula summary |
 | `concentration` | Drug concentration |
-| `expiry_days` | Days until expiry (negative = hours) |
-| `ingredients` | JSON array of ingredients |
-| `method` | JSON array of preparation steps |
-| `price` | Cost per unit (used in production value calculation) |
+| `expiry_days` | Shelf life in days; **negative** = hours (e.g. `-4` = 4 hours) |
+| `price` | Cost per bottle — used in production value calculations |
+| `ingredients` | JSON array of `{name, amount}` objects |
+| `method` | JSON array of preparation step strings |
 
 ### `preps`
 | Column | Description |
 |---|---|
-| `id` | Unique prep record ID |
+| `id` | Unique preparation record ID |
 | `formula_id` | Linked formula |
-| `mode` | `patient` or `stock` |
-| `lot_no` | Auto-generated lot number |
-| `date` | Date of preparation (stored as `YYYY-MM-DD`) |
-| `expiry_date` | Calculated expiry date |
-| `qty` | Quantity prepared |
-| `note` | Optional note / remark |
+| `mode` | `patient` (เฉพาะราย) or `stock` |
+| `lot_no` | Auto-generated lot number (`LOT-YYYYMM-NNN`) |
+| `date` | Preparation date — stored and returned as `YYYY-MM-DD` |
+| `expiry_date` | Calculated expiry — `YYYY-MM-DD` or full ISO for hour-based expiry |
+| `qty` | Number of bottles |
+| `note` | Optional remark / หมายเหตุ |
 | `prepared_by` | Pharmacist name |
-| `location` | Station/ward where prep was made |
-| `created_at` | Full timestamp (used for time-slot classification) |
+| `user_pha_id` | Pharmacist ID |
+| `location` | Station/ward where prep was made — used for location filter |
+| `created_at` | Full timestamp — **used for time-slot classification** in workload analysis |
 
 ---
 
 ## 🔌 API Reference
 
-All API calls are HTTP GET requests to the GAS Web App URL with an `action` query parameter.
+All requests are HTTP GET to the GAS Web App URL:
 
 ```
 GET https://script.google.com/.../exec?action=<ACTION>&<params>
 ```
 
-| Action | Description |
-|---|---|
-| `ping` | Health check — returns user/formula/prep counts |
-| `login` | Authenticate with `pha_id` and `password` |
-| `getUsers` | List all users (admin) |
-| `createUser` / `updateUser` / `deleteUser` | User CRUD (admin) |
-| `getFormulas` | List all formulas (cached 1 hr in GAS CacheService) |
-| `createFormula` / `updateFormula` / `deleteFormula` | Formula CRUD (admin, invalidates cache) |
-| `getPreps` | List preparation records — optional `startDate` / `endDate` params (`YYYY-MM-DD`) for server-side filtering |
-| `createPrep` / `updatePrep` / `deletePrep` | Prep CRUD |
-
----
-
-## 📈 Workload Report
-
-The **Workload** page (`/workload`) provides a monthly breakdown of preparation activity.
-
-### Time-slot Classification
-
-Slots are classified using the `created_at` timestamp of each record:
-
-| Slot | Condition | Color |
+| Action | Parameters | Description |
 |---|---|---|
-| 🟡 **เช้า** (Morning) | Mon–Fri 08:00–12:00 | Amber |
-| 🔵 **บ่าย** (Afternoon) | Mon–Fri 12:00–16:30 | Blue |
-| 🔴 **นอกเวลา** (Overtime) | Saturday / Sunday (all day) **or** weekday before 08:00 / after 16:30 | Red |
-
-> Records with no `created_at` timestamp are counted as **นอกเวลา** by default.
-
-### Features
-
-- **Month selector** — dropdown covering the past 24 months
-- **5 summary stat cards** — total records, total bottles, daily average, busiest day, total production value (฿)
-- **Proportion bars** — visual breakdown of each time slot for the month
-- **Daily table** — per-day counts for each slot, total records, total bottles, and a mini stacked bar chart
-- **Location filter** — appears automatically when the selected month has records from more than one station
-- **Toggle** — show only days with data, or all days in the month
-- **Export to Excel** — downloads the full monthly table as `.xlsx`
+| `ping` | — | Health check; returns sheet row counts |
+| `login` | `pha_id`, `password` | Authenticate; returns user object or error |
+| `getUsers` | — | List all users |
+| `createUser` / `updateUser` / `deleteUser` | `data` JSON / `id` | User CRUD (admin) |
+| `getFormulas` | — | List formulas — **cached 1 hr** in GAS CacheService |
+| `createFormula` / `updateFormula` / `deleteFormula` | `data` JSON / `id` | Formula CRUD — **auto-invalidates cache** |
+| `getPreps` | `startDate?`, `endDate?` (YYYY-MM-DD) | List preps — **server-side date filter** when dates are provided |
+| `createPrep` / `updatePrep` / `deletePrep` | `data` JSON / `id` | Prep CRUD — protected by `LockService` |
 
 ---
 
 ## 📦 Available Scripts
 
 ```bash
-npm run dev          # Start local development server
-npm run build        # Build for production (outputs to dist/)
+npm run dev          # Start local dev server (http://localhost:5173)
+npm run build        # Production build → dist/
 npm run preview      # Preview the production build locally
 npm run lint         # Run ESLint
 npm run deploy       # Build and deploy to GitHub Pages (manual)
 ```
 
-### Import Formula Data
-
-To bulk-import formulas from `formular.json` into your GAS backend:
+### Bulk Import Formulas
 
 ```bash
 VITE_GAS_URL=<your-gas-url> node scripts/import-formulas.mjs formular.json
@@ -329,95 +357,87 @@ VITE_GAS_URL=<your-gas-url> node scripts/import-formulas.mjs formular.json
 
 | Layer | Technology |
 |---|---|
-| **UI Framework** | React 19.2 |
-| **Language** | TypeScript ~5.9 |
-| **Build Tool** | Vite 7.3 |
-| **Routing** | React Router 7.13 (HashRouter) |
-| **PWA** | vite-plugin-pwa 1.2 |
-| **Dialogs** | SweetAlert2 11.26 |
-| **Excel Export** | XLSX 0.18 |
-| **Backend** | Google Apps Script |
-| **Database** | Google Sheets |
-| **Hosting** | GitHub Pages |
-| **CI/CD** | GitHub Actions |
+| UI Framework | React 19.2 |
+| Language | TypeScript ~5.9 |
+| Build Tool | Vite 7.3 |
+| Routing | React Router 7.13 (HashRouter for GitHub Pages) |
+| PWA | vite-plugin-pwa 1.2 |
+| Dialogs | SweetAlert2 11.26 |
+| Excel Export | XLSX 0.18 |
+| Backend | Google Apps Script |
+| Database | Google Sheets |
+| Hosting | GitHub Pages |
+| CI/CD | GitHub Actions |
 
 ---
 
 ## 🔑 Default Accounts
 
-When the GAS backend initializes the database, it seeds **44 default user accounts**:
+The backend seeds **44 user accounts** on first initialisation:
 
 | Account | Role | Default Password |
 |---|---|---|
 | `admin` | Administrator | `1234` |
-| `pha0` — `pha211` | Pharmacist | `1234` |
+| `pha0` – `pha211` | Pharmacist | `1234` |
 
-> All accounts have `must_change_password = true` and will be prompted to change their password on first login. **Change the `admin` password immediately after first login.**
+All accounts have `must_change_password = true`. **Change the `admin` password immediately.**
 
 ---
 
 ## 📱 PWA Support
 
-The app is installable as a Progressive Web App on both iOS and Android:
-
-- **Theme Color:** Blue (`#2563eb`)
-- **Display Mode:** Standalone (full-screen, no browser chrome)
-- **Icons:** 192×192 and 512×512 (with maskable version for Android)
-- **Auto-update:** Service worker updates automatically in the background
+| Property | Value |
+|---|---|
+| Theme colour | `#2563eb` (blue) |
+| Display mode | Standalone (full-screen) |
+| Icons | 192×192, 512×512, maskable |
+| Service worker | Vite-plugin-pwa — auto-updates in background |
 
 ---
 
-## ⚡ Performance & Optimization
+## ⚡ Performance & Correctness Notes
 
-### Server-side Date Filtering
-Dashboard and Workload fetch **only the selected month's records** by passing `startDate` / `endDate` to GAS. GAS filters before sending, so payload stays small regardless of total record count.
+### Server-side Date Filter
+Dashboard fetches **only the selected month** by passing `startDate`/`endDate` to GAS. Payload size stays constant regardless of total record count.
 
-```
-Without filter:  GAS sends ALL records → Frontend filters → heavy on large datasets
-With filter:     GAS sends current-month only → instant render
-```
-
-> **Note:** Google Sheets auto-converts date strings to `Date` objects internally. The GAS backend uses `Utilities.formatDate(date, tz, 'yyyy-MM-dd')` to normalize them before comparison **and** before returning, preventing off-by-one day bugs caused by UTC serialization.
-
-### Formula Cache (GAS CacheService)
-`getFormulas` results are cached in GAS for **1 hour**. Since formulas rarely change, this eliminates repeated Sheets reads on every page load. Cache is invalidated automatically when any formula is created, updated, or deleted.
+### Formula Cache
+`getFormulas` results are cached in **GAS CacheService for 1 hour**. Cache is invalidated automatically on any formula mutation (create / update / delete).
 
 ### Optimistic UI Updates
-`createPrep`, `updatePrep`, and `deletePrep` update the local React state **immediately** after the GAS call succeeds — no full refetch needed. The client-side cache (`resourceCache.ts`) is updated in-place.
+`createPrep`, `updatePrep`, and `deletePrep` update the local React state and `resourceCache` immediately after GAS confirms success — no full refetch required.
 
-### Pagination (20 per page)
-Both Dashboard and History display **20 records at a time** with a "Load more (+20)" button. History resets to page 1 automatically whenever any filter changes. Excel Export always exports **all filtered records**, not just the visible page.
+### Date Normalization (UTC off-by-one fix)
+Google Sheets silently converts `"YYYY-MM-DD"` strings to `Date` objects. Without correction, GAS's `JSON.stringify` would serialize midnight Bangkok time as the previous UTC day (e.g. `"2026-04-03T17:00:00.000Z"` for April 4), breaking all date-based grouping.
+
+**Two-layer fix:**
+1. **GAS side** — `normalizeCell_()` in `getAll_()` uses `Utilities.formatDate(date, timezone, 'yyyy-MM-dd')` to format date-only fields in the script's local timezone before returning.
+2. **Frontend side** — `toDateOnly()` in `usePreps.ts` converts any ISO datetime string to a `YYYY-MM-DD` local date string as a second safety layer.
+
+### Lock Safety (GAS)
+`LockService.tryLock()` returns `false` if the lock cannot be acquired within the timeout. The previous code always called `releaseLock()` in the `finally` block regardless, which throws a `LockTimeoutException` and silently aborts the save. The fix stores the `tryLock()` return value and only calls `releaseLock()` if the lock was actually acquired.
+
+### Error Surfacing
+`createPrep` in `usePreps.ts` returns `true | string` — `true` on success or the actual GAS error message string on failure. `PreparePage` shows the real error in the toast rather than a generic fallback, making diagnosis easier.
+
+### Pagination
+Both Dashboard and History display **20 records at a time** with a load-more button. History resets to page 1 whenever any filter changes. Excel export always includes **all filtered records**.
 
 ---
 
-## 📐 Implementation Notes
-
-- **HashRouter** is used instead of BrowserRouter to support GitHub Pages static hosting.
-- **Sessions** are stored in `localStorage` under the key `ed-extemp-session` with a 1-hour timeout.
-- **Client-side cache** (`resourceCache.ts`) uses month-keyed entries for preps (`preps-YYYY-MM`) and a single entry for formulas, with 5-minute stale time.
-- **Date normalization:** Google Sheets stores date strings as `Date` objects. GAS normalizes `date` / `expiry_date` fields with `Utilities.formatDate()` in the local timezone before returning, and the frontend further normalizes via `toDateOnly()` as a safety layer. This prevents UTC midnight serialization causing off-by-one day issues.
-- **Lock safety:** GAS `LockService.tryLock()` return value is checked before calling `releaseLock()` in the `finally` block, preventing spurious `LockTimeoutException` errors when lock acquisition fails.
-- **Thread safety** in GAS is handled via `LockService` to prevent concurrent write conflicts.
-- **Workload time slots** use the `created_at` timestamp: Mon–Fri 08:00–16:30 = regular hours; weekends or outside 08:00–16:30 = นอกเวลา (overtime).
-- **Short names:** The Dashboard formula summary displays `short_name` (if set) with the full `name` available on hover.
-- **Production value** on Dashboard and Workload is calculated as `formula.price × prep.qty` for each record in the selected month.
-
----
-
-## 🗺️ Recommended Deployment Order
+## 🗺️ Deployment Checklist
 
 ```
-1. Deploy GAS backend  →  2. Verify with ?action=ping  →  3. Set VITE_GAS_URL
-        ↓
-4. Deploy frontend to GitHub Pages  →  5. Login as admin / 1234
-        ↓
-6. Change admin password immediately
+1. Deploy GAS backend (Code.gs)
+2. Verify with ?action=ping
+3. Set VITE_GAS_URL in .env (dev) and GitHub Actions Variable (CI)
+4. Push to main → GitHub Actions deploys frontend automatically
+5. Login as admin / 1234 → change password immediately
 ```
 
 ---
 
 <div align="center">
 
-Built for **Uttaradit Hospital Pharmacy Department** 🏥
+Built for **Uttaradit Hospital — Pharmacy Department** 🏥
 
 </div>
