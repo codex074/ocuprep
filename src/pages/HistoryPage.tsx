@@ -240,6 +240,7 @@ export default function HistoryPage() {
                 <th style={{ width: '120px' }}>Lot / Qty</th>
                 <th style={{ width: '120px' }}>ผู้เตรียม</th>
                 <th style={{ width: '100px' }}>สถานที่</th>
+                <th style={{ width: '160px' }}>หมายเหตุ</th>
                 <th style={{ width: '80px', textAlign: 'right' }}></th>
               </tr>
             </thead>
@@ -287,6 +288,15 @@ export default function HistoryPage() {
                       {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : p.location)}
                     </span>
                   </td>
+                  <td data-label="หมายเหตุ" style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '160px' }}>
+                    {p.note ? (
+                      <span title={p.note} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {p.note}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                    )}
+                  </td>
                   <td className="td-actions">
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
                       {(user?.role === 'admin' || user?.name === p.prepared_by) && (
@@ -311,7 +321,7 @@ export default function HistoryPage() {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={9} className="td-empty" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>ไม่พบรายการ</td></tr>
+                <tr><td colSpan={10} className="td-empty" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>ไม่พบรายการ</td></tr>
               )}
             </tbody>
           </table>
