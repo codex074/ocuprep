@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
+import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
-import ActionStatus from '../components/ui/ActionStatus';
 import type { Formula } from '../types';
 
 export default function FormulasPage() {
@@ -107,7 +107,9 @@ export default function FormulasPage() {
     if (pendingAction === 'delete' && editId) {
       console.log('Attempting delete:', editId);
       setSaving(true);
+      openLoadingModal('กำลังลบสูตรตำรับ...');
       const ok = await deleteFormula(editId);
+      closeLoadingModal();
       setSaving(false);
       console.log('Delete result:', ok);
       toast(ok ? 'ลบสูตรสำเร็จ' : 'เกิดข้อผิดพลาดในการลบ', ok ? 'success' : 'error');
@@ -144,6 +146,7 @@ export default function FormulasPage() {
 
     let ok: boolean;
     setSaving(true);
+    openLoadingModal(editId ? 'กำลังบันทึกการแก้ไขสูตรตำรับ...' : 'กำลังเพิ่มสูตรตำรับ...');
     if (editId) {
       ok = await updateFormula(editId, d);
       console.log('Update result:', ok);
@@ -152,6 +155,7 @@ export default function FormulasPage() {
       ok = await createFormula(d);
       toast(ok ? 'เพิ่มสูตรสำเร็จ' : 'เกิดข้อผิดพลาด', ok ? 'success' : 'error');
     }
+    closeLoadingModal();
     setSaving(false);
     
     if (ok) {
@@ -359,7 +363,6 @@ export default function FormulasPage() {
           <label>การเก็บรักษา (Storage)</label>
           <input className="form-input" placeholder="เช่น เก็บในตู้เย็น 2-8°C" value={form.storage} onChange={e => setForm(f => ({ ...f, storage: e.target.value }))} disabled={user?.role !== 'admin'} />
         </div>
-        {saving && <ActionStatus text={pendingAction === 'delete' ? 'กำลังลบสูตรตำรับ...' : 'กำลังบันทึกสูตรตำรับ...'} />}
       </Modal>
 
       <Modal isOpen={showPassword} onClose={() => setShowPassword(false)}
@@ -387,7 +390,6 @@ export default function FormulasPage() {
             onKeyDown={e => e.key === 'Enter' && confirmAction()}
             autoFocus
           />
-          {saving && <ActionStatus text={pendingAction === 'delete' ? 'กำลังลบสูตรตำรับ...' : 'กำลังบันทึกการแก้ไข...'} />}
         </div>
       </Modal>
     </div>

@@ -3,11 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useUsers } from '../hooks/useUsers';
 import { resolvePath } from '../lib/utils';
+import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
 import ProfileCard from '../components/ProfileCard';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
-import ActionStatus from '../components/ui/ActionStatus';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -34,6 +34,7 @@ export default function UsersPage() {
     }
 
     setSaving(true);
+    openLoadingModal(editId ? 'กำลังบันทึกการแก้ไขผู้ใช้...' : 'กำลังเพิ่มผู้ใช้งาน...');
     if (editId) {
       // Edit mode
       const updates: any = { 
@@ -48,6 +49,7 @@ export default function UsersPage() {
       }
       
       const ok = await updateUser(editId, updates);
+      closeLoadingModal();
       setSaving(false);
       toast(ok ? 'แก้ไขผู้ใช้สำเร็จ' : 'เกิดข้อผิดพลาด', ok ? 'success' : 'error');
       if (ok) setModalOpen(false);
@@ -59,6 +61,7 @@ export default function UsersPage() {
         password: form.password, role: form.role, active: true,
         profile_image: form.profile_image || undefined
       });
+      closeLoadingModal();
       if (err) { setSaving(false); toast(err, 'error'); return; }
       setSaving(false);
       toast(`เพิ่ม ${form.name.trim()} สำเร็จ`, 'success');
@@ -91,11 +94,23 @@ export default function UsersPage() {
 
     if (!result.isConfirmed) return;
 
+    Swal.fire({
+      title: 'กำลังลบผู้ใช้งาน...',
+      text: 'กรุณารอสักครู่',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     const ok = await deleteUser(id);
+    Swal.close();
     if (ok) {
-      Swal.fire('ลบสำเร็จ!', 'ผู้ใช้งานถูกลบแล้ว.', 'success');
+      toast('ลบผู้ใช้งานสำเร็จ', 'success');
     } else {
-      toast('เกิดข้อผิดพลาด', 'error');
+      toast('เกิดข้อผิดพลาดในการลบผู้ใช้งาน', 'error');
     }
   };
 
@@ -257,7 +272,6 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
-        {saving && <ActionStatus text={editId ? 'กำลังบันทึกการแก้ไขผู้ใช้...' : 'กำลังเพิ่มผู้ใช้งาน...'} />}
       </Modal>
 
       <Modal isOpen={!!viewUser} onClose={() => setViewUser(null)} title="ข้อมูลผู้ใช้งาน" variant="clean">

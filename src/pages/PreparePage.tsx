@@ -5,11 +5,11 @@ import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
 import { today, addDays, fmtDate, multiplyAmount } from '../lib/utils';
 import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
+import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
-import ActionStatus from '../components/ui/ActionStatus';
 
 export default function PreparePage() {
   const { user, location: curLoc } = useAuth();
@@ -94,6 +94,7 @@ export default function PreparePage() {
     }
 
     setSaving(true);
+    openLoadingModal('กำลังบันทึกรายการผลิตยา...');
     const ok = await createPrep({
       formula_id: selectedFormula.id,
       formula_name: selectedFormula.name,
@@ -112,6 +113,7 @@ export default function PreparePage() {
       user_pha_id: user?.pha_id || '',
       location: curLoc,
     });
+    closeLoadingModal();
     setSaving(false);
 
     if (ok) {
@@ -314,7 +316,6 @@ export default function PreparePage() {
               พิมพ์ใบสูตรผลิต
             </button>
           </div>
-          {saving && <ActionStatus text="กำลังบันทึกรายการผลิตยา..." />}
         </div>
       </div>
 

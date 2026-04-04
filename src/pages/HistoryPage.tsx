@@ -87,12 +87,24 @@ export default function HistoryPage() {
     });
 
     if (!result.isConfirmed) return;
-    
+
+    Swal.fire({
+      title: 'กำลังลบรายการ...',
+      text: 'กรุณารอสักครู่',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     const ok = await deletePrep(id);
+    Swal.close();
     if (ok) {
-      Swal.fire('ลบสำเร็จ!', 'รายการถูกลบเรียบร้อยแล้ว.', 'success');
+      toast('ลบรายการสำเร็จ', 'success');
     } else {
-      toast('เกิดข้อผิดพลาด', 'error');
+      toast('เกิดข้อผิดพลาดในการลบข้อมูล', 'error');
     }
   };
 

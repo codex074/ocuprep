@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useUsers } from '../hooks/useUsers';
 import { usePreps } from '../hooks/usePreps';
 import { resolvePath } from '../lib/utils';
-import ActionStatus from './ui/ActionStatus';
+import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -75,7 +75,9 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     if (!result.isConfirmed) return;
 
     setBusySection('avatar');
+    openLoadingModal('กำลังบันทึกรูปโปรไฟล์...');
     const ok = await updateUser(targetUser.id, { profile_image: tempAvatar });
+    closeLoadingModal();
     setBusySection(null);
     if (ok) {
       toast('เปลี่ยนรูปโปรไฟล์สำเร็จ', 'success');
@@ -109,7 +111,9 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     if (!result.isConfirmed) return;
 
     setBusySection('name');
+    openLoadingModal('กำลังบันทึกชื่อผู้ใช้...');
     const ok = await updateUser(targetUser.id, { name: newName });
+    closeLoadingModal();
     setBusySection(null);
     if (ok) {
       toast('เปลี่ยนชื่อสำเร็จ', 'success');
@@ -131,7 +135,9 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     }
     
     setBusySection('password');
+    openLoadingModal('กำลังเปลี่ยนรหัสผ่าน...');
     const ok = await updateUser(targetUser.id, { password: newPassword });
+    closeLoadingModal();
     setBusySection(null);
     if (ok) {
       toast('เปลี่ยนรหัสผ่านสำเร็จ', 'success');
@@ -221,7 +227,6 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
             </button>
             <button className="btn btn-sm btn-outline" onClick={cancelAvatarEdit} disabled={busySection !== null}>ยกเลิก</button>
           </div>
-          {busySection === 'avatar' && <ActionStatus text="กำลังบันทึกรูปโปรไฟล์..." />}
         </div>
       )}
 
@@ -299,7 +304,6 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
                   </button>
                   <button className="btn btn-sm btn-danger" onClick={() => setShowNameEdit(false)} style={{ flex: 1 }} disabled={busySection !== null}>ยกเลิก</button>
                 </div>
-                {busySection === 'name' && <ActionStatus text="กำลังบันทึกชื่อผู้ใช้..." />}
               </div>
             )}
           </div>
@@ -346,7 +350,6 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
                   </button>
                   <button className="btn btn-sm btn-danger" onClick={() => setShowPasswordEdit(false)} style={{ flex: 1 }} disabled={busySection !== null}>ยกเลิก</button>
                 </div>
-                {busySection === 'password' && <ActionStatus text="กำลังเปลี่ยนรหัสผ่าน..." />}
               </div>
             )}
           </div>

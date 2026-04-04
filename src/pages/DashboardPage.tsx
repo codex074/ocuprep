@@ -50,7 +50,19 @@ export default function DashboardPage() {
     });
 
     if (result.isConfirmed) {
+      Swal.fire({
+        title: 'กำลังลบรายการ...',
+        text: 'กรุณารอสักครู่',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
       const ok = await deletePrep(id);
+      Swal.close();
       if (ok) {
         toast('ลบข้อมูลสำเร็จ', 'success');
       } else {

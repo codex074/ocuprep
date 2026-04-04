@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { api } from '../lib/api';
+import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 
 export default function ForceChangePasswordPage() {
   const [password, setPassword] = useState('');
@@ -19,6 +20,7 @@ export default function ForceChangePasswordPage() {
     if (password.length < 4) { toast('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร', 'error'); return; }
 
     setSubmitting(true);
+    openLoadingModal('กำลังบันทึกรหัสผ่านใหม่...');
     
     // Update password and clear the flag
     const res = await api.updateUser(user?.id || 0, {
@@ -27,12 +29,14 @@ export default function ForceChangePasswordPage() {
     });
 
     if (res.error) {
+      closeLoadingModal();
       toast('เกิดข้อผิดพลาด: ' + res.error, 'error');
       setSubmitting(false);
       return;
     }
 
     await refreshUser();
+    closeLoadingModal();
     setSubmitting(false);
     toast('เปลี่ยนรหัสผ่านสำเร็จ', 'success');
     navigate('/station-select', { replace: true });

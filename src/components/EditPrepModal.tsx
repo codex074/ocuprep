@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Modal from './ui/Modal';
-import ActionStatus from './ui/ActionStatus';
 import { useToast } from '../contexts/ToastContext';
+import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import type { Prep } from '../types';
 
 interface EditPrepModalProps {
@@ -58,7 +58,9 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
     };
 
     setSaving(true);
+    openLoadingModal('กำลังบันทึกการแก้ไขรายการ...');
     const ok = await onUpdate(prep.id, updates);
+    closeLoadingModal();
     setSaving(false);
     if (ok) {
       onClose();
@@ -119,7 +121,6 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
         <label>หมายเหตุ</label>
         <textarea className="form-textarea" rows={2} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
       </div>
-      {saving && <ActionStatus text="กำลังบันทึกการแก้ไขรายการ..." />}
     </Modal>
   );
 }
