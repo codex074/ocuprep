@@ -408,17 +408,39 @@ function handle_(params) {
       case 'deleteUser':
         return remove_(ss, 'users', params.id);
 
-      case 'getFormulas':
-        return getAll_(ss, 'formulas');
+      case 'getFormulas': {
+        const formulaCache = CacheService.getScriptCache();
+        const formulaCacheKey = 'formulas_v1';
+        const cachedFormulas = formulaCache.get(formulaCacheKey);
+        if (cachedFormulas) {
+          try { return JSON.parse(cachedFormulas); } catch (e) {}
+        }
+        const formulaData = getAll_(ss, 'formulas');
+        try { formulaCache.put(formulaCacheKey, JSON.stringify(formulaData), 3600); } catch (e) {}
+        return formulaData;
+      }
       case 'createFormula':
+        CacheService.getScriptCache().remove('formulas_v1');
         return create_(ss, 'formulas', JSON.parse(params.data || '{}'));
       case 'updateFormula':
+        CacheService.getScriptCache().remove('formulas_v1');
         return update_(ss, 'formulas', params.id, JSON.parse(params.data || '{}'));
       case 'deleteFormula':
+        CacheService.getScriptCache().remove('formulas_v1');
         return remove_(ss, 'formulas', params.id);
 
-      case 'getPreps':
-        return getAll_(ss, 'preps');
+      case 'getPreps': {
+        const startDate = params.startDate || '';
+        const endDate = params.endDate || '';
+        const allPreps = getAll_(ss, 'preps');
+        if (!startDate && !endDate) return allPreps;
+        return allPreps.filter(function(r) {
+          const d = String(r.date || '');
+          if (startDate && d < startDate) return false;
+          if (endDate && d > endDate) return false;
+          return true;
+        });
+      }
       case 'createPrep':
         return create_(ss, 'preps', JSON.parse(params.data || '{}'));
       case 'updatePrep':

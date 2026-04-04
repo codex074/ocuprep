@@ -19,11 +19,9 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { preps: allPreps, loading, refreshing, fetchPreps, updatePrep, deletePrep } = usePreps();
+  // ส่ง date range → GAS filter ฝั่ง server เฉพาะเดือนปัจจุบัน
   const [start, end] = getMonthRange();
-  const preps = allPreps
-    .filter(p => p.date >= start && p.date <= end)
-    .sort((a, b) => b.id - a.id);
+  const { preps, loading, refreshing, fetchPreps, updatePrep, deletePrep } = usePreps(start, end);
 
   const handleUpdate = async (id: number, updates: Partial<Prep>) => {
     const ok = await updatePrep(id, updates);

@@ -108,8 +108,12 @@ export const api = {
   deleteFormula: (id: number) =>
     withErrorResult(gasGet<OkResult>({ action: 'deleteFormula', id: String(id) })),
 
-  getPreps: () =>
-    gasGet<Record<string, unknown>[]>({ action: 'getPreps' }),
+  getPreps: (startDate?: string, endDate?: string) => {
+    const params: Record<string, string> = { action: 'getPreps' };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return gasGet<Record<string, unknown>[]>(params);
+  },
 
   createPrep: (data: object) =>
     withErrorResult(gasGet<OkResult>({ action: 'createPrep', data: JSON.stringify(data) })),

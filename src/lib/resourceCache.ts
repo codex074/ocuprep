@@ -11,6 +11,14 @@ export function getCachedResource<T>(key: string): T | undefined {
   return cache.get(key)?.data as T | undefined;
 }
 
+export function setCachedResource<T>(key: string, data: T): void {
+  cache.set(key, { data, fetchedAt: Date.now() });
+}
+
+export function invalidateCachedResource(key: string): void {
+  cache.delete(key);
+}
+
 export async function loadCachedResource<T>(
   key: string,
   loader: () => Promise<T>,
