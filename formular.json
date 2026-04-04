@@ -1,0 +1,1708 @@
+[
+  {
+    "code": "F01",
+    "name": "10% Acetylcysteine eye drop",
+    "short_name": "10% Acetyl",
+    "description": "ยาหยอดตาหล่อลื่น",
+    "concentration": "100 mg/ml",
+    "expiry_days": 30,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Lubricant",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe 5 ml ดึง Acetylcysteine inj. ออกมา 5 ml แล้วใส่ลงในขวดยาหยอดตา",
+    "ingredients": [
+      {
+        "name": "Acetylcysteine injection 300 mg/ml",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water for injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe 5 ml ดึง Acetylcysteine inj. ออกมา 5 ml แล้วใส่ลงในขวดยาหยอดตา"
+    ]
+  },
+  {
+    "code": "F02",
+    "name": "0.1% Amphotericin-B eye drop in water",
+    "short_name": "0.1% AmphoB in W",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "1 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  1 ml แล้วใส่ลงในขวดยาหยอดตา ใช้ syringe ดึง SWFI 4 ml แล้วผสมล...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  1 ml แล้วใส่ลงในขวดยาหยอดตา",
+      "ใช้ syringe ดึง SWFI 4 ml แล้วผสมลงในขวดยาหยอดตาข้อที่ 2 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F03",
+    "name": "0.15% Amphotericin-B eye drop in water",
+    "short_name": "0.15% AmphoB in W",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "1.5 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  1.5 ml แล้วใส่ลงในขวดยาหยอดตา ใช้ syringe ดึง SWFI 3.5 ml แล้ว...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  1.5 ml แล้วใส่ลงในขวดยาหยอดตา",
+      "ใช้ syringe ดึง SWFI 3.5 ml แล้วผสมลงในขวดยาหยอดตาข้อที่ 2 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F04",
+    "name": "0.2% Amphotericin-B in eye drop water",
+    "short_name": "0.2% AmphoB in W",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "2 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B  inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  2 ml แล้วใส่ลงในขวดยาหยอดตา ใช้ syringe ดึง SWFI 3 ml แล้วผสม...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B  inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  2 ml แล้วใส่ลงในขวดยาหยอดตา",
+      "ใช้ syringe ดึง SWFI 3 ml แล้วผสมลงในขวดยาหยอดตาข้อที่ 2 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F05",
+    "name": "0.25% Amphotericin-B eye drop in water",
+    "short_name": "0.25% AmphoB in W",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "2.5 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  2.5 ml แล้วใส่ลงในขวดยาหยอดตา ใช้ syringe ดึง SWFI 2.5 ml แล้ว...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลายข้อที่ 1 ออกมา  2.5 ml แล้วใส่ลงในขวดยาหยอดตา",
+      "ใช้ syringe ดึง SWFI 2.5 ml แล้วผสมลงในขวดยาหยอดตาข้อที่ 2 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F06",
+    "name": "0.1% Amphotericin-B eye drop in Natear",
+    "short_name": "0.1% AmphoB in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "1 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึง Natear ทิ้ง 2 ml ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 2 ml เติมลงใน Natear (ข้อ จา...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 2 ml",
+      "ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 2 ml เติมลงใน Natear (ข้อ 2) จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F07",
+    "name": "0.15% Amphotericin-B eye drop in Natear",
+    "short_name": "0.15% AmphoB in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "1.5 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึง Natear ทิ้ง 3 ml ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 3 ml เติมลงใน Natear (ข้อ จา...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 3 ml",
+      "ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 3 ml เติมลงใน Natear (ข้อ 2) จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F08",
+    "name": "0.2% Amphotericin-B eye drop in Natear",
+    "short_name": "0.2% AmphoB in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "2 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึง Natear ทิ้ง 4 ml ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 4 ml เติมลงใน Natear (ข้อ จา...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 4 ml",
+      "ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 4 ml เติมลงใน Natear (ข้อ 2) จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F09",
+    "name": "0.25% Amphotericin-B eye drop in Natear",
+    "short_name": "0.25% AmphoB in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "2.5 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml ใช้ syringe ดึง Natear ทิ้ง 5 ml ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 5 ml เติมลงใน Natear (ข้อ จา...",
+    "ingredients": [
+      {
+        "name": "Amphotericin-B injection (50 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Amphotericin-B inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 5 ml",
+      "ใช้ syringe ดึงสารละลายในข้อที่ 1 ออกมา 5 ml เติมลงใน Natear (ข้อ 2) จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F10",
+    "name": "1% Fortified amikin in water",
+    "short_name": "1% amikin in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "10 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง SWFI ใส่ลงในขวดยาหยอดตา 4.8 ml ใช้ syringe ดึง Amikin inj. มา 0.2 ml แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Amikin injection (500 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง SWFI ใส่ลงในขวดยาหยอดตา 4.8 ml",
+      "ใช้ syringe ดึง Amikin inj. มา 0.2 ml แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F11",
+    "name": "5% Fortified amikin in water",
+    "short_name": "5% amikin in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง SWFI ใส่ลงในขวดยาหยอดตา 4 ml ใช้ syringe ดึง Amikin inj. มา 1 ml แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Amikin injection (500 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง SWFI ใส่ลงในขวดยาหยอดตา 4 ml",
+      "ใช้ syringe ดึง Amikin inj. มา 1 ml แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F12",
+    "name": "2% Fortified amikin in Natear",
+    "short_name": "2% amikin in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "20 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ใช้ syringe ดึง Natear ทิ้ง 0.8 ml ใช้ syringe ดึง Amikin inj. ออกมา 0.8 ml เติมลงใน Natear (ข้อ จากนั้นผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Amikin injection (500 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง Natear ทิ้ง 0.8 ml",
+      "ใช้ syringe ดึง Amikin inj. ออกมา 0.8 ml เติมลงใน Natear (ข้อ 1) จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F13",
+    "name": "1% Fortified amikin in BSS",
+    "short_name": "1% amikin in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "10 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง BSS ใส่ลงในขวดยาหยอดตา 4.8 ml ใช้ syringe ดึง Amikin inj. มา 0.2 ml  แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Amikin injection (500 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง BSS ใส่ลงในขวดยาหยอดตา 4.8 ml",
+      "ใช้ syringe ดึง Amikin inj. มา 0.2 ml  แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F14",
+    "name": "2% Fortified amikin in BSS",
+    "short_name": "2% amikin in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "20 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง BSS ใส่ลงในขวดยาหยอดตา 4.6 ml ใช้ syringe ดึง Amikin inj. มา 0.4 ml แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Amikin injection (500 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง BSS ใส่ลงในขวดยาหยอดตา 4.6 ml",
+      "ใช้ syringe ดึง Amikin inj. มา 0.4 ml แล้วใส่ลงในขวดยาตาข้อที่ 1 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F15",
+    "name": "5% Fortified cefazolin in water",
+    "short_name": "5% cefazolin in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml ใช้ syringe 10 ml ดึง SWFI ออกมา 7.5 ml ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ ออกมา 2.5 ml เติมลงใน SWFI...",
+    "ingredients": [
+      {
+        "name": "Cefazolin inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml",
+      "ใช้ syringe 10 ml ดึง SWFI ออกมา 7.5 ml",
+      "ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ 1) ออกมา 2.5 ml เติมลงใน SWFI (ข้อที่ 2) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 3 ลงในขวดยาตาขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F16",
+    "name": "5% Fortified cefazolin in Natear",
+    "short_name": "5% cefazolin in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml ใช้ syringe ดึง Natear ทิ้ง 2.5 ml ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ ออกมา 2.5 ml เติมลงใน natear (ข...",
+    "ingredients": [
+      {
+        "name": "Cefazolin inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Nataer (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 2.5 ml",
+      "ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ 1) ออกมา 2.5 ml เติมลงใน natear (ข้อที่ 2) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F17",
+    "name": "5% Fortified cefazolin in BSS",
+    "short_name": "5% cefazolin in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml ใช้ syringe 10 ml ดึง BSS ออกมา 7.5 ml ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ ออกมา 2.5 ml เติมลงใน BSS (...",
+    "ingredients": [
+      {
+        "name": "Cefazolin inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml",
+      "ใช้ syringe 10 ml ดึง BSS ออกมา 7.5 ml",
+      "ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ 1) ออกมา 2.5 ml เติมลงใน BSS (ข้อที่ 2) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 3 ลงในขวดยาตาขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F18",
+    "name": "3.3% Fortified cefazolin in BSS",
+    "short_name": "3.3% cefazolin in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "33 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml ใช้ syringe 10 ml ดึง BSS ออกมา 8.3 ml ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ ออกมา 1.7 ml เติมลงใน BSS (...",
+    "ingredients": [
+      {
+        "name": "Cefazolin inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา cefazolin inj. ด้วย SWFI 5 ml",
+      "ใช้ syringe 10 ml ดึง BSS ออกมา 8.3 ml",
+      "ใช้ syring ดึงสารละลาย Cefazolin (ข้อที่ 1) ออกมา 1.7 ml เติมลงใน BSS (ข้อที่ 2) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 3 ลงในขวดยาตาขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F19",
+    "name": "5% Fortified ceftriaxone in Natear",
+    "short_name": "5% ceftriaxone in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา ceftriaxone inj. ด้วย SWFI 5 ml ใช้ syringe ดึง Natear ทิ้ง 2.5 ml ใช้ syring ดึงสารละลาย Ceftriaxone (ข้อที่ มา 2.5 ml เติมลงใน natear (...",
+    "ingredients": [
+      {
+        "name": "Ceftriaxone inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา ceftriaxone inj. ด้วย SWFI 5 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 2.5 ml",
+      "ใช้ syring ดึงสารละลาย Ceftriaxone (ข้อที่ 1) มา 2.5 ml เติมลงใน natear (ข้อที่ 2) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F20",
+    "name": "5% Fortified ceftriaxone in BSS",
+    "short_name": "5% ceftriaxone in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา ceftriaxone inj. ด้วย SWFI 5 ml ใช้ syringe 10 ml ดึง BSS ออกมา 7.5 ml ใช้ syring ดึงสารละลาย Ceftriaxone (ข้อที่ ออกมา 2.5 ml เติมลงใน B...",
+    "ingredients": [
+      {
+        "name": "Ceftriaxone inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา ceftriaxone inj. ด้วย SWFI 5 ml",
+      "ใช้ syringe 10 ml ดึง BSS ออกมา 7.5 ml",
+      "ใช้ syring ดึงสารละลาย Ceftriaxone (ข้อที่ 1) ออกมา 2.5 ml เติมลงใน BSS (ข้อที่ 2) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 3 ลงในขวดยาตาขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F21",
+    "name": "5% Fortified ceftazidime in BSS",
+    "short_name": "5% ceftazidime in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา ceftazidime inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย ceftzidime (ข้อที่ ออกมา 2.5 ml ใส่ลงในขวดยาหยอดตา ใช้ syring ดึง BSS ออกมา 2.5 ...",
+    "ingredients": [
+      {
+        "name": "Ceftazidime inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา ceftazidime inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย ceftzidime (ข้อที่ 1) ออกมา 2.5 ml ใส่ลงในขวดยาหยอดตา",
+      "ใช้ syring ดึง BSS ออกมา 2.5 ml ใส่ลงในขวดยาหยอดตาข้อที่ 2 จากนั้นผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F22",
+    "name": "5% Fortified ceftazidime in Natear",
+    "short_name": "5% ceftazidime in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา ceftazidime inj. ด้วย SWFI 10 ml ใช้ syringe ดึง Natear ทิ้ง 5 ml ใช้ syring ดึงสารละลาย Ceftzidime (ข้อที่ มา 5 ml เติมลงใน natear (ข้อท...",
+    "ingredients": [
+      {
+        "name": "Ceftazidime inj. (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา ceftazidime inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 5 ml",
+      "ใช้ syring ดึงสารละลาย Ceftzidime (ข้อที่ 1) มา 5 ml เติมลงใน natear (ข้อที่ 2) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F23",
+    "name": "5% Fortified clindamycin in BSS",
+    "short_name": "5% clinda in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe 10 ml ดึง BSS ออกมา 4 ml ใช้ syring ดึงยา clindamycin inj. ออกมา 2 ml เติมลงใน BSS (ข้อที่ ผสมให้เข้ากัน แบ่งสารละลายในข้อที่ 2 ลงในขวด...",
+    "ingredients": [
+      {
+        "name": "Clindamycin inj. (600 mg/4 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe 10 ml ดึง BSS ออกมา 4 ml",
+      "ใช้ syring ดึงยา clindamycin inj. ออกมา 2 ml เติมลงใน BSS (ข้อที่ 1) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 2 ลงในขวดยาหยอดตา 5 ml (ที่เหลือ 1 ml ให้ทิ้งไป)"
+    ]
+  },
+  {
+    "code": "F24",
+    "name": "5% Fortified clindamycin in Natear",
+    "short_name": "5% clinda in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ใช้ syringe ดึง Natear ทิ้ง 3.4 ml ใช้ syring ดึงยา clindamycin inj. ออกมา 3.4 ml เติมลงใน natear (ข้อที่ ผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Clindamycin inj. (600 mg/4 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง Natear ทิ้ง 3.4 ml",
+      "ใช้ syring ดึงยา clindamycin inj. ออกมา 3.4 ml เติมลงใน natear (ข้อที่ 1) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F25",
+    "name": "0.3% Fortified gentamycin in water",
+    "short_name": "0.3% genta in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "3 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe 20 ml ดึง SWFI ออกมา 18.5 ml ใช้ syring ดึงยา gentamycin inj. ออกมา 1.5 ml เติมลงใน SWFI (ข้อที่ ผสมให้เข้ากัน แบ่งสารละลายในข้อที่ 2 ล...",
+    "ingredients": [
+      {
+        "name": "Gentamycin inj. (80 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe 20 ml ดึง SWFI ออกมา 18.5 ml",
+      "ใช้ syring ดึงยา gentamycin inj. ออกมา 1.5 ml เติมลงใน SWFI (ข้อที่ 1) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 2 ลงในขวดยาหยอดตา ขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F26",
+    "name": "1.5% Fortified gentamycin in water",
+    "short_name": "1.5% genta in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "15 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง SWFI ออกมา 4.1 ml ลงในขวดยาหยอดตา ใช้ syring ดึงยา gentamycin inj. ออกมา 1.9 ml เติมลงใน SWFI (ข้อที่ ผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Gentamycin inj. (80 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง SWFI ออกมา 4.1 ml ลงในขวดยาหยอดตา",
+      "ใช้ syring ดึงยา gentamycin inj. ออกมา 1.9 ml เติมลงใน SWFI (ข้อที่ 1) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F27",
+    "name": "1% Fortified gentamycin in BSS",
+    "short_name": "1% genta in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "10 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe 10 ml ดึง BSS ออกมา 6 ml ใช้ syring ดึงยา gentmycin inj. ออกมา 2 ml เติมลงใน BSS (ข้อที่ ผสมให้เข้ากัน แบ่งสารละลายในข้อที่ 2 ลงในขวดยา...",
+    "ingredients": [
+      {
+        "name": "Gentamycin inj. (80 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe 10 ml ดึง BSS ออกมา 6 ml",
+      "ใช้ syring ดึงยา gentmycin inj. ออกมา 2 ml เติมลงใน BSS (ข้อที่ 1) ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อที่ 2 ลงในขวดยาหยอดตา 5 ml (ที่เหลือ 3 ml ให้ทิ้งไป)"
+    ]
+  },
+  {
+    "code": "F28",
+    "name": "1.4% Fortified gentamycin in BSS",
+    "short_name": "1.4% genta in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "14 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe  ดึง BSS ออกมา 3.2 ml ลงในขวดยาหยอดตา ใช้ syring ดึงยา gentamycin inj. ออกมา 1.8 ml เติมลงใน BSS (ข้อที่ ผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Gentamycin inj. (80 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe  ดึง BSS ออกมา 3.2 ml ลงในขวดยาหยอดตา",
+      "ใช้ syring ดึงยา gentamycin inj. ออกมา 1.8 ml เติมลงใน BSS (ข้อที่ 1) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F29",
+    "name": "1% Fortified gentamycin in garamycin",
+    "short_name": "1% genta in garamycin",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "10 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe  ดึง garamycin ED ทิ้ง 1.3  ml ใช้ syringe  ดึงยา gentamycin inj. มา 1.3 ml ใส่ลงในขวด garamycin ED ข้อ 1 แล้วผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "Gentamycin inj. (80 mg/2 ml)",
+        "amount": "1"
+      },
+      {
+        "name": "3% Garamycin ED (5 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe  ดึง garamycin ED ทิ้ง 1.3  ml",
+      "ใช้ syringe  ดึงยา gentamycin inj. มา 1.3 ml ใส่ลงในขวด garamycin ED ข้อ 1 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F30",
+    "name": "0.5% Fortified imipenem in Natear",
+    "short_name": "0.5% imipenem in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "5 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา imipenem inj. ด้วย SWFI 10 ml ใช้ syringe ดึง Natear ทิ้ง 1 ml ใช้ syring ดึงสารละลาย imipenem inj. ออกมา 1 ml แล้วเติมลงใน natear (ข้อที...",
+    "ingredients": [
+      {
+        "name": "Imipenem inj. (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา imipenem inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง Natear ทิ้ง 1 ml",
+      "ใช้ syring ดึงสารละลาย imipenem inj. ออกมา 1 ml แล้วเติมลงใน natear (ข้อที่ 1) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F31",
+    "name": "0.5% Fortified imipenem in BSS",
+    "short_name": "0.5% imipenem in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "5 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา imipenem inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย imipenem (ข้อที่ มา 0.5 ml ใส่ลงในขวดยาตา ใช้ syringe ดึง BSS มา 4.5 ml ใส่ลงในขวดย...",
+    "ingredients": [
+      {
+        "name": "Imipenem inj. (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา imipenem inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย imipenem (ข้อที่ 1) มา 0.5 ml ใส่ลงในขวดยาตา",
+      "ใช้ syringe ดึง BSS มา 4.5 ml ใส่ลงในขวดยาตาในข้อที่ 2 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F32",
+    "name": "2% Ketoconazole in water",
+    "short_name": "2% Keto in W",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "20 mg/ml",
+    "expiry_days": 10,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา ketoconazole ด้วย SWFI 20 ml เขย่าขวดจนผงยากระจายตัวดี (เขย่าแรงๆ เนื่องจากผงยาไม่ละลายน้ำ) ใช้ syringe ดึงสารละลาย ketoconazole ออกมา 5m...",
+    "ingredients": [
+      {
+        "name": "Ketoconazole  (400 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา ketoconazole ด้วย SWFI 20 ml",
+      "เขย่าขวดจนผงยากระจายตัวดี (เขย่าแรงๆ เนื่องจากผงยาไม่ละลายน้ำ)",
+      "ใช้ syringe ดึงสารละลาย ketoconazole ออกมา 5ml แล้วใส่ลงในขวดยาหยอดตาทีละขวด",
+      "(จะเตรียมได้ครั้งละ 4 ขวด)"
+    ]
+  },
+  {
+    "code": "F33",
+    "name": "2.5% Fortified vancomycin in water",
+    "short_name": "2.5% vanco in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "25 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ มา 2.5 ml ใส่ลงในขวดยาตา ใช้ syringe ดึง SWFI มา 2.5 ml ใส่ลงในข...",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ 1) มา 2.5 ml ใส่ลงในขวดยาตา",
+      "ใช้ syringe ดึง SWFI มา 2.5 ml ใส่ลงในขวดยาตาในข้อที่ 2 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F34",
+    "name": "5% Fortified vancomycin in water",
+    "short_name": "5% vanco in W",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ 1 ) ออกมา 5 ml แล้วใส่ลงในขวดยาหยอดตา",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ 1 ) ออกมา 5 ml แล้วใส่ลงในขวดยาหยอดตา"
+    ]
+  },
+  {
+    "code": "F35",
+    "name": "2.5% Fortified vancomycin in Natear",
+    "short_name": "2.5% vanco in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "25 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 5 ml ใช้ syringe ดึง natear ทิ้ง 2.5 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ มา 2.5 ml ใส่ลงในขวด natear (ข...",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 5 ml",
+      "ใช้ syringe ดึง natear ทิ้ง 2.5 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ 1) มา 2.5 ml ใส่ลงในขวด natear (ข้อ 2) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F36",
+    "name": "5% Fortified vancomycin in Natear",
+    "short_name": "5% vanco in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 5 ml ใช้ syringe ดึง natear ทิ้ง 5 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ มา 5 ml ใส่ลงในขวด natear (ข้อ ผ...",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 5 ml",
+      "ใช้ syringe ดึง natear ทิ้ง 5 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อ 1) มา 5 ml ใส่ลงในขวด natear (ข้อ 2) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F37",
+    "name": "0.2% Fortified vancomycin in BSS",
+    "short_name": "0.2% vanco in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "2 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อที่ ออกมา 0.2 ml แล้วใส่ลงในขวดยาตา ใช้ syringe ดึง BSS มา 4.8 ml...",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อที่ 1) ออกมา 0.2 ml แล้วใส่ลงในขวดยาตา",
+      "ใช้ syringe ดึง BSS มา 4.8 ml ใส่ลงในขวดยาตาในข้อที่ 2 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F38",
+    "name": "2.5% Fortified vancomycin in BSS",
+    "short_name": "2.5% vanco in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "25 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อที่ ออกมา 2.5 ml แล้วใส่ลงในขวดยาตา ใช้ syringe ดึง BSS มา 2.5 ml...",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อที่ 1) ออกมา 2.5 ml แล้วใส่ลงในขวดยาตา",
+      "ใช้ syringe ดึง BSS มา 2.5 ml ใส่ลงในขวดยาตาในข้อที่ 2 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F39",
+    "name": "5% Fortified vancomycin in BSS",
+    "short_name": "5% vanco in BSS",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "50 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Vancomycin inj.  ด้วย SWFI 5 ml ใช้ syringe ดึงสารละลาย Vancomycin (ข้อที่ ออกมา 2.5 ml แล้วใส่ลงในขวดยาตา ใช้ syringe ดึง BSS มา 2.5 ml ...",
+    "ingredients": [
+      {
+        "name": "Vancomycin inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Vancomycin inj.  ด้วย SWFI 5 ml",
+      "ใช้ syringe ดึงสารละลาย Vancomycin (ข้อที่ 1) ออกมา 2.5 ml แล้วใส่ลงในขวดยาตา",
+      "ใช้ syringe ดึง BSS มา 2.5 ml ใส่ลงในขวดยาตาในข้อที่ 2 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F40",
+    "name": "Fortified penicillin G in Natear",
+    "short_name": "PenG in NT",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "10,000 IU/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ละลายผงยา Penicillin G inj.  ด้วย SWFI 10 ml ใช้ syringe ดึง natear ทิ้ง 1 ml ใช้ syringe ดึงสารละลาย Penicillin G (ข้อ มา 1 ml ใส่ลงในขวด natear (...",
+    "ingredients": [
+      {
+        "name": "Penicillin G  inj.  ( 5 MU/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Penicillin G inj.  ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึง natear ทิ้ง 1 ml",
+      "ใช้ syringe ดึงสารละลาย Penicillin G (ข้อ 1) มา 1 ml ใส่ลงในขวด natear (ข้อ 2) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F41",
+    "name": "2.5% phenyleprine in Natear",
+    "short_name": "2.5% PE in NT",
+    "description": "ยาหยอดตาขยายม่านตา",
+    "concentration": "25 mg/ml",
+    "expiry_days": 30,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Sympathomimetic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "10 mL",
+    "short_prep": "ใช้ syringe ดึง natear ทิ้ง 2.5 ml ใช้ syringe ดึง 10% Phenylephrine ED 2.5 ml แล้วใส่ลงในขวด natear ( ข้อ ผสมให้เข้ากัน",
+    "ingredients": [
+      {
+        "name": "10% Phenylephrine ED",
+        "amount": "1"
+      },
+      {
+        "name": "Natear (10 ml)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง natear ทิ้ง 2.5 ml",
+      "ใช้ syringe ดึง 10% Phenylephrine ED 2.5 ml แล้วใส่ลงในขวด natear ( ข้อ 1) ผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F42",
+    "name": "3% Sodium chloride (NaCl) eye drop",
+    "short_name": "3% NaCl (NaCl)",
+    "description": "ยาหยอดตาลดบวมกระจกตา",
+    "concentration": "3%",
+    "expiry_days": 30,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Hypertonic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง 3%NaCl มา 5 ml แล้วใส่ลงในขวดยาตา",
+    "ingredients": [
+      {
+        "name": "3% sodium chloride (NaCl)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง 3%NaCl มา 5 ml แล้วใส่ลงในขวดยาตา"
+    ]
+  },
+  {
+    "code": "F43",
+    "name": "0.01% Mitomycin-C in water eye drop",
+    "short_name": "0.01% MMC in W",
+    "description": "ยาหยอดตาต้านการแบ่งเซลล์",
+    "concentration": "0.1 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antimetabolite",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา mitomycin-C ด้วย SWFI 20 ml โดยใส่น้ำลงในขวดยาประมาณ 5 ml ก่อน ดึงสารละลาย mitomycin-C (ข้อที่ กลับเข้าที่ syringe เดิม ที่มี SWFI แล้วผส...",
+    "ingredients": [
+      {
+        "name": "Mitomycin-C  (2 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา mitomycin-C ด้วย SWFI 20 ml โดยใส่น้ำลงในขวดยาประมาณ 5 ml ก่อน",
+      "ดึงสารละลาย mitomycin-C (ข้อที่ 1) กลับเข้าที่ syringe เดิม ที่มี SWFI แล้วผสมยาให้เข้ากัน",
+      "นำสารละลายข้อที่ 2 ใน syringe ใส่ลงในขวดยาตา 5 ml",
+      "(ยาที่เหลือใน syringe ปิด cap lock ทิ้งในขยะเคมีบำบัด)"
+    ]
+  },
+  {
+    "code": "F44",
+    "name": "0.02% Mitomycin-C in water eye drop",
+    "short_name": "0.02% MMC in W",
+    "description": "ยาหยอดตาต้านการแบ่งเซลล์",
+    "concentration": "0.2 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antimetabolite",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา mitomycin-C ด้วย SWFI 10 ml โดยใส่น้ำลงในขวดยาประมาณ 5 ml ก่อน ดึงสารละลาย mitomycin-C (ข้อที่ กลับเข้าที่ syringe เดิม ที่มี SWFI แล้วผส...",
+    "ingredients": [
+      {
+        "name": "Mitomycin-C  (2 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา mitomycin-C ด้วย SWFI 10 ml โดยใส่น้ำลงในขวดยาประมาณ 5 ml ก่อน",
+      "ดึงสารละลาย mitomycin-C (ข้อที่ 1) กลับเข้าที่ syringe เดิม ที่มี SWFI แล้วผสมยาให้เข้ากัน",
+      "นำสารละลายข้อที่ 2 ใน syringe ใส่ลงในขวดยาตา 5 ml",
+      "(ยาที่เหลือใน syringe ปิด cap lock ทิ้งในขยะเคมีบำบัด)"
+    ]
+  },
+  {
+    "code": "F45",
+    "name": "0.04% Mitomycin-C in water eye drop",
+    "short_name": "0.04% MMC in W",
+    "description": "ยาหยอดตาต้านการแบ่งเซลล์",
+    "concentration": "0.4 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antimetabolite",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา mitomycin-C ด้วย SWFI 5 ml โดยใส่น้ำลงในขวดยาประมาณ 5 ml ก่อน ดึงสารละลาย mitomycin-C (ข้อที่ กลับเข้าที่ syringe เดิม ที่มี SWFI แล้วผสม...",
+    "ingredients": [
+      {
+        "name": "Mitomycin-C  (2 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา mitomycin-C ด้วย SWFI 5 ml โดยใส่น้ำลงในขวดยาประมาณ 5 ml ก่อน",
+      "ดึงสารละลาย mitomycin-C (ข้อที่ 1) กลับเข้าที่ syringe เดิม ที่มี SWFI แล้วผสมยาให้เข้ากัน",
+      "นำสารละลายข้อที่ 2 ใน syringe ใส่ลงในขวดยาตา 5 ml",
+      "(ยาที่เหลือใน syringe ปิด cap lock ทิ้งในขยะเคมีบำบัด)"
+    ]
+  },
+  {
+    "code": "F46",
+    "name": "0.02% Mitomycin-C in chloramphenicol eye drop",
+    "short_name": "0.02% MMC in chloram",
+    "description": "ยาหยอดตาต้านการแบ่งเซลล์",
+    "concentration": "0.2 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antimetabolite",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึงยา chloramphenicol ED มา 3 ml ใส่ลงในขวดยา mitomycin-C เพื่อละลายผงยา ดึงสารละลายในข้อที่ 1 ทั้งหมด ใส่กลับลงในขวดยา chloramphenicol...",
+    "ingredients": [
+      {
+        "name": "Mitomycin-C  (2 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Chloramphenicol ED",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึงยา chloramphenicol ED มา 3 ml ใส่ลงในขวดยา mitomycin-C เพื่อละลายผงยา",
+      "ดึงสารละลายในข้อที่ 1 ทั้งหมด ใส่กลับลงในขวดยา chloramphenicol ED แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F47",
+    "name": "1% Methylprednisolone in  NSS eye drop",
+    "short_name": "1% MethylPred in NSS",
+    "description": "ยาหยอดตาลดการอักเสบ",
+    "concentration": "10 mg/ml",
+    "expiry_days": 21,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Corticosteroid",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Methylprednisolone inj. (1g/vial) ด้วย SWFI 15.6 ml ใช้ syringe ดึงสารละลาย Methylprednisolone (ข้อ ออกมา 1.6 ml ใช้ syringe ดึง 0.9% NaC...",
+    "ingredients": [
+      {
+        "name": "Methylprednisolone inj.  (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "0.9% NaCl",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Methylprednisolone inj. (1g/vial) ด้วย SWFI 15.6 ml",
+      "ใช้ syringe ดึงสารละลาย Methylprednisolone (ข้อ 1) ออกมา 1.6 ml",
+      "ใช้ syringe ดึง 0.9% NaCl มา 8.4 ml แล้วผสมลงในสารละลายข้อที่ 2 ผสมให้เข้ากัน",
+      "แบ่งสารละลายในข้อ 3 ลงในขวดยาตา ขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F48",
+    "name": "0.1% Dexamethasone in BSS eye drop",
+    "short_name": "0.1% Dexa in BSS",
+    "description": "ยาหยอดตาลดการอักเสบ",
+    "concentration": "1 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Corticosteroid",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง Dexamethasone inj. มา 2.5 ml ใช้ syringe ดึง BSS มา 7.5 ml แล้วนำ Dexamethasone ในข้อที่ 1 ผสมให้เข้ากัน ) แบ่งสารละลายในข้อ 2 ลงใน...",
+    "ingredients": [
+      {
+        "name": "Dexamethasone inj.  (4 mg/ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง Dexamethasone inj. มา 2.5 ml",
+      "ใช้ syringe ดึง BSS มา 7.5 ml แล้วนำ Dexamethasone ในข้อที่ 1 ผสมให้เข้ากัน",
+      ") แบ่งสารละลายในข้อ 2 ลงในขวดยาตา ขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F49",
+    "name": "0.01% Dexamethasone in BSS eye drop",
+    "short_name": "0.01% Dexa in BSS",
+    "description": "ยาหยอดตาลดการอักเสบ",
+    "concentration": "0.1 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Corticosteroid",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ใช้ syringe ดึง Dexamethasone inj. มา 0.4 ml ใช้ syringe ดึง BSS มา 15 ml แล้วนำ Dexamethasone ในข้อที่ 1 ผสมให้เข้ากัน ) แบ่งสารละลายในข้อ 2 ลงในข...",
+    "ingredients": [
+      {
+        "name": "Dexamethasone inj.  (4 mg/ml)",
+        "amount": "1"
+      },
+      {
+        "name": "Balanced salt solution (BSS)",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ใช้ syringe ดึง Dexamethasone inj. มา 0.4 ml",
+      "ใช้ syringe ดึง BSS มา 15 ml แล้วนำ Dexamethasone ในข้อที่ 1 ผสมให้เข้ากัน",
+      ") แบ่งสารละลายในข้อ 2 ลงในขวดยาตา ขวดละ 5 ml"
+    ]
+  },
+  {
+    "code": "F50",
+    "name": "1% Voriconazole in SWFI eye drop",
+    "short_name": "1% Vorico in SWFI",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "10 mg/ml",
+    "expiry_days": 30,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Voriconazole inj. ด้วย SWFI 8 ml ใช้ syringe  ดึงสารละลาย Voriconazole (ข้อที่ มา 2.5 ml ใส่ในขวดยาหยอดตา ใช้ syringe ดึง SWFI 2.5 ml ใส่...",
+    "ingredients": [
+      {
+        "name": "voriconazole inj.  (200 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Voriconazole inj. ด้วย SWFI 8 ml",
+      "ใช้ syringe  ดึงสารละลาย Voriconazole (ข้อที่ 1) มา 2.5 ml ใส่ในขวดยาหยอดตา",
+      "ใช้ syringe ดึง SWFI 2.5 ml ใส่ในขวดยาตาข้อ 2 แล้วผสมให้เข้ากัน"
+    ]
+  },
+  {
+    "code": "F51",
+    "name": "2% Voriconazole in SWFI eye drop",
+    "short_name": "2% Vorico in SWFI",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "20 mg/ml",
+    "expiry_days": 30,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Voriconazole inj. ด้วย SWFI 8 ml  (จะได้ 200 mg/10 ml) ใช้ syringe  ดึงสารละลาย Voriconazole (ข้อที่ มา 5 ml ใส่ในขวดยาหยอดตา",
+    "ingredients": [
+      {
+        "name": "voriconazole inj.  (200 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Voriconazole inj. ด้วย SWFI 8 ml  (จะได้ 200 mg/10 ml)",
+      "ใช้ syringe  ดึงสารละลาย Voriconazole (ข้อที่ 1) มา 5 ml ใส่ในขวดยาหยอดตา"
+    ]
+  },
+  {
+    "code": "F52",
+    "name": "1% Voriconazole in SWFI for injection",
+    "short_name": "1% Vorico in SWFI inj",
+    "description": "ยาหยอดตาฆ่าเชื้อรา",
+    "concentration": "10 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antifungal",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "1 mL",
+    "short_prep": "ละลายผงยา Voriconazole inj. ด้วย SWFI 8 ml  (จะได้ 200 mg/10 ml) ใช้ syringe  ดึงสารละลาย voriconazole (ข้อที่ มา 1 ml ผสม SWFI 1 ml ให้เข้ากัน แบ่...",
+    "ingredients": [
+      {
+        "name": "voriconazole inj.  (200 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Voriconazole inj. ด้วย SWFI 8 ml  (จะได้ 200 mg/10 ml)",
+      "ใช้ syringe  ดึงสารละลาย voriconazole (ข้อที่ 1) มา 1 ml ผสม SWFI 1 ml ให้เข้ากัน",
+      "แบ่งสารละลายในข้อ 2 ใส่ syringe อย่างละ 1 ml"
+    ]
+  },
+  {
+    "code": "F53",
+    "name": "1% Cefuroxime in NSS for injection",
+    "short_name": "1% Cefurox in NSS inj",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "10 mg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "0.3 mL",
+    "short_prep": "ละลายผงยา Cefuroxim inj. ด้วย SWFI 7.5 ml (จะได้ 100 mg/ml) ใช้ syringe ดึงสารละลาย Cefuroxim (ข้อที่ ออกมา 1 ml ผสมกับ 0.9% NaCl ให้ได้ 10 ml ใช้ ...",
+    "ingredients": [
+      {
+        "name": "Cefuroxime inj.  (750 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "0.9% NaCl",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Cefuroxim inj. ด้วย SWFI 7.5 ml (จะได้ 100 mg/ml)",
+      "ใช้ syringe ดึงสารละลาย Cefuroxim (ข้อที่ 1) ออกมา 1 ml ผสมกับ 0.9% NaCl ให้ได้ 10 ml",
+      "ใช้ syringe 1 ml แบ่งสารละลายในข้อ 2 อย่างละ 0.3 ml",
+      "(เตรียมได้ครั้งละ 10-15 syringe ตามความเหมาะสม)"
+    ]
+  },
+  {
+    "code": "F54",
+    "name": "Meropenrm in SWFI for injection",
+    "short_name": "Meropenem in SWFI inj",
+    "description": "ยาหยอดตาฆ่าเชื้อแบคทีเรีย",
+    "concentration": "500 mcg/ml",
+    "expiry_days": 7,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antibiotic",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "0.2 mL",
+    "short_prep": "ละลายผงยา Meropenem inj. ด้วย SWFI 9.5 ml (จะได้ 100 mg/ml) ใช้ syringe ดึงสารละลายในข้อที่ 1 มา 0.1 ml ผสมกับSWFI ให้ได้ 20 ml ใช้ syringe 1 ml แบ...",
+    "ingredients": [
+      {
+        "name": "Meropenem inj.  (1 g/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Meropenem inj. ด้วย SWFI 9.5 ml (จะได้ 100 mg/ml)",
+      "ใช้ syringe ดึงสารละลายในข้อที่ 1 มา 0.1 ml ผสมกับSWFI ให้ได้ 20 ml",
+      "ใช้ syringe 1 ml แบ่งสารละลายในข้อ 2 อย่างละ 0.2 ml",
+      "(เตรียมได้ตามความเหมาะสม)"
+    ]
+  },
+  {
+    "code": "F55",
+    "name": "Ganciclovir in NSS for injection",
+    "short_name": "GCV in NSS inj",
+    "description": "ยาหยอดตาต้านไวรัส",
+    "concentration": "50 mg/ml",
+    "expiry_days": 180,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antiviral",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "0.1 mL",
+    "short_prep": "ละลายผงยา Ganciclovir inj. ด้วย 0.9% NaCl 10 ml ใช้ syringe 1 ml ดึงสารละลายในข้อ 1 ออกมา 0.1 ml (ความเข้มข้น 5 mg/0.1 ml) ***(ขนาดยาที่แพทย์สั่ง 2...",
+    "ingredients": [
+      {
+        "name": "Ganciclovir inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "0.9% NaCl",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Ganciclovir inj. ด้วย 0.9% NaCl 10 ml",
+      "ใช้ syringe 1 ml ดึงสารละลายในข้อ 1 ออกมา 0.1 ml (ความเข้มข้น 5 mg/0.1 ml)",
+      "***(ขนาดยาที่แพทย์สั่ง 2 mg/0.04 ml)***"
+    ]
+  },
+  {
+    "code": "F56",
+    "name": "2% Ganciclovir in NSS eye drop",
+    "short_name": "2% GCV in NSS",
+    "description": "ยาหยอดตาต้านไวรัส",
+    "concentration": "20 mg/ml",
+    "expiry_days": 30,
+    "expiry_unit": "days",
+    "price": 120,
+    "category": "Antiviral",
+    "storage": "เก็บในตู้เย็นช่องธรรมดา",
+    "package_size": "5 mL",
+    "short_prep": "ละลายผงยา Ganciclovir inj. ด้วย SWFI 10 ml ใช้ syringe ดึงสารละลาย Ganciclovi (ข้อที่ มา 4 ml ผสมกับ 0.9% NaCl 6 ml ให้เข้ากัน แบ่งสารละลายข้อ 2 ใส...",
+    "ingredients": [
+      {
+        "name": "Ganciclovir inj.  (500 mg/vial)",
+        "amount": "1"
+      },
+      {
+        "name": "Sterile water fot injection",
+        "amount": "1"
+      },
+      {
+        "name": "0.9% NaCl",
+        "amount": "1"
+      }
+    ],
+    "method": [
+      "ละลายผงยา Ganciclovir inj. ด้วย SWFI 10 ml",
+      "ใช้ syringe ดึงสารละลาย Ganciclovi (ข้อที่ 1) มา 4 ml ผสมกับ 0.9% NaCl 6 ml ให้เข้ากัน",
+      "แบ่งสารละลายข้อ 2 ใส่ขวดยาตา ขวดละ 5 ml"
+    ]
+  }
+]

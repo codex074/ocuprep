@@ -24,3 +24,13 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Local archives / legacy files
+_backup/
+_vite-tmp/
+sample-code/
+frontend.md
+user.json
+supabase_*.sql
+test_*.js
+test_*.ts
