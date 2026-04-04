@@ -122,14 +122,13 @@ export default function Layout() {
 
           <h1 className="page-title">{getPageTitle(location.pathname)}</h1>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="header-actions">
             {stationName && (
-              <div className="header-station" style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: stationStyle.bg, color: stationStyle.text,
-                padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
-              }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 13, height: 13 }}>
+              <div
+                className="header-station"
+                style={{ background: stationStyle.bg, color: stationStyle.text }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
@@ -137,29 +136,26 @@ export default function Layout() {
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div className="header-user-text" style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.name || 'User'}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            <div className="header-user-cluster">
+              <div className="header-user-text">
+                <div className="header-user-name">{user?.name || 'User'}</div>
+                <div className="header-user-role">
                   {user?.role === 'admin' ? 'Admin' : 'Pharmacist'}
                 </div>
               </div>
               <div
+                className="header-avatar-button"
                 onClick={() => navigate('/profile')}
-                style={{
-                  width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden',
-                  cursor: 'pointer', border: '2px solid var(--border)',
-                  flexShrink: 0, transition: 'var(--tr)',
-                }}
               >
                 <img
                   src={avatarSrc}
                   alt=""
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="header-avatar-image"
                   onError={(e) => { (e.target as HTMLImageElement).src = resolvePath('/avatars/male-pharmacist.png'); }}
                 />
               </div>
               <button
+                className="header-logout-btn"
                 onClick={() => {
                   Swal.fire({
                     title: 'ต้องการออกจากระบบ?',
@@ -175,15 +171,8 @@ export default function Layout() {
                   });
                 }}
                 title="ออกจากระบบ"
-                style={{
-                  background: 'none', border: 'none', color: 'var(--text-muted)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center',
-                  padding: '5px', borderRadius: '8px', transition: 'all 0.2s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '19px', height: '19px' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                 </svg>

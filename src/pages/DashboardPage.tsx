@@ -116,6 +116,26 @@ export default function DashboardPage() {
         <LoadingState title="กำลังโหลดภาพรวมการผลิต" description="ดึงข้อมูลรายการเตรียมยาประจำเดือนจาก Google Sheet" />
       ) : (
         <>
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-copy">
+          <span className="dashboard-hero-kicker">ภาพรวมการผลิตยา</span>
+          <h2>ติดตามงานประจำวันได้เร็วขึ้นบนหน้าจอมือถือ</h2>
+          <p>
+            ดูปริมาณงานของเดือน {currentMonthYear} เช็กงานที่ผลิตวันนี้ และแตะดูรายละเอียดต่อได้ทันที
+          </p>
+        </div>
+        <div className="dashboard-hero-meta">
+          <div className="dashboard-hero-pill">
+            <span>วันนี้</span>
+            <strong>{todayPreps.length} รายการ</strong>
+          </div>
+          <div className="dashboard-hero-pill muted">
+            <span>มูลค่ารวม</span>
+            <strong>{totalValueFormatted}</strong>
+          </div>
+        </div>
+      </section>
+
       <div className="stats-grid">
         {stats.map((s, i) => (
           <div className="stat-card" key={i}>
@@ -134,8 +154,8 @@ export default function DashboardPage() {
             <button className="btn btn-sm btn-outline" onClick={() => navigate('/history')}>ดูทั้งหมด →</button>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            <div className="table-wrapper">
-              <table>
+            <div className="table-wrapper dashboard-table-wrapper">
+              <table className="responsive-table">
                 <thead><tr><th>วันที่</th><th>สูตรยา</th><th>จำนวน</th><th>ประเภท</th><th>ผู้เตรียม</th><th></th></tr></thead>
                 <tbody>
                   {recent.length ? recent.map(p => (
@@ -147,17 +167,17 @@ export default function DashboardPage() {
                       onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      <td style={{ fontFamily: 'var(--font-mono)' }}>
+                      <td data-label="วันที่" style={{ fontFamily: 'var(--font-mono)' }}>
                         <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{fmtShort(p.date)}</div>
                         {p.created_at && (
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{fmtTime(p.created_at)}</div>
                         )}
                       </td>
-                      <td style={{ fontWeight: 500 }}>{p.formula_name}</td>
-                      <td>{p.qty}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}><span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`}>{p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}</span></td>
-                      <td>{p.prepared_by}</td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td data-label="สูตรยา" style={{ fontWeight: 500 }}>{p.formula_name}</td>
+                      <td data-label="จำนวน">{p.qty}</td>
+                      <td data-label="ประเภท" style={{ whiteSpace: 'nowrap' }}><span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`}>{p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}</span></td>
+                      <td data-label="ผู้เตรียม">{p.prepared_by}</td>
+                      <td className="td-actions" style={{ textAlign: 'right' }}>
                         {(user?.role === 'admin' || user?.name === p.prepared_by) && (
                           <>
                             <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); setEditPrep(p); }} title="แก้ไข" style={{ marginLeft: '4px' }}>
@@ -178,7 +198,7 @@ export default function DashboardPage() {
                       </td>
                     </tr>
                   )) : (
-                    <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '32px' }}>ยังไม่มีรายการ</td></tr>
+                    <tr><td className="td-empty" colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '32px' }}>ยังไม่มีรายการ</td></tr>
                   )}
                 </tbody>
               </table>
