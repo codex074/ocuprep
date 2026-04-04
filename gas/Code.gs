@@ -434,8 +434,14 @@ function handle_(params) {
         const endDate = params.endDate || '';
         const allPreps = getAll_(ss, 'preps');
         if (!startDate && !endDate) return allPreps;
+        const tz = Session.getScriptTimeZone();
         return allPreps.filter(function(r) {
-          const d = String(r.date || '');
+          const raw = r.date;
+          if (!raw) return true;
+          // Date object (Sheets auto-converts date strings to Date cells)
+          const d = raw instanceof Date
+            ? Utilities.formatDate(raw, tz, 'yyyy-MM-dd')
+            : String(raw).substring(0, 10); // ISO string fallback
           if (startDate && d < startDate) return false;
           if (endDate && d > endDate) return false;
           return true;
