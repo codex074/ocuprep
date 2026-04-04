@@ -41,23 +41,29 @@ function buildMonthOptions(n = 24) {
 
 // ──────────────────────────────────────────────
 // Time-slot config
+// นอกเวลา = เสาร์/อาทิตย์ หรือ วันธรรมดาก่อน 08:00 / หลัง 16:30 น.
 // ──────────────────────────────────────────────
-type SlotKey = 'morning' | 'afternoon' | 'evening' | 'other';
+type SlotKey = 'morning' | 'afternoon' | 'overtime';
 
-const SLOTS: { key: SlotKey; label: string; range: string; startH: number; endH: number; color: string; bg: string }[] = [
-  { key: 'morning',   label: 'เช้า',     range: '08–12 น.', startH: 8,  endH: 12, color: '#d97706', bg: '#fef3c7' },
-  { key: 'afternoon', label: 'บ่าย',     range: '12–16 น.', startH: 12, endH: 16, color: '#2563eb', bg: '#dbeafe' },
-  { key: 'evening',   label: 'เย็น',     range: '16–20 น.', startH: 16, endH: 20, color: '#7c3aed', bg: '#ede9fe' },
-  { key: 'other',     label: 'นอกเวลา', range: 'อื่นๆ',    startH: -1, endH: -1, color: '#64748b', bg: '#f1f5f9' },
+const SLOTS: { key: SlotKey; label: string; range: string; color: string; bg: string }[] = [
+  { key: 'morning',   label: 'เช้า',     range: 'จ–ศ  08:00–12:00 น.',        color: '#d97706', bg: '#fef3c7' },
+  { key: 'afternoon', label: 'บ่าย',     range: 'จ–ศ  12:00–16:30 น.',        color: '#2563eb', bg: '#dbeafe' },
+  { key: 'overtime',  label: 'นอกเวลา', range: 'เสาร์/อาทิตย์ หรือ >16:30 น.', color: '#ef4444', bg: '#fee2e2' },
 ];
 
 function classifySlot(created_at?: string): SlotKey {
-  if (!created_at) return 'other';
-  const h = new Date(created_at).getHours();
-  if (h >= 8  && h < 12) return 'morning';
-  if (h >= 12 && h < 16) return 'afternoon';
-  if (h >= 16 && h < 20) return 'evening';
-  return 'other';
+  if (!created_at) return 'overtime'; // ไม่มีเวลาจัดเป็นนอกเวลา
+  const d   = new Date(created_at);
+  const dow = d.getDay();              // 0 = อาทิตย์, 6 = เสาร์
+  const min = d.getHours() * 60 + d.getMinutes();
+
+  // เสาร์ / อาทิตย์ → นอกเวลาทั้งวัน
+  if (dow === 0 || dow === 6) return 'overtime';
+
+  // วันธรรมดา
+  if (min >= 8 * 60 && min < 12 * 60)       return 'morning';   // 08:00–12:00
+  if (min >= 12 * 60 && min < 16 * 60 + 30) return 'afternoon'; // 12:00–16:30
+  return 'overtime';                                              // ก่อน 08:00 หรือ หลัง 16:30
 }
 
 // ──────────────────────────────────────────────
@@ -91,7 +97,7 @@ export default function WorkloadPage() {
     return Array.from({ length: daysInMonth }, (_, i) => {
       const date = `${selectedMonth}-${String(i + 1).padStart(2, '0')}`;
       const dayPreps = byDate[date] ?? [];
-      const slots: Record<SlotKey, number> = { morning: 0, afternoon: 0, evening: 0, other: 0 };
+      const slots: Record<SlotKey, number> = { morning: 0, afternoon: 0, overtime: 0 };
       let totalQty   = 0;
       let totalValue = 0;
 
@@ -130,24 +136,22 @@ export default function WorkloadPage() {
   // ── Export ────────────────────────────────
   const handleExport = () => {
     const rows = displayRows.map(d => ({
-      'วันที่': d.date,
-      'เช้า (08–12 น.)': d.morning   || 0,
-      'บ่าย (12–16 น.)': d.afternoon || 0,
-      'เย็น (16–20 น.)': d.evening   || 0,
-      'นอกเวลา':         d.other     || 0,
-      'รายการรวม':       d.totalPreps,
-      'จำนวนขวด':        d.totalQty,
-      'มูลค่า (บาท)':    parseFloat(d.totalValue.toFixed(2)),
+      'วันที่':                   d.date,
+      'เช้า (จ-ศ 08:00-12:00)': d.morning   || 0,
+      'บ่าย (จ-ศ 12:00-16:30)': d.afternoon || 0,
+      'นอกเวลา (เสาร์/อาทิตย์ หรือ >16:30)': d.overtime || 0,
+      'รายการรวม':               d.totalPreps,
+      'จำนวนขวด':                d.totalQty,
+      'มูลค่า (บาท)':            parseFloat(d.totalValue.toFixed(2)),
     }));
     rows.push({
-      'วันที่': 'รวมทั้งเดือน',
-      'เช้า (08–12 น.)': summary.slotTotals.morning,
-      'บ่าย (12–16 น.)': summary.slotTotals.afternoon,
-      'เย็น (16–20 น.)': summary.slotTotals.evening,
-      'นอกเวลา':         summary.slotTotals.other,
-      'รายการรวม':       summary.totalPreps,
-      'จำนวนขวด':        summary.totalQty,
-      'มูลค่า (บาท)':    parseFloat(summary.totalValue.toFixed(2)),
+      'วันที่':                   'รวมทั้งเดือน',
+      'เช้า (จ-ศ 08:00-12:00)': summary.slotTotals.morning,
+      'บ่าย (จ-ศ 12:00-16:30)': summary.slotTotals.afternoon,
+      'นอกเวลา (เสาร์/อาทิตย์ หรือ >16:30)': summary.slotTotals.overtime,
+      'รายการรวม':               summary.totalPreps,
+      'จำนวนขวด':                summary.totalQty,
+      'มูลค่า (บาท)':            parseFloat(summary.totalValue.toFixed(2)),
     });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -379,19 +383,15 @@ export default function WorkloadPage() {
                         <th style={{ minWidth: '120px' }}>วันที่</th>
                         <th style={{ textAlign: 'center', color: '#d97706' }}>
                           เช้า<br />
-                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>08–12 น.</span>
+                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>08:00–12:00</span>
                         </th>
                         <th style={{ textAlign: 'center', color: '#2563eb' }}>
                           บ่าย<br />
-                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>12–16 น.</span>
+                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>12:00–16:30</span>
                         </th>
-                        <th style={{ textAlign: 'center', color: '#7c3aed' }}>
-                          เย็น<br />
-                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>16–20 น.</span>
-                        </th>
-                        <th style={{ textAlign: 'center', color: '#64748b' }}>
+                        <th style={{ textAlign: 'center', color: '#ef4444' }}>
                           นอกเวลา<br />
-                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>อื่นๆ</span>
+                          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--text-muted)' }}>เสาร์/อาทิตย์ หรือ {'>'} 16:30</span>
                         </th>
                         <th style={{ textAlign: 'center' }}>รวม (รายการ)</th>
                         <th style={{ textAlign: 'center' }}>ขวด</th>
@@ -419,11 +419,8 @@ export default function WorkloadPage() {
                             <td style={{ textAlign: 'center', fontWeight: d.afternoon > 0 ? 600 : 400, color: d.afternoon > 0 ? '#2563eb' : 'var(--text-muted)' }}>
                               {d.afternoon > 0 ? d.afternoon : '—'}
                             </td>
-                            <td style={{ textAlign: 'center', fontWeight: d.evening   > 0 ? 600 : 400, color: d.evening   > 0 ? '#7c3aed' : 'var(--text-muted)' }}>
-                              {d.evening   > 0 ? d.evening   : '—'}
-                            </td>
-                            <td style={{ textAlign: 'center', fontWeight: d.other     > 0 ? 600 : 400, color: d.other     > 0 ? '#64748b' : 'var(--text-muted)' }}>
-                              {d.other     > 0 ? d.other     : '—'}
+                            <td style={{ textAlign: 'center', fontWeight: d.overtime  > 0 ? 600 : 400, color: d.overtime  > 0 ? '#ef4444' : 'var(--text-muted)' }}>
+                              {d.overtime  > 0 ? d.overtime  : '—'}
                             </td>
                             <td style={{ textAlign: 'center', fontWeight: 700, color: isEmpty ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                               {isEmpty ? '—' : d.totalPreps}
@@ -460,8 +457,7 @@ export default function WorkloadPage() {
                         <td style={{ fontSize: '13px' }}>รวมทั้งเดือน</td>
                         <td style={{ textAlign: 'center', color: '#d97706' }}>{summary.slotTotals.morning   || '—'}</td>
                         <td style={{ textAlign: 'center', color: '#2563eb' }}>{summary.slotTotals.afternoon || '—'}</td>
-                        <td style={{ textAlign: 'center', color: '#7c3aed' }}>{summary.slotTotals.evening   || '—'}</td>
-                        <td style={{ textAlign: 'center', color: '#64748b' }}>{summary.slotTotals.other     || '—'}</td>
+                        <td style={{ textAlign: 'center', color: '#ef4444' }}>{summary.slotTotals.overtime  || '—'}</td>
                         <td style={{ textAlign: 'center' }}>{summary.totalPreps}</td>
                         <td style={{ textAlign: 'center' }}>{summary.totalQty}</td>
                         <td />
