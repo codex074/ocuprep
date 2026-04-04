@@ -10,6 +10,7 @@ import type { Prep } from '../types';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
 import { usePreps } from '../hooks/usePreps';
+import { useFormulas } from '../hooks/useFormulas';
 import Swal from 'sweetalert2';
 
 export default function DashboardPage() {
@@ -22,6 +23,12 @@ export default function DashboardPage() {
   // ส่ง date range → GAS filter ฝั่ง server เฉพาะเดือนปัจจุบัน
   const [start, end] = getMonthRange();
   const { preps, loading, refreshing, fetchPreps, updatePrep, deletePrep } = usePreps(start, end);
+  const { formulas } = useFormulas();
+
+  // lookup: formula_name → short_name (ถ้ามี)
+  const shortNameMap = Object.fromEntries(
+    formulas.map(f => [f.name, f.short_name ?? f.name])
+  );
 
   const handleUpdate = async (id: number, updates: Partial<Prep>) => {
     const ok = await updatePrep(id, updates);
@@ -204,7 +211,9 @@ export default function DashboardPage() {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 title="คลิกเพื่อดูประวัติการเตรียมยา"
               >
-                <span style={{ fontSize: '13px', fontWeight: 500 }}>{n}</span>
+                <span style={{ fontSize: '13px', fontWeight: 500 }} title={n}>
+                  {shortNameMap[n] || n}
+                </span>
                 <span className={`badge-tag ${cols[i % 6]}`}>{c} ขวด</span>
               </div>
             )) : (
