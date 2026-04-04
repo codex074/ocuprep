@@ -20,7 +20,7 @@
 
 **UTTH ED-Extemp** is a web application for recording and tracking the production of custom-compounded (extemporaneous) eye drop medications in the Pharmacy Department of Uttaradit Hospital.
 
-The system manages the full preparation workflow — from formula selection and lot number generation to label printing and historical auditing — with role-based access for pharmacists and administrators.
+The system manages the full preparation workflow — from formula selection and lot number generation to label printing, historical auditing, and monthly workload reporting — with role-based access for pharmacists and administrators.
 
 ---
 
@@ -29,14 +29,15 @@ The system manages the full preparation workflow — from formula selection and 
 | Category | Features |
 |---|---|
 | 🔐 **Authentication** | Login with pharmacist ID, forced password change on first login, 1-hour session timeout |
-| 📊 **Dashboard** | Monthly prep overview — loads current month only (server-side filtered), inline edit/delete |
-| 🧪 **Preparation Recording** | Patient or stock mode, auto lot number, auto expiry calculation, quantity multiplier |
+| 📊 **Dashboard** | Monthly prep overview with 5 stat cards (count, today, patient, stock bottles, production value), server-side date filter, inline edit/delete, load-more pagination |
+| 🧪 **Preparation Recording** | Patient or stock mode, auto lot number, auto expiry calculation, quantity multiplier, detailed error messages on save failure |
 | 🖨️ **Label Printing** | Batch sheets, standard labels, bottle labels, prep stickers — all browser-printable |
-| 💡 **Formula Management** | Admin: create/edit/delete drug formulas with ingredients and preparation methods |
+| 💡 **Formula Management** | Admin: create/edit/delete drug formulas with short names, ingredients, and preparation methods |
 | 👥 **User Management** | Admin: manage pharmacist accounts, roles, profile images, and active status |
-| 📜 **History** | Full audit log with search/filter, paginated 20 per page, Export to Excel |
+| 📜 **History** | Full audit log with search/filter, note column, paginated 20 per page, Export to Excel |
+| 📈 **Workload Report** | Monthly workload by day and time slot (เช้า/บ่าย/นอกเวลา), location filter, proportion bars, mini stacked bar chart, Export to Excel |
 | 📱 **PWA** | Installable on iOS/Android, offline-capable, home screen icon |
-| ⚡ **Performance** | Server-side date filter, GAS formula cache (1 hr), optimistic UI updates |
+| ⚡ **Performance** | Server-side date filter, GAS formula cache (1 hr), optimistic UI updates, load-more pagination |
 
 ---
 
@@ -88,6 +89,10 @@ utth-ed/
 │   │   ├── resourceCache.ts   # In-memory cache with invalidation
 │   │   └── utils.ts           # Date formatting, helpers
 │   ├── 📁 pages/              # LoginPage, DashboardPage, PreparePage…
+│   │   ├── DashboardPage.tsx  # Monthly overview + 5 stat cards
+│   │   ├── HistoryPage.tsx    # Full audit log with note column
+│   │   ├── WorkloadPage.tsx   # Workload report by day & time slot
+│   │   └── …
 │   ├── 📁 types/              # TypeScript interfaces (User, Formula, Prep)
 │   └── App.tsx                # Routing & auth guards
 ├── 📁 gas/
@@ -227,11 +232,12 @@ The backend uses **Google Sheets** as a database. Three sheets are created autom
 | `id` | Unique formula ID |
 | `code` | Formula code |
 | `name` | Full formula name |
+| `short_name` | Abbreviated name shown in Dashboard summary |
 | `concentration` | Drug concentration |
-| `expiry_days` | Days until expiry after preparation |
+| `expiry_days` | Days until expiry (negative = hours) |
 | `ingredients` | JSON array of ingredients |
 | `method` | JSON array of preparation steps |
-| `price` | Cost per unit |
+| `price` | Cost per unit (used in production value calculation) |
 
 ### `preps`
 | Column | Description |
@@ -240,11 +246,13 @@ The backend uses **Google Sheets** as a database. Three sheets are created autom
 | `formula_id` | Linked formula |
 | `mode` | `patient` or `stock` |
 | `lot_no` | Auto-generated lot number |
-| `date` | Date of preparation |
+| `date` | Date of preparation (stored as `YYYY-MM-DD`) |
 | `expiry_date` | Calculated expiry date |
 | `qty` | Quantity prepared |
+| `note` | Optional note / remark |
 | `prepared_by` | Pharmacist name |
-| `location` | Station/ward |
+| `location` | Station/ward where prep was made |
+| `created_at` | Full timestamp (used for time-slot classification) |
 
 ---
 
@@ -262,10 +270,38 @@ GET https://script.google.com/.../exec?action=<ACTION>&<params>
 | `login` | Authenticate with `pha_id` and `password` |
 | `getUsers` | List all users (admin) |
 | `createUser` / `updateUser` / `deleteUser` | User CRUD (admin) |
-| `getFormulas` | List all formulas |
-| `createFormula` / `updateFormula` / `deleteFormula` | Formula CRUD (admin) |
+| `getFormulas` | List all formulas (cached 1 hr in GAS CacheService) |
+| `createFormula` / `updateFormula` / `deleteFormula` | Formula CRUD (admin, invalidates cache) |
 | `getPreps` | List preparation records — optional `startDate` / `endDate` params (`YYYY-MM-DD`) for server-side filtering |
 | `createPrep` / `updatePrep` / `deletePrep` | Prep CRUD |
+
+---
+
+## 📈 Workload Report
+
+The **Workload** page (`/workload`) provides a monthly breakdown of preparation activity.
+
+### Time-slot Classification
+
+Slots are classified using the `created_at` timestamp of each record:
+
+| Slot | Condition | Color |
+|---|---|---|
+| 🟡 **เช้า** (Morning) | Mon–Fri 08:00–12:00 | Amber |
+| 🔵 **บ่าย** (Afternoon) | Mon–Fri 12:00–16:30 | Blue |
+| 🔴 **นอกเวลา** (Overtime) | Saturday / Sunday (all day) **or** weekday before 08:00 / after 16:30 | Red |
+
+> Records with no `created_at` timestamp are counted as **นอกเวลา** by default.
+
+### Features
+
+- **Month selector** — dropdown covering the past 24 months
+- **5 summary stat cards** — total records, total bottles, daily average, busiest day, total production value (฿)
+- **Proportion bars** — visual breakdown of each time slot for the month
+- **Daily table** — per-day counts for each slot, total records, total bottles, and a mini stacked bar chart
+- **Location filter** — appears automatically when the selected month has records from more than one station
+- **Toggle** — show only days with data, or all days in the month
+- **Export to Excel** — downloads the full monthly table as `.xlsx`
 
 ---
 
@@ -334,14 +370,14 @@ The app is installable as a Progressive Web App on both iOS and Android:
 ## ⚡ Performance & Optimization
 
 ### Server-side Date Filtering
-Dashboard fetches **only the current month's records** by passing `startDate` / `endDate` to GAS. GAS filters before sending, so payload stays small regardless of total record count.
+Dashboard and Workload fetch **only the selected month's records** by passing `startDate` / `endDate` to GAS. GAS filters before sending, so payload stays small regardless of total record count.
 
 ```
 Without filter:  GAS sends ALL records → Frontend filters → heavy on large datasets
 With filter:     GAS sends current-month only → instant render
 ```
 
-> **Note:** Google Sheets auto-converts date strings to `Date` objects internally. The GAS backend uses `Utilities.formatDate(date, tz, 'yyyy-MM-dd')` to normalize them before comparison.
+> **Note:** Google Sheets auto-converts date strings to `Date` objects internally. The GAS backend uses `Utilities.formatDate(date, tz, 'yyyy-MM-dd')` to normalize them before comparison **and** before returning, preventing off-by-one day bugs caused by UTC serialization.
 
 ### Formula Cache (GAS CacheService)
 `getFormulas` results are cached in GAS for **1 hour**. Since formulas rarely change, this eliminates repeated Sheets reads on every page load. Cache is invalidated automatically when any formula is created, updated, or deleted.
@@ -359,8 +395,12 @@ Both Dashboard and History display **20 records at a time** with a "Load more (+
 - **HashRouter** is used instead of BrowserRouter to support GitHub Pages static hosting.
 - **Sessions** are stored in `localStorage` under the key `ed-extemp-session` with a 1-hour timeout.
 - **Client-side cache** (`resourceCache.ts`) uses month-keyed entries for preps (`preps-YYYY-MM`) and a single entry for formulas, with 5-minute stale time.
-- **Date handling:** Sheets stores dates as `Date` objects; GAS normalizes with `Utilities.formatDate`; frontend receives ISO strings and displays in Thai locale (`th-TH`).
+- **Date normalization:** Google Sheets stores date strings as `Date` objects. GAS normalizes `date` / `expiry_date` fields with `Utilities.formatDate()` in the local timezone before returning, and the frontend further normalizes via `toDateOnly()` as a safety layer. This prevents UTC midnight serialization causing off-by-one day issues.
+- **Lock safety:** GAS `LockService.tryLock()` return value is checked before calling `releaseLock()` in the `finally` block, preventing spurious `LockTimeoutException` errors when lock acquisition fails.
 - **Thread safety** in GAS is handled via `LockService` to prevent concurrent write conflicts.
+- **Workload time slots** use the `created_at` timestamp: Mon–Fri 08:00–16:30 = regular hours; weekends or outside 08:00–16:30 = นอกเวลา (overtime).
+- **Short names:** The Dashboard formula summary displays `short_name` (if set) with the full `name` available on hover.
+- **Production value** on Dashboard and Workload is calculated as `formula.price × prep.qty` for each record in the selected month.
 
 ---
 
