@@ -29,13 +29,14 @@ The system manages the full preparation workflow — from formula selection and 
 | Category | Features |
 |---|---|
 | 🔐 **Authentication** | Login with pharmacist ID, forced password change on first login, 1-hour session timeout |
-| 📊 **Dashboard** | Monthly preparation overview, date-range filtering, inline edit/delete |
+| 📊 **Dashboard** | Monthly prep overview — loads current month only (server-side filtered), inline edit/delete |
 | 🧪 **Preparation Recording** | Patient or stock mode, auto lot number, auto expiry calculation, quantity multiplier |
 | 🖨️ **Label Printing** | Batch sheets, standard labels, bottle labels, prep stickers — all browser-printable |
 | 💡 **Formula Management** | Admin: create/edit/delete drug formulas with ingredients and preparation methods |
 | 👥 **User Management** | Admin: manage pharmacist accounts, roles, profile images, and active status |
-| 📜 **History** | Full audit log of all preparation records with detail modals |
+| 📜 **History** | Full audit log with search/filter, paginated 20 per page, Export to Excel |
 | 📱 **PWA** | Installable on iOS/Android, offline-capable, home screen icon |
+| ⚡ **Performance** | Server-side date filter, GAS formula cache (1 hr), optimistic UI updates |
 
 ---
 
@@ -157,6 +158,10 @@ The app will be available at `http://localhost:5173`.
 
 > **Note:** You don't need to create a Google Sheet manually. The backend automatically creates and seeds the spreadsheet on first run.
 
+> ⚠️ **Important — Updating GAS:** Pushing to GitHub does **not** auto-deploy the GAS backend. Whenever `gas/Code.gs` changes, you must manually re-deploy:
+> **Deploy → Manage deployments → ✏️ Edit → New version → Deploy**
+> The Web App URL stays the same after re-deployment.
+
 #### Verify the backend is working:
 
 ```
@@ -259,7 +264,7 @@ GET https://script.google.com/.../exec?action=<ACTION>&<params>
 | `createUser` / `updateUser` / `deleteUser` | User CRUD (admin) |
 | `getFormulas` | List all formulas |
 | `createFormula` / `updateFormula` / `deleteFormula` | Formula CRUD (admin) |
-| `getPreps` | List all preparation records |
+| `getPreps` | List preparation records — optional `startDate` / `endDate` params (`YYYY-MM-DD`) for server-side filtering |
 | `createPrep` / `updatePrep` / `deletePrep` | Prep CRUD |
 
 ---
@@ -326,12 +331,35 @@ The app is installable as a Progressive Web App on both iOS and Android:
 
 ---
 
+## ⚡ Performance & Optimization
+
+### Server-side Date Filtering
+Dashboard fetches **only the current month's records** by passing `startDate` / `endDate` to GAS. GAS filters before sending, so payload stays small regardless of total record count.
+
+```
+Without filter:  GAS sends ALL records → Frontend filters → heavy on large datasets
+With filter:     GAS sends current-month only → instant render
+```
+
+> **Note:** Google Sheets auto-converts date strings to `Date` objects internally. The GAS backend uses `Utilities.formatDate(date, tz, 'yyyy-MM-dd')` to normalize them before comparison.
+
+### Formula Cache (GAS CacheService)
+`getFormulas` results are cached in GAS for **1 hour**. Since formulas rarely change, this eliminates repeated Sheets reads on every page load. Cache is invalidated automatically when any formula is created, updated, or deleted.
+
+### Optimistic UI Updates
+`createPrep`, `updatePrep`, and `deletePrep` update the local React state **immediately** after the GAS call succeeds — no full refetch needed. The client-side cache (`resourceCache.ts`) is updated in-place.
+
+### Pagination (20 per page)
+Both Dashboard and History display **20 records at a time** with a "Load more (+20)" button. History resets to page 1 automatically whenever any filter changes. Excel Export always exports **all filtered records**, not just the visible page.
+
+---
+
 ## 📐 Implementation Notes
 
 - **HashRouter** is used instead of BrowserRouter to support GitHub Pages static hosting.
 - **Sessions** are stored in `localStorage` under the key `ed-extemp-session` with a 1-hour timeout.
-- **Client-side caching** via `resourceCache.ts` reduces unnecessary GAS calls.
-- **Date handling** uses `YYYY-MM-DD` format internally; displayed in Thai locale (`th-TH`).
+- **Client-side cache** (`resourceCache.ts`) uses month-keyed entries for preps (`preps-YYYY-MM`) and a single entry for formulas, with 5-minute stale time.
+- **Date handling:** Sheets stores dates as `Date` objects; GAS normalizes with `Utilities.formatDate`; frontend receives ISO strings and displays in Thai locale (`th-TH`).
 - **Thread safety** in GAS is handled via `LockService` to prevent concurrent write conflicts.
 
 ---
