@@ -94,11 +94,16 @@ export default function DashboardPage() {
   const sorted = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
   const cols = ['blue', 'green', 'amber', 'purple', 'teal', 'red'];
 
+  const priceMap = Object.fromEntries(formulas.map(f => [f.id, f.price ?? 0]));
+  const totalValue = preps.reduce((sum, p) => sum + (priceMap[p.formula_id] ?? 0) * p.qty, 0);
+  const totalValueFormatted = `฿${totalValue.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const stats = [
     { v: preps.length, l: 'รายการทั้งหมด', c: 'blue', path: <><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></> },
     { v: todayPreps.length, l: 'ผลิตวันนี้', c: 'green', path: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></> },
     { v: patientPreps.length, l: 'เฉพาะราย (Patient)', c: 'amber', path: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></> },
     { v: stockBottles, l: 'จำนวนขวดที่ทำ (Stock)', c: 'purple', path: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
+    { v: totalValueFormatted, l: 'มูลค่ายาที่ผลิต', c: 'teal', path: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
   ];
 
   return (
