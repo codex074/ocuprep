@@ -34,8 +34,6 @@ export default function HistoryPage() {
   // Details Modal State
   const [selectedPrep, setSelectedPrep] = useState<Prep | null>(null);
   const isRefreshing = prepsRefreshing || formulasRefreshing;
-  const visiblePreps = filtered.slice(0, visibleCount);
-  const hasMore = filtered.length > visibleCount;
 
   // reset กลับ 20 ทุกครั้งที่ filter เปลี่ยน
   useEffect(() => { setVisibleCount(20); }, [search, roomFilter, modeFilter, timeFilter, dateFrom, dateTo]);
@@ -69,6 +67,10 @@ export default function HistoryPage() {
     if (dateTo) list = list.filter(p => p.date <= dateTo);
     return list;
   }, [preps, search, roomFilter, modeFilter, timeFilter, dateFrom, dateTo]);
+
+  // slice สำหรับ pagination — ต้องอยู่หลัง filtered
+  const visiblePreps = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
