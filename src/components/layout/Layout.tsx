@@ -15,6 +15,7 @@ export default function Layout() {
       case '/dashboard': return 'แดชบอร์ด';
       case '/prepare':   return 'เตรียมยา';
       case '/history':   return 'ประวัติการผลิต';
+      case '/workload':  return 'รายงาน Workload';
       case '/formulas':  return 'สูตรตำรับยา';
       case '/users':     return 'จัดการผู้ใช้';
       default:           return 'ED-Extemp';
@@ -74,6 +75,13 @@ export default function Layout() {
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
             </svg>
             ประวัติการผลิต
+          </NavLink>
+          <NavLink to="/workload" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} onClick={closeSidebar}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            รายงาน Workload
           </NavLink>
 
           <div className="nav-label">จัดการระบบ</div>
@@ -209,6 +217,13 @@ export default function Layout() {
             <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
           </svg>
           <span>ประวัติ</span>
+        </NavLink>
+        <NavLink to="/workload" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+          <span>Workload</span>
         </NavLink>
         <NavLink to="/formulas" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

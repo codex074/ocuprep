@@ -11,6 +11,7 @@ import HistoryPage from './pages/HistoryPage';
 import FormulasPage from './pages/FormulasPage';
 import UsersPage from './pages/UsersPage';
 import ProfilePage from './pages/ProfilePage';
+import WorkloadPage from './pages/WorkloadPage';
 import StationSelectionPage from './pages/StationSelectionPage';
 import ForceChangePasswordPage from './pages/ForceChangePasswordPage';
 import type { ReactNode } from 'react';
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/formulas" element={<FormulasPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/workload" element={<WorkloadPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
