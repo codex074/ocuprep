@@ -7,6 +7,7 @@ import Modal from '../components/ui/Modal';
 import ProfileCard from '../components/ProfileCard';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
+import ActionStatus from '../components/ui/ActionStatus';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -18,6 +19,7 @@ export default function UsersPage() {
   // Edit/Create state
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', pha_id: '', password: '', role: 'user' as 'admin' | 'user', profile_image: '' });
 
   // View state
@@ -26,10 +28,12 @@ export default function UsersPage() {
   const cols = ['#2563EB', '#059669', '#D97706', '#7C3AED', '#DC2626', '#0D9488'];
 
   const handleSave = async () => {
+    if (saving) return;
     if (!form.name.trim() || !form.pha_id.trim()) {
       toast('กรุณากรอกข้อมูลให้ครบ', 'error'); return;
     }
 
+    setSaving(true);
     if (editId) {
       // Edit mode
       const updates: any = { 
@@ -44,7 +48,9 @@ export default function UsersPage() {
       }
       
       const ok = await updateUser(editId, updates);
+      setSaving(false);
       toast(ok ? 'แก้ไขผู้ใช้สำเร็จ' : 'เกิดข้อผิดพลาด', ok ? 'success' : 'error');
+      if (ok) setModalOpen(false);
     } else {
       // Create mode
       if (!form.password) { toast('กรุณากรอกรหัสผ่าน', 'error'); return; }
@@ -53,10 +59,11 @@ export default function UsersPage() {
         password: form.password, role: form.role, active: true,
         profile_image: form.profile_image || undefined
       });
-      if (err) { toast(err, 'error'); return; }
+      if (err) { setSaving(false); toast(err, 'error'); return; }
+      setSaving(false);
       toast(`เพิ่ม ${form.name.trim()} สำเร็จ`, 'success');
+      setModalOpen(false);
     }
-    setModalOpen(false);
   };
 
   const handleToggle = async (id: number) => {
@@ -201,8 +208,10 @@ export default function UsersPage() {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editId ? 'แก้ไขผู้ใช้งาน' : 'เพิ่มผู้ใช้งาน'}
         footer={
           <>
-            <button className="btn btn-outline" onClick={() => setModalOpen(false)}>ยกเลิก</button>
-            <button className="btn btn-primary" onClick={handleSave}>บันทึก</button>
+            <button className="btn btn-outline" onClick={() => setModalOpen(false)} disabled={saving}>ยกเลิก</button>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึก'}
+            </button>
           </>
         }
       >
@@ -248,6 +257,7 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+        {saving && <ActionStatus text={editId ? 'กำลังบันทึกการแก้ไขผู้ใช้...' : 'กำลังเพิ่มผู้ใช้งาน...'} />}
       </Modal>
 
       <Modal isOpen={!!viewUser} onClose={() => setViewUser(null)} title="ข้อมูลผู้ใช้งาน" variant="clean">

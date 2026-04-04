@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useUsers } from '../hooks/useUsers';
 import { usePreps } from '../hooks/usePreps';
 import { resolvePath } from '../lib/utils';
+import ActionStatus from './ui/ActionStatus';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -29,6 +30,7 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
   const [newName, setNewName] = useState(targetUser.name);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [busySection, setBusySection] = useState<'avatar' | 'name' | 'password' | null>(null);
 
   // Temp avatar state for preview before saving
   const [tempAvatar, setTempAvatar] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
   );
 
   const saveAvatar = async () => {
-    if (!tempAvatar || !canEdit) return;
+    if (!tempAvatar || !canEdit || busySection) return;
     
     // confirm
     const result = await Swal.fire({
@@ -72,7 +74,9 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
 
     if (!result.isConfirmed) return;
 
+    setBusySection('avatar');
     const ok = await updateUser(targetUser.id, { profile_image: tempAvatar });
+    setBusySection(null);
     if (ok) {
       toast('เปลี่ยนรูปโปรไฟล์สำเร็จ', 'success');
       refreshUser();
@@ -89,7 +93,7 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
   };
 
   const handleNameChange = async () => {
-    if (!canEdit) return;
+    if (!canEdit || busySection) return;
     if (!newName.trim()) { toast('กรุณากรอกชื่อ', 'error'); return; }
     
     // confirm
@@ -104,7 +108,9 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     
     if (!result.isConfirmed) return;
 
+    setBusySection('name');
     const ok = await updateUser(targetUser.id, { name: newName });
+    setBusySection(null);
     if (ok) {
       toast('เปลี่ยนชื่อสำเร็จ', 'success');
       refreshUser();
@@ -115,7 +121,7 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
   };
 
   const handlePasswordChange = async () => {
-    if (!canEdit) return;
+    if (!canEdit || busySection) return;
     if (!newPassword) { toast('กรุณากรอกรหัสผ่านใหม่', 'error'); return; }
     
     // Require old password only if it's the user checking themselves, NOT admin
@@ -124,7 +130,9 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
         if (oldPassword !== targetUser.password) { toast('รหัสผ่านเดิมไม่ถูกต้อง', 'error'); return; }
     }
     
+    setBusySection('password');
     const ok = await updateUser(targetUser.id, { password: newPassword });
+    setBusySection(null);
     if (ok) {
       toast('เปลี่ยนรหัสผ่านสำเร็จ', 'success');
       setOldPassword('');
@@ -208,9 +216,12 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
             ระบบใช้ avatar มาตรฐานเพื่อให้แสดงผลได้สม่ำเสมอทุกอุปกรณ์
           </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-            <button className="btn btn-sm btn-primary" onClick={saveAvatar} style={{ flex: 1 }}>ยืนยันเปลี่ยนรูป</button>
-            <button className="btn btn-sm btn-outline" onClick={cancelAvatarEdit}>ยกเลิก</button>
+            <button className="btn btn-sm btn-primary" onClick={saveAvatar} style={{ flex: 1 }} disabled={busySection !== null}>
+              {busySection === 'avatar' ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'ยืนยันเปลี่ยนรูป'}
+            </button>
+            <button className="btn btn-sm btn-outline" onClick={cancelAvatarEdit} disabled={busySection !== null}>ยกเลิก</button>
           </div>
+          {busySection === 'avatar' && <ActionStatus text="กำลังบันทึกรูปโปรไฟล์..." />}
         </div>
       )}
 
@@ -283,9 +294,12 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-sm btn-primary" onClick={handleNameChange} style={{ flex: 1 }}>บันทึก</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => setShowNameEdit(false)} style={{ flex: 1 }}>ยกเลิก</button>
+                  <button className="btn btn-sm btn-primary" onClick={handleNameChange} style={{ flex: 1 }} disabled={busySection !== null}>
+                    {busySection === 'name' ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึก'}
+                  </button>
+                  <button className="btn btn-sm btn-danger" onClick={() => setShowNameEdit(false)} style={{ flex: 1 }} disabled={busySection !== null}>ยกเลิก</button>
                 </div>
+                {busySection === 'name' && <ActionStatus text="กำลังบันทึกชื่อผู้ใช้..." />}
               </div>
             )}
           </div>
@@ -327,9 +341,12 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-sm btn-primary" onClick={handlePasswordChange} style={{ flex: 1 }}>บันทึก</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => setShowPasswordEdit(false)} style={{ flex: 1 }}>ยกเลิก</button>
+                  <button className="btn btn-sm btn-primary" onClick={handlePasswordChange} style={{ flex: 1 }} disabled={busySection !== null}>
+                    {busySection === 'password' ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึก'}
+                  </button>
+                  <button className="btn btn-sm btn-danger" onClick={() => setShowPasswordEdit(false)} style={{ flex: 1 }} disabled={busySection !== null}>ยกเลิก</button>
                 </div>
+                {busySection === 'password' && <ActionStatus text="กำลังเปลี่ยนรหัสผ่าน..." />}
               </div>
             )}
           </div>

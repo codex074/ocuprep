@@ -1,4 +1,4 @@
-import { fmtDate, fmtDateTime, multiplyAmount } from './utils';
+import { fmtDate, multiplyAmount, resolvePath } from './utils';
 import type { Prep, Formula } from '../types';
 
 export const printHtml = (html: string) => {
@@ -19,17 +19,7 @@ export const printA4Html = (html: string) => {
 
 export const generateLabelHtml = (prep: Prep, formula: Formula) => {
   const dateStr = fmtDate(prep.date);
-  
-  // Format expiry date based on string length or value
-  // If expiry contains time (ISO with 'T' and time part), we might want fmtDateTime
-  // But usually stored string is YYYY-MM-DD or ISO. 
-  // Let's infer if it has time component relevant to hours.
-  // Actually, utilize fmtDateTime if it looks like hours (negative match in PreparePage).
-  // But here we rely on the string stored in DB.
-  // If DB stores YYYY-MM-DD for everything, we lose hour precision?
-  // Let's assume standard fmtDate unless we detect time.
-  // Actually, to be safe, if we just print what's stored formatted:
-  const expStr = prep.expiry_date.includes('T') ? fmtDateTime(prep.expiry_date) : fmtDate(prep.expiry_date);
+  const expStr = fmtDate(prep.expiry_date);
 
   // Extract Patient Name and HN from target if mode is patient
   // Or use what's in prep object (patient_name, hn)
@@ -67,7 +57,8 @@ const getMethodHtml = (str: string | null) => {
 
 export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
   const dateStr = fmtDate(prep.date);
-  const expStr = prep.expiry_date.includes('T') ? fmtDateTime(prep.expiry_date) : fmtDate(prep.expiry_date);
+  const expStr = fmtDate(prep.expiry_date);
+  const hospitalLogo = resolvePath('/logo/mophlogo.png');
   
   const ingHtml = getIngredientsHtml(formula.ingredients, prep.qty);
   const metHtml = getMethodHtml(formula.method);
@@ -79,9 +70,9 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
   <div style="padding:16px;font-size:13px;line-height:1.8">
     <table style="width:100%;border-collapse:collapse;border:1px solid #000;margin-bottom:16px;">
       <tr>
-        <td style="width:120px;border-right:1px solid #000;text-align:center;padding:10px;vertical-align:middle;">
-           <div><img src="data:image/png;base64,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" style="height:55px;object-fit:contain;" /></div>
-           <div style="font-size:28px;font-weight:bold;margin-top:8px;line-height:1;">${formula.code || ''}</div>
+        <td style="width:120px;border-right:1px solid #000;text-align:center;padding:10px 8px;vertical-align:middle;">
+           <div><img src="${hospitalLogo}" alt="Hospital Logo" style="height:58px;object-fit:contain;display:block;margin:0 auto 10px auto;" /></div>
+           <div style="font-size:22px;font-weight:bold;line-height:1.05;letter-spacing:0.5px;">${formula.code || ''}</div>
         </td>
         <td style="text-align:center;padding:12px;vertical-align:middle;">
            <div style="font-size:16px;font-weight:bold;margin-bottom:4px;">ฝ่ายเภสัชกรรม โรงพยาบาลอุตรดิตถ์</div>
@@ -133,9 +124,8 @@ export const generateBottleLabelsHtml = (
   formula: Formula,
 ): string => {
   const mfgStr = fmtDate(prep.date);
-  const expStr = prep.expiry_date.includes('T') ? fmtDateTime(prep.expiry_date) : fmtDate(prep.expiry_date);
-  const drugName = (formula.short_name?.trim() || prep.formula_name) + (formula.package_size ? ` (${formula.package_size})` : '') + ` (${prep.qty} ขวด)`;
-  const storage = formula.storage?.trim() || 'เก็บในตู้เย็น 2-8°C';
+  const expStr = fmtDate(prep.expiry_date);
+  const drugName = (formula.short_name?.trim() || prep.formula_name) + (formula.package_size ? ` (${formula.package_size})` : '');
   const qty = prep.qty;
   const totalPages = Math.ceil(qty / 3);
   const pages: string[] = [];
@@ -146,27 +136,17 @@ export const generateBottleLabelsHtml = (
       const idx = page * 3 + i;
       if (idx >= qty) break;
       const preparer = prep.user_pha_id || prep.prepared_by;
-      // Use TEC-IT Barcode API (more reliable)
-      // code=Code128, dpi=96, imagetype=Png
-      // we hide text in API (datamajor=0, dataminor=0 usually hides or default) - actually strictly we want to CONTROL it.
-      // TEC-IT shows text by default. Let's create our own text below to control font/size.
-      // &hideText=1
-      const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${prep.lot_no}&code=Code128&dpi=96&datamajor=0&dataminor=0&hideText=1`;
       
       labelsHtml += `<div class="bl">
-        <div class="bl-text">
-          <div class="bl-name">${drugName}</div>
-          <div class="bl-row"><span>Mfg: ${mfgStr}</span></div>
-          <div class="bl-row"><span>Exp: ${expStr}</span></div>
-          <div class="bl-row"><span>By: ${preparer}</span></div>
-          <div class="bl-storage">${storage}</div>
+        <div class="bl-count">${idx + 1}/${qty}</div>
+        <div class="bl-name">${drugName}</div>
+        <div class="bl-half-row">
+          <div class="bl-half"><span class="bl-label">Mfg:</span><span>${mfgStr}</span></div>
+          <div class="bl-half"><span class="bl-label">Exp:</span><span>${expStr}</span></div>
         </div>
-        <div class="bl-right">
-             <div class="bl-count">${idx + 1}/${qty}</div>
-             <div class="bl-barcode">
-                <img src="${barcodeUrl}" />
-                <div class="bl-lot">${prep.lot_no}</div>
-             </div>
+        <div class="bl-inline-row">
+          <div class="bl-inline-item"><span class="bl-label">By:</span><span>${preparer}</span></div>
+          <div class="bl-inline-item"><span class="bl-label">Lot:</span><span>${prep.lot_no}</span></div>
         </div>
       </div>`;
     }
@@ -307,24 +287,14 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 /* Bottle label pages */
 .bp{width:8.5cm;height:6cm;box-sizing:border-box;padding:8mm 2mm 0 2mm;page-break-after:always;display:flex;flex-direction:column;gap:0;justify-content:flex-start;align-items:center}
 /* .bl size: 7cm x 1.7cm */
-.bl{width:7cm;height:1.7cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:row;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
-
-/* Left side text - Maximize space */
-.bl-text{flex:1;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;padding-right:1mm}
-.bl-name{font-weight:700;font-size:11px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bl-row{font-size:10px;line-height:1.1;display:flex;gap:3mm}
-.bl-storage{font-size:10px;line-height:1.1;color:#333;margin-top:auto;font-weight:500}
-
-/* Right side wrapper */
-.bl-right{width:2.4cm;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;position:relative}
-
-/* Pagination top right */
-.bl-count{font-size:7px;font-weight:700;line-height:1;position:absolute;top:-1px;right:0}
-
-/* Barcode area */
-.bl-barcode{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:100%;margin-top:2mm}
-.bl-barcode img{width:100%;height:10mm;object-fit:contain}
-.bl-lot{font-size:7px;font-weight:700;text-align:center;line-height:1;margin-top:1px}
+.bl{width:7cm;height:1.7cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:column;justify-content:space-between;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
+.bl-name{font-weight:700;font-size:12px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12mm}
+.bl-count{font-size:8px;font-weight:700;line-height:1;position:absolute;top:1mm;right:2mm}
+.bl-half-row{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10px;line-height:1.15}
+.bl-half{display:flex;align-items:center;gap:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bl-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10px;line-height:1.15}
+.bl-inline-item{display:flex;align-items:center;gap:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bl-label{font-weight:700}
 
 .bl-num{display:none} 
 .bl-qr{display:none}
@@ -332,4 +302,3 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
   w.document.close();
   w.onload = () => w.print();
 };
-

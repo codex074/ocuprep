@@ -75,7 +75,7 @@ export default function ForceChangePasswordPage() {
           </div>
           
           <button className="login-btn" type="submit" disabled={submitting}>
-            {submitting ? 'กำลังบันทึก...' : 'เปลี่ยนรหัสผ่าน'}
+            {submitting ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'เปลี่ยนรหัสผ่าน'}
           </button>
         </form>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Modal from './ui/Modal';
+import ActionStatus from './ui/ActionStatus';
 import { useToast } from '../contexts/ToastContext';
 import type { Prep } from '../types';
 
@@ -12,6 +13,7 @@ interface EditPrepModalProps {
 
 export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditPrepModalProps) {
   const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     date: '', lot_no: '', qty: 1, expiry_date: '', note: '',
     hn: '', patient_name: '', dest_room: ''
@@ -33,7 +35,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
   }, [prep]);
 
   const handleSave = async () => {
-    if (!prep) return;
+    if (!prep || saving) return;
 
     // Calculate new target string
     let newTarget = prep.target;
@@ -55,7 +57,9 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
       qty: +form.qty,
     };
 
+    setSaving(true);
     const ok = await onUpdate(prep.id, updates);
+    setSaving(false);
     if (ok) {
       onClose();
     }
@@ -65,8 +69,10 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
     <Modal isOpen={isOpen} onClose={onClose} title="แก้ไขรายการผลิต" width="500px"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button className="btn btn-outline" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" onClick={handleSave}>บันทึกการแก้ไข</button>
+          <button className="btn btn-outline" onClick={onClose} disabled={saving}>ยกเลิก</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึกการแก้ไข'}
+          </button>
         </div>
       }
     >
@@ -113,6 +119,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, onUpdate }: EditP
         <label>หมายเหตุ</label>
         <textarea className="form-textarea" rows={2} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
       </div>
+      {saving && <ActionStatus text="กำลังบันทึกการแก้ไขรายการ..." />}
     </Modal>
   );
 }

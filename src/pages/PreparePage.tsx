@@ -3,12 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
-import { today, addDays, fmtDate, fmtDateTime, multiplyAmount } from '../lib/utils';
-import { generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
+import { today, addDays, fmtDate, multiplyAmount } from '../lib/utils';
+import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
+import ActionStatus from '../components/ui/ActionStatus';
 
 export default function PreparePage() {
   const { user, location: curLoc } = useAuth();
@@ -27,6 +28,7 @@ export default function PreparePage() {
   const [printModal, setPrintModal] = useState(false);
   const [printContent, setPrintContent] = useState('');
   const [printTitle, setPrintTitle] = useState('');
+  const [saving, setSaving] = useState(false);
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
   useEffect(() => {
@@ -78,30 +80,8 @@ export default function PreparePage() {
     return <pre style={{ fontFamily: 'var(--font-body)', whiteSpace: 'pre-wrap', margin: 0 }}>{str}</pre>;
   };
 
-  // Helper for printing
-  const getIngredientsHtml = (str: string | null) => {
-    if (!str) return '-';
-    try {
-      const parsed = JSON.parse(str);
-      if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
-        return `<ul style="margin:0;padding-left:20px">${parsed.map(p => `<li>${p.name} ${p.amount ? `(${multiplyAmount(p.amount, qty)})` : ''}</li>`).join('')}</ul>`;
-      }
-    } catch {}
-    return `<pre style="font-family:Sarabun,sans-serif;white-space:pre-wrap;margin:0">${str}</pre>`;
-  };
-
-  const getMethodHtml = (str: string | null) => {
-    if (!str) return '-';
-    try {
-      const parsed = JSON.parse(str);
-      if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'string') {
-        return `<ol style="margin:0;padding-left:20px">${parsed.map(p => `<li>${p}</li>`).join('')}</ol>`;
-      }
-    } catch {}
-    return `<pre style="font-family:Sarabun,sans-serif;white-space:pre-wrap;margin:0">${str}</pre>`;
-  };
-
   const handleSave = async () => {
+    if (saving) return;
     if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return; }
     if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return; }
     let target = '';
@@ -113,6 +93,7 @@ export default function PreparePage() {
       target = `Stock → ${room}`;
     }
 
+    setSaving(true);
     const ok = await createPrep({
       formula_id: selectedFormula.id,
       formula_name: selectedFormula.name,
@@ -131,6 +112,7 @@ export default function PreparePage() {
       user_pha_id: user?.pha_id || '',
       location: curLoc,
     });
+    setSaving(false);
 
     if (ok) {
       toast(`บันทึกสำเร็จ: ${selectedFormula.name} (${qty} ขวด)`, 'success');
@@ -144,9 +126,8 @@ export default function PreparePage() {
     if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยาก่อน', 'error'); return; }
     const d = date || today();
     // Use full datetime for expiration if it's hours (negative days)
-    const isHours = selectedFormula.expiry_days < 0;
     const exp = addDays(d, selectedFormula.expiry_days);
-    const expStr = isHours ? fmtDateTime(exp) : fmtDate(exp);
+    const expStr = fmtDate(exp);
     const dateStr = fmtDate(d);
 
     const pn = mode === 'patient' ? (patientName || '-') : 'Stock';
@@ -160,16 +141,30 @@ export default function PreparePage() {
   const handlePrintBatch = () => {
     if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยาก่อน', 'error'); return; }
     const d = date || today();
-    const isHours = selectedFormula.expiry_days < 0;
     const exp = addDays(d, selectedFormula.expiry_days);
-    const expStr = isHours ? fmtDateTime(exp) : fmtDate(exp);
-
     setPrintTitle('ใบสูตรผลิต (Batch Sheet)');
-    
-    const ingHtml = getIngredientsHtml(selectedFormula.ingredients);
-    const metHtml = getMethodHtml(selectedFormula.method);
 
-    setPrintContent(`<div style="border:2px solid #333;border-radius:8px;padding:24px;font-size:13px;line-height:1.8"><div style="text-align:center;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:16px"><h3 style="font-size:16px">ใบสูตรผลิต (Batch Production Record)</h3><p style="color:#666">โรงพยาบาลอุตรดิตถ์ — กลุ่มงานเภสัชกรรม</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"><div><strong>ชื่อตำรับ:</strong> ${selectedFormula.name}</div><div><strong>ความเข้มข้น:</strong> ${selectedFormula.concentration}</div><div><strong>Lot No.:</strong> ${lotNo}</div><div><strong>จำนวน:</strong> ${qty} ขวด</div><div><strong>วันที่ผลิต:</strong> ${fmtDate(d)}</div><div><strong>วันหมดอายุ:</strong> ${expStr}</div></div><div style="border-top:1px solid #ccc;padding-top:12px;margin-bottom:16px"><h4 style="font-size:14px;margin-bottom:8px">ส่วนประกอบ</h4><div style="background:#F9FAFB;padding:12px;border-radius:6px;border:1px solid #eee">${ingHtml}</div></div><div style="border-top:1px solid #ccc;padding-top:12px;margin-bottom:16px"><h4 style="font-size:14px;margin-bottom:8px">วิธีเตรียม</h4><div style="background:#F9FAFB;padding:12px;border-radius:6px;border:1px solid #eee">${metHtml}</div></div><div style="border-top:2px solid #333;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px"><div style="text-align:center"><div style="border-bottom:1px solid #999;height:50px"></div><strong>ผู้เตรียม (Prepared by)</strong><div style="color:#666;font-size:11px">วันที่: ____/____/____</div></div><div style="text-align:center"><div style="border-bottom:1px solid #999;height:50px"></div><strong>ผู้ตรวจสอบ (Checked by)</strong><div style="color:#666;font-size:11px">วันที่: ____/____/____</div></div></div></div>`);
+    const mockPrep = {
+      id: 0,
+      formula_id: selectedFormula.id,
+      formula_name: selectedFormula.name,
+      concentration: selectedFormula.concentration,
+      mode: mode as 'patient' | 'stock',
+      target: mode === 'patient' ? `HN: ${hn} - ${patientName}` : `Stock → ${room}`,
+      hn: mode === 'patient' ? hn : '',
+      patient_name: mode === 'patient' ? patientName : '',
+      dest_room: mode === 'stock' ? room : '',
+      lot_no: lotNo,
+      date: d,
+      expiry_date: exp,
+      qty,
+      note: note.trim(),
+      prepared_by: user?.name || '-',
+      user_pha_id: user?.pha_id || '',
+      location: curLoc,
+    };
+
+    setPrintContent(generateBatchSheetHtml(mockPrep, selectedFormula));
     setPrintModal(true);
   };
 
@@ -307,19 +302,19 @@ export default function PreparePage() {
           )}
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={handleSave}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
-              บันทึก
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>บันทึก</>}
             </button>
-            <button className="btn btn-success" onClick={handlePrintLabel}>
+            <button className="btn btn-success" onClick={handlePrintLabel} disabled={saving}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
               พิมพ์ฉลากยา
             </button>
-            <button className="btn btn-outline" onClick={handlePrintBatch}>
+            <button className="btn btn-outline" onClick={handlePrintBatch} disabled={saving}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
               พิมพ์ใบสูตรผลิต
             </button>
           </div>
+          {saving && <ActionStatus text="กำลังบันทึกรายการผลิตยา..." />}
         </div>
       </div>
 

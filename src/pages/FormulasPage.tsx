@@ -5,6 +5,7 @@ import { useFormulas } from '../hooks/useFormulas';
 import Modal from '../components/ui/Modal';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
+import ActionStatus from '../components/ui/ActionStatus';
 import type { Formula } from '../types';
 
 export default function FormulasPage() {
@@ -18,6 +19,7 @@ export default function FormulasPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [pendingAction, setPendingAction] = useState<'save' | 'delete' | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<{
     code: string;
     name: string;
@@ -94,6 +96,7 @@ export default function FormulasPage() {
   };
 
   const confirmAction = async () => {
+    if (saving) return;
     console.log('Confirming:', pendingAction, 'input:', password, 'user:', user);
     if (!user || password.trim() !== user.password) {
       toast('รหัสผ่านไม่ถูกต้อง', 'error');
@@ -103,7 +106,9 @@ export default function FormulasPage() {
 
     if (pendingAction === 'delete' && editId) {
       console.log('Attempting delete:', editId);
+      setSaving(true);
       const ok = await deleteFormula(editId);
+      setSaving(false);
       console.log('Delete result:', ok);
       toast(ok ? 'ลบสูตรสำเร็จ' : 'เกิดข้อผิดพลาดในการลบ', ok ? 'success' : 'error');
       if (ok) {
@@ -118,6 +123,7 @@ export default function FormulasPage() {
   };
 
   const performSave = async () => {
+    if (saving) return;
     // Filter out empty rows
     const validIngredients = form.ingredients.filter(i => i.name.trim());
     const validMethod = form.method.filter(m => m.trim());
@@ -137,6 +143,7 @@ export default function FormulasPage() {
     };
 
     let ok: boolean;
+    setSaving(true);
     if (editId) {
       ok = await updateFormula(editId, d);
       console.log('Update result:', ok);
@@ -145,6 +152,7 @@ export default function FormulasPage() {
       ok = await createFormula(d);
       toast(ok ? 'เพิ่มสูตรสำเร็จ' : 'เกิดข้อผิดพลาด', ok ? 'success' : 'error');
     }
+    setSaving(false);
     
     if (ok) {
       setModalOpen(false);
@@ -235,9 +243,11 @@ export default function FormulasPage() {
               <button className="btn btn-danger" onClick={handleDelete}>ลบสูตร</button>
             ) : <div />}
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-outline" onClick={() => setModalOpen(false)}>ปิด</button>
+              <button className="btn btn-outline" onClick={() => setModalOpen(false)} disabled={saving}>ปิด</button>
               {user?.role === 'admin' && (
-                <button className="btn btn-primary" onClick={handleSave}>บันทึก</button>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                  {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึก'}
+                </button>
               )}
             </div>
           </div>
@@ -349,6 +359,7 @@ export default function FormulasPage() {
           <label>การเก็บรักษา (Storage)</label>
           <input className="form-input" placeholder="เช่น เก็บในตู้เย็น 2-8°C" value={form.storage} onChange={e => setForm(f => ({ ...f, storage: e.target.value }))} disabled={user?.role !== 'admin'} />
         </div>
+        {saving && <ActionStatus text={pendingAction === 'delete' ? 'กำลังลบสูตรตำรับ...' : 'กำลังบันทึกสูตรตำรับ...'} />}
       </Modal>
 
       <Modal isOpen={showPassword} onClose={() => setShowPassword(false)}
@@ -356,8 +367,10 @@ export default function FormulasPage() {
         width="400px"
         footer={
           <>
-            <button className="btn btn-outline" onClick={() => setShowPassword(false)}>ยกเลิก</button>
-            <button className="btn btn-primary" onClick={confirmAction}>ยืนยัน</button>
+            <button className="btn btn-outline" onClick={() => setShowPassword(false)} disabled={saving}>ยกเลิก</button>
+            <button className="btn btn-primary" onClick={confirmAction} disabled={saving}>
+              {saving ? <><span className="btn-spinner" /> กำลังดำเนินการ...</> : 'ยืนยัน'}
+            </button>
           </>
         }
       >
@@ -374,6 +387,7 @@ export default function FormulasPage() {
             onKeyDown={e => e.key === 'Enter' && confirmAction()}
             autoFocus
           />
+          {saving && <ActionStatus text={pendingAction === 'delete' ? 'กำลังลบสูตรตำรับ...' : 'กำลังบันทึกการแก้ไข...'} />}
         </div>
       </Modal>
     </div>
