@@ -75,6 +75,7 @@ export default function WorkloadPage() {
 
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [showAllDays, setShowAllDays]     = useState(false);
+  const [filterLocation, setFilterLocation] = useState<string>('');
 
   const [start, end] = useMemo(() => getMonthRange(selectedMonth), [selectedMonth]);
   const { preps, loading, refreshing, fetchPreps } = usePreps(start, end);
@@ -85,14 +86,25 @@ export default function WorkloadPage() {
     [formulas],
   );
 
+  // ── Location filter ───────────────────────
+  const locations = useMemo(() => {
+    const s = new Set(preps.map(p => p.location).filter(Boolean));
+    return Array.from(s).sort();
+  }, [preps]);
+
+  const filteredPreps = useMemo(
+    () => filterLocation ? preps.filter(p => p.location === filterLocation) : preps,
+    [preps, filterLocation],
+  );
+
   // ── Per-day aggregation ───────────────────
   const dailyRows = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
 
-    // index preps by date
-    const byDate: Record<string, typeof preps> = {};
-    preps.forEach(p => { (byDate[p.date] ??= []).push(p); });
+    // index filteredPreps by date
+    const byDate: Record<string, typeof filteredPreps> = {};
+    filteredPreps.forEach(p => { (byDate[p.date] ??= []).push(p); });
 
     return Array.from({ length: daysInMonth }, (_, i) => {
       const date = `${selectedMonth}-${String(i + 1).padStart(2, '0')}`;
@@ -109,14 +121,14 @@ export default function WorkloadPage() {
 
       return { date, ...slots, totalPreps: dayPreps.length, totalQty, totalValue };
     });
-  }, [preps, selectedMonth, priceMap]);
+  }, [filteredPreps, selectedMonth, priceMap]);
 
   // ── Summary ───────────────────────────────
   const summary = useMemo(() => {
     const activeDays = dailyRows.filter(d => d.totalPreps > 0);
-    const totalPreps = preps.length;
-    const totalQty   = preps.reduce((s, p) => s + p.qty, 0);
-    const totalValue = preps.reduce((s, p) => s + (priceMap[p.formula_id] ?? 0) * p.qty, 0);
+    const totalPreps = filteredPreps.length;
+    const totalQty   = filteredPreps.reduce((s, p) => s + p.qty, 0);
+    const totalValue = filteredPreps.reduce((s, p) => s + (priceMap[p.formula_id] ?? 0) * p.qty, 0);
     const avgPerDay  = activeDays.length > 0
       ? (totalPreps / activeDays.length).toFixed(1) : '0';
     const busiestDay = activeDays.reduce<typeof dailyRows[0] | null>(
@@ -187,6 +199,29 @@ export default function WorkloadPage() {
         </div>
 
         <RefreshButton refreshing={refreshing} onClick={() => fetchPreps(true)} />
+
+        {/* Location filter — ปรากฏเมื่อมีมากกว่า 1 หน่วยงาน */}
+        {locations.length > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              หน่วยงาน:
+            </label>
+            <select
+              value={filterLocation}
+              onChange={e => setFilterLocation(e.target.value)}
+              style={{
+                padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border)',
+                fontSize: '13px', fontFamily: 'var(--font-body)', background: '#fff',
+                color: 'var(--text-primary)', cursor: 'pointer', outline: 'none', maxWidth: '220px',
+              }}
+            >
+              <option value=''>ทั้งหมด</option>
+              {locations.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <button
           className="btn btn-sm btn-outline"

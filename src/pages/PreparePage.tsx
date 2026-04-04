@@ -116,11 +116,12 @@ export default function PreparePage() {
     closeLoadingModal();
     setSaving(false);
 
-    if (ok) {
+    if (ok === true) {
       toast(`บันทึกสำเร็จ: ${selectedFormula.name} (${qty} ขวด)`, 'success');
       setHn(''); setPatientName(''); setNote(''); setQty(1);
     } else {
-      toast('เกิดข้อผิดพลาดในการบันทึก', 'error');
+      // ok คือ string ที่ได้จาก GAS error หรือ network error
+      toast(ok, 'error');
     }
   };
 

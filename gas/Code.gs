@@ -74,6 +74,26 @@ function normalizeBoolean_(value) {
   return normalized === 'true' || normalized === '1' || normalized === 'yes';
 }
 
+/**
+ * Normalize a raw cell value from getValues().
+ * Google Sheets silently auto-converts "YYYY-MM-DD" strings to Date objects.
+ * Without this, JSON.stringify would produce UTC ISO strings like
+ * "2026-04-03T17:00:00.000Z" for a Bangkok-midnight date, causing off-by-one
+ * day bugs on the frontend.
+ */
+function normalizeCell_(value, header) {
+  if (value === '' || value == null) return null;
+  if (!(value instanceof Date)) return value;
+
+  var tz = Session.getScriptTimeZone();
+  // Date-only fields → keep as local YYYY-MM-DD string
+  if (header === 'date' || header === 'expiry_date') {
+    return Utilities.formatDate(value, tz, 'yyyy-MM-dd');
+  }
+  // Datetime fields (created_at) → UTC ISO string so frontend can parse timezone
+  return value.toISOString();
+}
+
 function isAdminUser_(user) {
   return String(user.role || '').toLowerCase() === 'admin' && normalizeBoolean_(user.active);
 }
@@ -206,7 +226,7 @@ function getAll_(ss, sheetName) {
   return data.slice(1).map(function(row) {
     const obj = {};
     headers.forEach(function(header, index) {
-      obj[header] = row[index] === '' || row[index] == null ? null : row[index];
+      obj[header] = normalizeCell_(row[index], header);
     });
     return obj;
   });
@@ -264,7 +284,8 @@ function getActiveAdminCount_(ss) {
 
 function create_(ss, sheetName, data) {
   const lock = LockService.getScriptLock();
-  lock.tryLock(10000);
+  // tryLock returns false if the lock cannot be acquired — must check before releaseLock()
+  const lockAcquired = lock.tryLock(10000);
 
   try {
     const sheet = getSheet_(ss, sheetName);
@@ -285,13 +306,13 @@ function create_(ss, sheetName, data) {
     sheet.appendRow(row);
     return { success: true, id: id };
   } finally {
-    lock.releaseLock();
+    if (lockAcquired) lock.releaseLock();
   }
 }
 
 function update_(ss, sheetName, id, data) {
   const lock = LockService.getScriptLock();
-  lock.tryLock(10000);
+  const lockAcquired = lock.tryLock(10000);
 
   try {
     const sheet = getSheet_(ss, sheetName);
@@ -328,13 +349,13 @@ function update_(ss, sheetName, id, data) {
 
     return { success: true };
   } finally {
-    lock.releaseLock();
+    if (lockAcquired) lock.releaseLock();
   }
 }
 
 function remove_(ss, sheetName, id) {
   const lock = LockService.getScriptLock();
-  lock.tryLock(10000);
+  const lockAcquired = lock.tryLock(10000);
 
   try {
     const sheet = getSheet_(ss, sheetName);
@@ -349,7 +370,7 @@ function remove_(ss, sheetName, id) {
     sheet.deleteRow(rowIndex + 2);
     return { success: true };
   } finally {
-    lock.releaseLock();
+    if (lockAcquired) lock.releaseLock();
   }
 }
 

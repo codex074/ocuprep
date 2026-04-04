@@ -6,6 +6,23 @@ import type { Prep } from '../types';
 // Cache key สำหรับ all preps (ใช้ใน HistoryPage)
 const PREPS_ALL_CACHE_KEY = 'preps';
 
+/**
+ * Normalize a date value from GAS to "YYYY-MM-DD".
+ *
+ * Google Sheets auto-converts "2026-04-04" strings → Date objects.
+ * GAS's JSON.stringify then serializes them as UTC ISO strings like
+ * "2026-04-03T17:00:00.000Z" (midnight Bangkok = 17:00 UTC the day before).
+ * Without normalization every date comparison would be off by one day.
+ */
+function toDateOnly(raw: unknown): string {
+  if (raw === null || raw === undefined || raw === '') return '';
+  const s = String(raw);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;          // already YYYY-MM-DD ✓
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toLocaleDateString('en-CA'); // → YYYY-MM-DD (local tz)
+  return s.substring(0, 10);                               // best-effort fallback
+}
+
 function toPrep(r: Record<string, unknown>): Prep {
   return {
     id: Number(r.id),
@@ -18,8 +35,8 @@ function toPrep(r: Record<string, unknown>): Prep {
     patient_name: String(r.patient_name ?? ''),
     dest_room: String(r.dest_room ?? ''),
     lot_no: String(r.lot_no ?? ''),
-    date: String(r.date ?? ''),
-    expiry_date: String(r.expiry_date ?? ''),
+    date: toDateOnly(r.date),           // ← normalized YYYY-MM-DD
+    expiry_date: toDateOnly(r.expiry_date), // ← normalized YYYY-MM-DD
     qty: Number(r.qty),
     note: String(r.note ?? ''),
     prepared_by: String(r.prepared_by ?? ''),
@@ -66,8 +83,8 @@ export function usePreps(startDate?: string, endDate?: string) {
   useEffect(() => { fetchPreps(); }, [fetchPreps]);
 
   // --- Optimistic create ---
-  // อัปเดต state ทันทีหลัง GAS ยืนยัน ไม่ต้อง refetch ทั้งหมด
-  const createPrep = async (p: Omit<Prep, 'id' | 'created_at'>): Promise<boolean> => {
+  // คืนค่า true เมื่อสำเร็จ หรือ string (ข้อความ error) เมื่อล้มเหลว
+  const createPrep = async (p: Omit<Prep, 'id' | 'created_at'>): Promise<true | string> => {
     const res = await api.createPrep(p);
     if (res.success && res.id) {
       const newPrep: Prep = { ...p, id: res.id, created_at: new Date().toISOString() };
@@ -80,7 +97,8 @@ export function usePreps(startDate?: string, endDate?: string) {
       });
       return true;
     }
-    return false;
+    // ส่งคืน error message จาก GAS (ถ้ามี) เพื่อแสดงใน toast
+    return res.error ?? 'บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
   };
 
   // --- Optimistic update ---
