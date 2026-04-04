@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -26,6 +26,7 @@ export default function HistoryPage() {
   const [timeFilter, setTimeFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
 
   // Edit State
   const [editPrep, setEditPrep] = useState<Prep | null>(null);
@@ -33,6 +34,11 @@ export default function HistoryPage() {
   // Details Modal State
   const [selectedPrep, setSelectedPrep] = useState<Prep | null>(null);
   const isRefreshing = prepsRefreshing || formulasRefreshing;
+  const visiblePreps = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
+  // reset กลับ 20 ทุกครั้งที่ filter เปลี่ยน
+  useEffect(() => { setVisibleCount(20); }, [search, roomFilter, modeFilter, timeFilter, dateFrom, dateTo]);
 
   const filtered = useMemo(() => {
     let list = [...preps];
@@ -236,7 +242,7 @@ export default function HistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length ? filtered.map(p => (
+              {visiblePreps.length ? visiblePreps.map(p => (
                 <tr
                   key={p.id}
                   onClick={() => setSelectedPrep(p)}
@@ -307,10 +313,24 @@ export default function HistoryPage() {
               )}
             </tbody>
           </table>
+          {hasMore && (
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+              <button
+                className="btn btn-sm btn-outline"
+                onClick={() => setVisibleCount(c => c + 20)}
+                style={{ width: '100%', color: 'var(--text-secondary)' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px', display: 'inline', marginRight: '6px' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+                โหลดเพิ่มอีก 20 รายการ ({filtered.length - visibleCount} รายการที่เหลือ)
+              </button>
+            </div>
+          )}
         </div>
       </div>
-      
-      <EditPrepModal 
+
+      <EditPrepModal
         isOpen={!!editPrep} 
         onClose={() => setEditPrep(null)} 
         prep={editPrep} 

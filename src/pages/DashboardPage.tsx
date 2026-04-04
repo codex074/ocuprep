@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fmtShort, fmtTime, today, getMonthRange, getCurrentThaiMonthYear } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,12 +69,18 @@ export default function DashboardPage() {
     }
   };
 
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  // reset เมื่อข้อมูลเดือนโหลดใหม่
+  useEffect(() => { setVisibleCount(20); }, [preps.length]);
+
   const t = today();
   const currentMonthYear = getCurrentThaiMonthYear();
   const todayPreps = preps.filter(p => p.date === t);
   const patientPreps = preps.filter(p => p.mode === 'patient');
   const stockBottles = preps.filter(p => p.mode === 'stock').reduce((sum, p) => sum + p.qty, 0);
-  const recent = preps.slice(0, 5);
+  const recent = preps.slice(0, visibleCount);
+  const hasMore = preps.length > visibleCount;
 
   const cnt: Record<string, number> = {};
   preps.forEach(p => { cnt[p.formula_name] = (cnt[p.formula_name] || 0) + p.qty; });
@@ -121,6 +127,7 @@ export default function DashboardPage() {
                 <thead><tr><th>วันที่</th><th>สูตรยา</th><th>จำนวน</th><th>ประเภท</th><th>ผู้เตรียม</th><th></th></tr></thead>
                 <tbody>
                   {recent.length ? recent.map(p => (
+
                     <tr
                       key={p.id}
                       onClick={() => setSelectedPrep(p)}
@@ -164,6 +171,20 @@ export default function DashboardPage() {
                 </tbody>
               </table>
             </div>
+            {hasMore && (
+              <div style={{ padding: '12px 16px', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+                <button
+                  className="btn btn-sm btn-outline"
+                  onClick={() => setVisibleCount(c => c + 20)}
+                  style={{ width: '100%', color: 'var(--text-secondary)', gap: '6px' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px', display: 'inline', marginRight: '6px' }}>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                  โหลดเพิ่มอีก 20 รายการ ({preps.length - visibleCount} รายการที่เหลือ)
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
