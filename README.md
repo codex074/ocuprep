@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💊 UTTH ED-Extemp
+# 💊 YATA
 
 ### Extemporaneous Eye Drop Preparation Tracking System
 **Uttaradit Hospital — Pharmacy Department**
@@ -18,7 +18,7 @@
 
 ## 📋 Overview
 
-**UTTH ED-Extemp** is a web application for recording and tracking the production of custom-compounded (extemporaneous) eye drop medications in the Pharmacy Department of Uttaradit Hospital.
+**YATA** is a web application for recording and tracking the production of custom-compounded (extemporaneous) eye drop medications in the Pharmacy Department of Uttaradit Hospital.
 
 The system manages the full preparation workflow — from formula selection and lot number generation to label printing, historical auditing, and monthly workload analysis — with role-based access for pharmacists and administrators.
 

@@ -17,7 +17,7 @@ export default function Layout() {
       case '/history':   return 'ประวัติการผลิต';
       case '/formulas':  return 'สูตรตำรับยา';
       case '/users':     return 'จัดการผู้ใช้';
-      default:           return 'ED-Extemp';
+      default:           return 'YATA';
     }
   };
 
@@ -48,7 +48,7 @@ export default function Layout() {
               <img src={resolvePath('/logo/hoslogo.png')} alt="Hospital Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div className="s-title">
-              <h2>ED-Extemp</h2>
+              <h2>YATA</h2>
               <p>Pharmacy System</p>
             </div>
           </div>

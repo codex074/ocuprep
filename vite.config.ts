@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo/*.png'],
       manifest: {
-        name: 'UTTH ED-Extemp',
-        short_name: 'ED-Extemp',
+        name: 'YATA',
+        short_name: 'YATA',
         description: 'ระบบบันทึกการผลิตยาตาเฉพาะราย โรงพยาบาลอุตรดิตถ์',
         theme_color: '#2563eb',
         background_color: '#ffffff',

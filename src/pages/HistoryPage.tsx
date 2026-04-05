@@ -161,7 +161,7 @@ export default function HistoryPage() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'History');
     
-    XLSX.writeFile(workbook, `ED-Extemp_${today()}.xlsx`);
+    XLSX.writeFile(workbook, `YATA_${today()}.xlsx`);
     toast('Export Excel สำเร็จ', 'success');
   };
 

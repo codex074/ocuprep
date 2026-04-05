@@ -1,4 +1,4 @@
-// UTTH ED-Extemp - Google Apps Script Backend
+// YATA - Google Apps Script Backend
 
 const SPREADSHEET_ID = '1aICDq9Ag0AECN2nIuJAnlmXx8pQvGcuLHOVI4T0-Kws';
 const DEFAULT_PASSWORD = '1234';

@@ -33,7 +33,7 @@ export default function LoginPage() {
         </div>
 
         <div className="login-header">ยินดีต้อนรับ</div>
-        <div className="login-subtext">ED-Extemp · โรงพยาบาลอุตรดิตถ์</div>
+        <div className="login-subtext">YATA · โรงพยาบาลอุตรดิตถ์</div>
 
         <form className="login-form" onSubmit={handleSubmit}>
           {/* Username */}

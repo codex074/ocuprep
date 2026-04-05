@@ -1,4 +1,4 @@
-# CLAUDE.md — UTTH ED-Extemp
+# CLAUDE.md — YATA
 
 Project context for AI-assisted development. Read this before making changes.
 
