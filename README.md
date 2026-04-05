@@ -248,9 +248,9 @@ Embedded below the main grid — uses the same month/location filter as the rest
 
 | Slot | Condition | Colour |
 |---|---|---|
-| 🟡 เช้า (Morning) | Mon–Fri 08:00–12:00 | Amber |
-| 🔵 บ่าย (Afternoon) | Mon–Fri 12:00–16:30 | Blue |
-| 🔴 นอกเวลา (Overtime) | Saturday/Sunday (all day) **or** weekday before 08:00 / after 16:30 | Red |
+| 🟡 เช้า (Morning) | Mon–Fri 08:30–13:30 | Amber |
+| 🔵 บ่าย (Afternoon) | Mon–Fri 13:30–16:30 | Blue |
+| 🔴 นอกเวลา (Overtime) | Saturday/Sunday (all day) **or** weekday before 08:30 / after 16:30 | Red |
 
 > Classification uses the `created_at` timestamp. Records without a timestamp are counted as นอกเวลา.
 
