@@ -195,9 +195,9 @@ function classifySlot(created_at?: string): 'morning' | 'afternoon' | 'overtime'
   const dow = d.getDay();
   const min = d.getHours() * 60 + d.getMinutes();
   if (dow === 0 || dow === 6) return 'overtime';          // Sat/Sun
-  if (min >= 480  && min < 720)  return 'morning';        // 08:00–12:00
-  if (min >= 720  && min < 990)  return 'afternoon';      // 12:00–16:30
-  return 'overtime';                                      // before 08:00 or after 16:30
+  if (min >= 510  && min < 810)  return 'morning';        // 08:30–13:30
+  if (min >= 810  && min < 990)  return 'afternoon';      // 13:30–16:30
+  return 'overtime';                                      // before 08:30 or after 16:30
 }
 ```
 

@@ -17,9 +17,9 @@ import * as XLSX from 'xlsx';
 type SlotKey = 'morning' | 'afternoon' | 'overtime';
 
 const SLOTS: { key: SlotKey; label: string; range: string; color: string }[] = [
-  { key: 'morning', label: 'เช้า', range: 'จ-ศ 08:00-12:00 น.', color: '#d97706' },
-  { key: 'afternoon', label: 'บ่าย', range: 'จ-ศ 12:00-16:30 น.', color: '#2563eb' },
-  { key: 'overtime', label: 'นอกเวลา', range: 'เสาร์/อาทิตย์ หรือ >16:30 น.', color: '#ef4444' },
+  { key: 'morning', label: 'เช้า', range: 'จ-ศ 08:30-13:30 น.', color: '#d97706' },
+  { key: 'afternoon', label: 'บ่าย', range: 'จ-ศ 13:30-16:30 น.', color: '#2563eb' },
+  { key: 'overtime', label: 'นอกเวลา', range: 'เสาร์/อาทิตย์ หรือ นอกเวลาราชการ', color: '#ef4444' },
 ];
 
 function fmtThaiDay(dateStr: string) {
@@ -45,8 +45,8 @@ function classifySlot(created_at?: string): SlotKey {
   const dow = d.getDay();
   const min = d.getHours() * 60 + d.getMinutes();
   if (dow === 0 || dow === 6) return 'overtime';
-  if (min >= 8 * 60 && min < 12 * 60) return 'morning';
-  if (min >= 12 * 60 && min < 16 * 60 + 30) return 'afternoon';
+  if (min >= 8 * 60 + 30 && min < 13 * 60 + 30) return 'morning';   // 08:30–13:30
+  if (min >= 13 * 60 + 30 && min < 16 * 60 + 30) return 'afternoon'; // 13:30–16:30
   return 'overtime';
 }
 
@@ -207,18 +207,18 @@ export default function DashboardPage() {
   const handleExportWorkload = () => {
     const rows = displayWorkloadRows.map((d) => ({
       วันที่: d.date,
-      'เช้า (จ-ศ 08:00-12:00)': d.morning || 0,
-      'บ่าย (จ-ศ 12:00-16:30)': d.afternoon || 0,
-      'นอกเวลา (เสาร์/อาทิตย์ หรือ >16:30)': d.overtime || 0,
+      'เช้า (จ-ศ 08:30-13:30)': d.morning || 0,
+      'บ่าย (จ-ศ 13:30-16:30)': d.afternoon || 0,
+      'นอกเวลา': d.overtime || 0,
       รายการรวม: d.totalPreps,
       จำนวนขวด: d.totalQty,
       'มูลค่า (บาท)': parseFloat(d.totalValue.toFixed(2)),
     }));
     rows.push({
       วันที่: 'รวมทั้งเดือน',
-      'เช้า (จ-ศ 08:00-12:00)': workloadSummary.slotTotals.morning,
-      'บ่าย (จ-ศ 12:00-16:30)': workloadSummary.slotTotals.afternoon,
-      'นอกเวลา (เสาร์/อาทิตย์ หรือ >16:30)': workloadSummary.slotTotals.overtime,
+      'เช้า (จ-ศ 08:30-13:30)': workloadSummary.slotTotals.morning,
+      'บ่าย (จ-ศ 13:30-16:30)': workloadSummary.slotTotals.afternoon,
+      'นอกเวลา': workloadSummary.slotTotals.overtime,
       รายการรวม: workloadSummary.totalPreps,
       จำนวนขวด: workloadSummary.totalQty,
       'มูลค่า (บาท)': parseFloat(workloadSummary.totalValue.toFixed(2)),
