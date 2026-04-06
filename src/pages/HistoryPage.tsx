@@ -102,7 +102,13 @@ export default function HistoryPage() {
         p.lot_no.toLowerCase().includes(s)
       );
     });
-    if (roomFilter) list = list.filter(p => p.location === roomFilter);
+    if (roomFilter === 'IPD') {
+      list = list.filter(p => p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม');
+    } else if (roomFilter === 'OPD') {
+      list = list.filter(p => p.location === 'ห้องจ่ายยาผู้ป่วยนอก');
+    } else if (roomFilter) {
+      list = list.filter(p => p.location === roomFilter);
+    }
     if (modeFilter) list = list.filter(p => p.mode === modeFilter);
     if (timeFilter) {
       if (timeFilter === 'morning') {
@@ -231,7 +237,7 @@ export default function HistoryPage() {
             {activeFilterCount > 0 && (
               <div className="history-filter-chips">
                 {search && <span className="filter-chip">ค้นหา: {search}<button onClick={() => setSearch('')}>×</button></span>}
-                {roomFilter && <span className="filter-chip">{roomFilter === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : 'OPD'}<button onClick={() => setRoomFilter('')}>×</button></span>}
+                {roomFilter && <span className="filter-chip">{roomFilter === 'IPD' ? 'IPD Surg' : 'OPD'}<button onClick={() => setRoomFilter('')}>×</button></span>}
                 {modeFilter && <span className="filter-chip">{modeFilter === 'patient' ? 'เฉพาะราย' : 'Stock'}<button onClick={() => setModeFilter('')}>×</button></span>}
                 {timeFilter && <span className="filter-chip">{timeFilter === 'morning' ? 'เช้า' : 'บ่าย'}<button onClick={() => setTimeFilter('')}>×</button></span>}
                 {dateFrom && <span className="filter-chip">จาก {dateFrom}<button onClick={() => setDateFrom('')}>×</button></span>}
@@ -381,8 +387,8 @@ export default function HistoryPage() {
                     <label className="form-label">ห้องยา</label>
                     <select className="form-select" value={draftRoom} onChange={e => setDraftRoom(e.target.value)}>
                       <option value="">ทุกห้องยา</option>
-                      <option value="ห้องยาในศัลยกรรม">ห้องยาในศัลยกรรม (IPD Surg)</option>
-                      <option value="ห้องจ่ายยาผู้ป่วยนอก">ห้องจ่ายยาผู้ป่วยนอก (OPD)</option>
+                      <option value="IPD">ห้องจ่ายยาผู้ป่วยในศัลยกรรม (IPD Surg)</option>
+                      <option value="OPD">ห้องจ่ายยาผู้ป่วยนอก (OPD)</option>
                     </select>
                   </div>
 
