@@ -2410,18 +2410,7 @@ body {
   }
 
   .header-user-cluster {
-    gap: 8px;
-  }
-
-  .header-avatar-button {
-    width: 38px;
-    height: 38px;
-    border-radius: 14px;
-  }
-
-  .header-logout-btn {
-    width: 34px;
-    height: 34px;
+    display: none !important;
   }
 
   .card {
