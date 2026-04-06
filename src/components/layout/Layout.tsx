@@ -9,6 +9,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const getPageTitle = (path: string) => {
     switch (path) {
@@ -31,6 +32,22 @@ export default function Layout() {
   const avatarSrc = resolvePath(user?.profile_image || '/avatars/male-pharmacist.png');
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  const handleLogout = () => {
+    setProfileMenuOpen(false);
+    Swal.fire({
+      title: 'ต้องการออกจากระบบ?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb',
+      cancelButtonColor: '#475569',
+      confirmButtonText: 'ใช่, ออกจากระบบ',
+      cancelButtonText: 'ยกเลิก',
+      borderRadius: '14px',
+    } as any).then((result) => {
+      if (result.isConfirmed) { logout(); navigate('/login'); }
+    });
+  };
 
   return (
     <div className="app-layout">
@@ -98,7 +115,7 @@ export default function Layout() {
       {/* Main Content */}
       <main className="main-content">
         <header className="main-header">
-          {/* Hamburger (mobile only) */}
+          {/* Hamburger — desktop only, hidden on mobile */}
           <button
             className="sidebar-toggle-btn"
             onClick={() => setSidebarOpen(o => !o)}
@@ -147,20 +164,7 @@ export default function Layout() {
               </div>
               <button
                 className="header-logout-btn"
-                onClick={() => {
-                  Swal.fire({
-                    title: 'ต้องการออกจากระบบ?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#475569',
-                    confirmButtonText: 'ใช่, ออกจากระบบ',
-                    cancelButtonText: 'ยกเลิก',
-                    borderRadius: '14px',
-                  } as any).then((result) => {
-                    if (result.isConfirmed) { logout(); navigate('/login'); }
-                  });
-                }}
+                onClick={handleLogout}
                 title="ออกจากระบบ"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -214,7 +218,71 @@ export default function Layout() {
             <span>ผู้ใช้</span>
           </NavLink>
         )}
+
+        {/* Profile button — avatar in bottom nav */}
+        <button
+          className={`bottom-nav-item bottom-nav-profile-btn${profileMenuOpen ? ' active' : ''}`}
+          onClick={() => setProfileMenuOpen(o => !o)}
+          aria-label="โปรไฟล์"
+        >
+          <img
+            src={avatarSrc}
+            alt=""
+            className="bottom-nav-avatar"
+            onError={(e) => { (e.target as HTMLImageElement).src = resolvePath('/avatars/male-pharmacist.png'); }}
+          />
+          <span>โปรไฟล์</span>
+        </button>
       </nav>
+
+      {/* Profile popup (mobile) */}
+      {profileMenuOpen && (
+        <>
+          <div className="profile-popup-overlay" onClick={() => setProfileMenuOpen(false)} />
+          <div className="profile-popup">
+            {/* User info */}
+            <div className="profile-popup-user">
+              <img
+                src={avatarSrc}
+                alt=""
+                className="profile-popup-avatar"
+                onError={(e) => { (e.target as HTMLImageElement).src = resolvePath('/avatars/male-pharmacist.png'); }}
+              />
+              <div className="profile-popup-info">
+                <div className="profile-popup-name">{user?.name || 'User'}</div>
+                <div className="profile-popup-role">
+                  {user?.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เภสัชกร'}
+                  {stationName ? ` · ${stationName}` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-popup-divider" />
+
+            {/* Actions */}
+            <button
+              className="profile-popup-action"
+              onClick={() => { setProfileMenuOpen(false); navigate('/profile'); }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+              โปรไฟล์ของฉัน
+            </button>
+
+            <button
+              className="profile-popup-action profile-popup-logout"
+              onClick={handleLogout}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              ออกจากระบบ
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1522,7 +1522,7 @@ table tbody tr:last-child td { border-bottom: none; }
   .sidebar-overlay {
     display: block;
   }
-  .sidebar-toggle-btn { display: flex; }
+  .sidebar-toggle-btn { display: none; }
 
   .form-row,
   .form-row-3 { grid-template-columns: 1fr; }
@@ -2518,6 +2518,170 @@ body {
     right: 8px;
   }
 }
+/* ============================================================
+   BOTTOM NAV – Profile Avatar Button
+   ============================================================ */
+.bottom-nav-profile-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.bottom-nav-profile-btn.active .bottom-nav-avatar,
+.bottom-nav-profile-btn:active .bottom-nav-avatar {
+  border-color: var(--accent-blue);
+  transform: scale(1.08);
+}
+
+/* ============================================================
+   PROFILE POPUP (Mobile)
+   ============================================================ */
+.profile-popup-overlay {
+  display: none;
+}
+
+.profile-popup {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .profile-popup-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 88;
+    background: rgba(15, 23, 42, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: fadeIn 0.18s ease;
+  }
+
+  .profile-popup {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    z-index: 89;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 22px;
+    box-shadow: 0 -8px 40px rgba(15, 23, 42, 0.16), 0 4px 16px rgba(15, 23, 42, 0.08);
+    padding: 6px;
+    animation: slideUpPopup 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow: hidden;
+  }
+
+  @keyframes slideUpPopup {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .profile-popup-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .profile-popup-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid var(--border);
+  }
+
+  .profile-popup-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .profile-popup-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-popup-role {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-popup-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 8px;
+  }
+
+  .profile-popup-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px 14px;
+    background: none;
+    border: none;
+    border-radius: 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .profile-popup-action svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+  }
+
+  .profile-popup-action:active {
+    background: var(--bg-primary);
+  }
+
+  .profile-popup-logout {
+    color: var(--accent-red);
+  }
+
+  .profile-popup-logout svg {
+    color: var(--accent-red);
+  }
+
+  .profile-popup-logout:active {
+    background: var(--accent-red-light);
+  }
+}
+
+/* ============================================================
+   SWAL2 OVERRIDES
+   ============================================================ */
 .swal2-icon .swal2-icon-content {
   font-size: 2rem !important;
 }
