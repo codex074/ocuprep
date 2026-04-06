@@ -21,6 +21,11 @@ export default function HistoryPage() {
   const routerLocation = useRouterLocation();
   const filterByState = (routerLocation.state as { filterBy?: string } | null)?.filterBy || '';
 
+  // lookup: formula_name → short_name
+  const shortNameMap = Object.fromEntries(
+    formulas.map(f => [f.name, f.short_name ?? f.name])
+  );
+
   // filter state
   const [search, setSearch]         = useState(filterByState);
   const [roomFilter, setRoomFilter]   = useState('');
@@ -165,7 +170,7 @@ export default function HistoryPage() {
       'ID': p.id,
       'วันที่': p.date,
       'เวลา': p.created_at ? fmtTime(p.created_at).replace(' น.', '') : '',
-      'สูตรยา': p.formula_name,
+      'สูตรยา': shortNameMap[p.formula_name] ?? p.formula_name,
       'ประเภท': p.mode === 'patient' ? 'เฉพาะราย' : 'Stock',
       'ผู้ป่วย/ห้อง': p.target,
       'Lot': p.lot_no,
@@ -267,7 +272,7 @@ export default function HistoryPage() {
                         {p.created_at && <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{fmtTime(p.created_at)}</div>}
                       </td>
                       <td data-label="สูตรยา">
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{p.formula_name}</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>{shortNameMap[p.formula_name] ?? p.formula_name}</div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{p.concentration}</div>
                       </td>
                       <td data-label="ประเภท">

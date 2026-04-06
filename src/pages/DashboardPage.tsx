@@ -313,7 +313,7 @@ export default function DashboardPage() {
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{fmtTime(p.created_at)}</div>
                         )}
                       </td>
-                      <td data-label="สูตรยา" style={{ fontWeight: 500 }}>{p.formula_name}</td>
+                      <td data-label="สูตรยา" style={{ fontWeight: 500 }}>{shortNameMap[p.formula_name] ?? p.formula_name}</td>
                       <td data-label="จำนวน">{p.qty}</td>
                       <td data-label="ประเภท" style={{ whiteSpace: 'nowrap' }}><span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`}>{p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}</span></td>
                       <td data-label="ผู้เตรียม">{p.prepared_by}</td>
