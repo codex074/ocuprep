@@ -32,10 +32,10 @@ The system manages the full preparation workflow — from formula selection and 
 | 📊 **Dashboard** | Selectable month & location filter · 6 stat cards · recent list with inline edit/delete · formula summary · built-in workload analysis section · Export to Excel |
 | 🧪 **Preparation Recording** | Patient or stock mode · auto lot number · auto expiry calculation · quantity multiplier · actual GAS error messages surfaced on save failure |
 | 🖨️ **Label Printing** | Batch sheets · standard patient labels · bottle labels · prep stickers — all browser-printable |
-| 💡 **Formula Management** | Admin: create/edit/delete formulas with short names, ingredients, preparation methods, pricing |
+| 💡 **Formula Management** | Admin: create/edit/delete formulas with short names, ingredients, preparation methods, pricing · displayed as a sortable list table |
 | 👥 **User Management** | Admin: manage pharmacist accounts, roles, profile images, active status |
-| 📜 **History** | Full audit log · search/filter by date range, mode, and keyword · note column · paginated 20 per load · Export to Excel |
-| 📱 **PWA** | Installable on iOS/Android · offline-capable · home screen icon |
+| 📜 **History** | Full audit log · filter modal (ห้องยา, ประเภท, ช่วงเวลา, วันที่, คำค้นหา) with active filter chips · paginated 20 per load · Export to Excel |
+| 📱 **PWA / Mobile** | Installable on iOS/Android · offline-capable · bottom navigation bar · profile popup in bottom nav (no sidebar on mobile) |
 | ⚡ **Performance** | Server-side date filter · GAS formula cache (1 hr) · optimistic UI updates · load-more pagination |
 
 ---
@@ -229,6 +229,7 @@ The Dashboard is the central hub, combining real-time overview and monthly workl
 ### Recent List
 
 - Displays the **20 most recent** preparations in the selected month/filter
+- Formula name shown as **`short_name`** (falls back to full name if not set)
 - Click any row to open full prep details (PrepDetailsModal)
 - Inline **Edit** and **Delete** buttons — visible to the record owner or any admin
 - **"โหลดเพิ่มอีก 20 รายการ"** button appears when more records remain
@@ -384,7 +385,7 @@ All accounts have `must_change_password = true`. **Change the `admin` password i
 
 ---
 
-## 📱 PWA Support
+## 📱 PWA & Mobile UI
 
 | Property | Value |
 |---|---|
@@ -392,6 +393,21 @@ All accounts have `must_change_password = true`. **Change the `admin` password i
 | Display mode | Standalone (full-screen) |
 | Icons | 192×192, 512×512, maskable |
 | Service worker | Vite-plugin-pwa — auto-updates in background |
+
+### Mobile Navigation
+
+On screens ≤ 768 px the sidebar is hidden and replaced by a **bottom navigation bar**:
+
+| Tab | Route |
+|---|---|
+| หน้าหลัก | `/dashboard` |
+| เตรียมยา | `/prepare` |
+| ประวัติ | `/history` |
+| สูตรยา | `/formulas` |
+| ผู้ใช้ *(admin only)* | `/users` |
+| **โปรไฟล์** *(avatar)* | Popup — profile + logout |
+
+Tapping the avatar at the right end of the bottom nav opens a **slide-up profile popup** showing the user's name, role, station, a link to `/profile`, and a logout button.
 
 ---
 

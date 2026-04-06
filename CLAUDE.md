@@ -48,8 +48,9 @@ A **Progressive Web App** for the Pharmacy Department of Uttaradit Hospital to r
 | `src/hooks/useGasInit.ts` | Pings GAS once on boot to auto-create sheets |
 | `src/hooks/useAppWarmup.ts` | Pre-fetches formulas on startup |
 | `src/contexts/AuthContext.tsx` | Login, logout, station selection — session in `localStorage` key `ed-extemp-session`, 1-hour TTL |
-| `src/pages/DashboardPage.tsx` | Central hub: month/location filter, 6 stat cards, recent list, formula summary, workload analysis + Export Excel |
-| `src/pages/HistoryPage.tsx` | Full audit log with search, filters, note column, pagination, Export Excel |
+| `src/pages/DashboardPage.tsx` | Central hub: month/location filter, 6 stat cards, recent list (shows `short_name`), formula summary, workload analysis + Export Excel |
+| `src/pages/HistoryPage.tsx` | Full audit log — filter modal ("ตั้งค่าการกรอง") with draft state, active filter chips, shows `short_name`, pagination, Export Excel |
+| `src/pages/FormulasPage.tsx` | Formula list (table view) — click row to open edit/detail modal |
 | `src/pages/PreparePage.tsx` | Record a new prep — auto lot number, label printing |
 | `src/lib/print.ts` | Generates browser-printable HTML for labels and batch sheets |
 | `src/lib/utils.ts` | Date helpers (`today`, `fmtDate`, `fmtShort`, `fmtTime`, `addDays`, `getMonthRange`, etc.) |
@@ -262,6 +263,67 @@ LOT-YYYYMM-NNN
 
 ---
 
+## Mobile UI
+
+On `max-width: 768px` the sidebar is **hidden entirely** (`display: none !important`).
+Navigation is handled exclusively by the **bottom navigation bar**.
+
+### Bottom Nav Profile Popup
+The rightmost item in the bottom nav is an **avatar button** (`bottom-nav-profile-btn`).
+Tapping it opens a slide-up popup (`profile-popup`) with:
+- User name, role, station
+- "โปรไฟล์ของฉัน" → navigates to `/profile`
+- "ออกจากระบบ" → Swal confirm → logout
+
+The popup uses a backdrop overlay (`profile-popup-overlay`).
+Both elements are `display: none` on desktop and activated via `@media (max-width: 768px)`.
+
+### Header on mobile
+- Hamburger button: `display: none` on mobile (sidebar not used)
+- `header-user-cluster` (avatar + logout): `display: none !important` on mobile — replaced by bottom nav popup
+
+---
+
+## History Page — Filter Modal
+
+Filters are behind a **"ตั้งค่าการกรอง"** button (magnifying glass icon).
+
+**Draft pattern:** Opening the modal copies current filter state into draft state.
+Filters only apply when "ใช้ตัวกรอง" is clicked. Closing without confirming discards changes.
+
+**Room filter values:** Use keys `'IPD'` / `'OPD'` (not raw Thai location strings).
+The filter logic maps these to actual location values:
+```typescript
+if (roomFilter === 'IPD') {
+  // matches: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' OR 'ห้องยาในศัลยกรรม' (legacy)
+} else if (roomFilter === 'OPD') {
+  // matches: 'ห้องจ่ายยาผู้ป่วยนอก'
+}
+```
+
+> ⚠️ Do NOT change option values back to raw Thai strings — it caused a bug where
+> IPD Surg filter returned no results because `StationSelectionPage` saves
+> `'ห้องจ่ายยาผู้ป่วยในศัลยกรรม'` but the old dropdown had `'ห้องยาในศัลยกรรม'`.
+
+**Active filter chips** appear below the card header. Each chip has an `×` to remove it individually. "ล้างทั้งหมด" resets all filters immediately (bypasses draft).
+
+---
+
+## Formula Display — short_name
+
+Both Dashboard (recent list) and History (table + Excel export) display `short_name` instead of `formula_name`:
+
+```typescript
+const shortNameMap = Object.fromEntries(
+  formulas.map(f => [f.name, f.short_name ?? f.name])
+);
+// usage: shortNameMap[p.formula_name] ?? p.formula_name
+```
+
+The FormulasPage list table also shows `short_name` as the primary label with `name` below it.
+
+---
+
 ## Common Pitfalls
 
 1. **After any `gas/Code.gs` change** → remind user to manually redeploy GAS.
@@ -270,6 +332,7 @@ LOT-YYYYMM-NNN
 4. **HashRouter `#/path`** — all links and redirects must use React Router `<NavLink>` / `navigate()`. Direct `window.location` changes break the router.
 5. **GAS URL query string limit** — all API calls are GET requests. Very long `note` fields or Thai characters are URL-encoded and handled fine, but keep data payloads reasonable.
 6. **`expiry_days < 0` means hours** — `addDays(date, -4)` adds 4 hours and returns a full ISO string. Display via `fmtDate()` still shows a readable date/time.
+7. **Room filter values in HistoryPage** — use `'IPD'`/`'OPD'` as option values, never raw Thai location strings. See History Page — Filter Modal section above.
 
 ---
 
