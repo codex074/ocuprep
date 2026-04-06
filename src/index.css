@@ -2499,6 +2499,133 @@ body {
   }
 }
 /* ============================================================
+   HISTORY PAGE – Filter Button, Chips, Modal
+   ============================================================ */
+
+/* Filter trigger button */
+.history-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+/* Active filter count badge */
+.filter-active-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Active filter chip strip */
+.history-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 24px 14px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-blue-light);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.filter-chip button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-blue);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  margin-left: 2px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.filter-chip button:hover { opacity: 1; }
+
+.filter-chip-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent-red);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 999px;
+  transition: background 0.15s;
+  font-family: var(--font-body);
+}
+.filter-chip-clear:hover { background: var(--accent-red-light); }
+
+/* Filter modal sizing */
+.history-filter-modal {
+  max-width: 480px;
+  width: 100%;
+}
+
+.history-filter-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-filter-date-row .form-input {
+  flex: 1;
+}
+
+.history-filter-date-sep {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Modal title with icon */
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .history-filter-chips {
+    padding: 0 16px 12px;
+  }
+
+  .history-filter-date-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .history-filter-date-sep {
+    text-align: center;
+  }
+
+  /* hide text label on small screens, keep icon */
+  .history-filter-btn .filter-btn-label {
+    display: none;
+  }
+}
+
+/* ============================================================
    BOTTOM NAV – Profile Avatar Button
    ============================================================ */
 .bottom-nav-profile-btn {
