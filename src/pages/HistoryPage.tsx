@@ -200,7 +200,7 @@ export default function HistoryPage() {
       </div>
 
       {prepsLoading || formulasLoading ? (
-        <LoadingState title="กำลังโหลดประวัติการผลิต" description="ดึงข้อมูลประวัติและสูตรยาจาก Google Sheet" />
+        <LoadingState title="กำลังโหลดประวัติการผลิต" description="ดึงข้อมูลประวัติและสูตรยาจากฐานข้อมูล" />
       ) : (
         <>
           <div className="card">

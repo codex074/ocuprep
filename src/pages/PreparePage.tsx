@@ -212,7 +212,7 @@ export default function PreparePage() {
       </div>
 
       {formulasLoading || prepsLoading ? (
-        <LoadingState title="กำลังเตรียมข้อมูลสำหรับบันทึกยา" description="กำลังโหลดสูตรตำรับและเลขล็อตล่าสุดจาก Google Sheet" />
+        <LoadingState title="กำลังเตรียมข้อมูลสำหรับบันทึกยา" description="กำลังโหลดสูตรตำรับและเลขล็อตล่าสุดจากฐานข้อมูล" />
       ) : (
         <>
       <div className="card">

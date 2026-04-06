@@ -142,7 +142,7 @@ export default function UsersPage() {
       </div>
 
       {loading ? (
-        <LoadingState title="กำลังโหลดข้อมูลผู้ใช้" description="ระบบกำลังดึงรายชื่อผู้ใช้งานจาก Google Sheet" />
+        <LoadingState title="กำลังโหลดข้อมูลผู้ใช้" description="ระบบกำลังดึงรายชื่อผู้ใช้งานจากฐานข้อมูล" />
       ) : (
         <>
       <div className="card">

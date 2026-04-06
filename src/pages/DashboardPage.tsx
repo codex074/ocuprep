@@ -268,7 +268,7 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <LoadingState title="กำลังโหลดภาพรวมการผลิต" description="ดึงข้อมูลรายการเตรียมยาประจำเดือนจาก Google Sheet" />
+        <LoadingState title="กำลังโหลดภาพรวมการผลิต" description="ดึงข้อมูลรายการเตรียมยาประจำเดือนจากฐานข้อมูล" />
       ) : (
         <>
       <div className="stats-grid">

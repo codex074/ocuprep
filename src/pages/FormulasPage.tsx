@@ -220,7 +220,7 @@ export default function FormulasPage() {
       </div>
 
       {loading ? (
-        <LoadingState title="กำลังโหลดสูตรตำรับยา" description="ระบบกำลังอ่านรายการสูตรยาจาก Google Sheet" />
+        <LoadingState title="กำลังโหลดสูตรตำรับยา" description="ระบบกำลังอ่านรายการสูตรยาจากฐานข้อมูล" />
       ) : (
         <div className="card">
           <div className="table-wrapper" style={{ padding: '0 0 8px' }}>

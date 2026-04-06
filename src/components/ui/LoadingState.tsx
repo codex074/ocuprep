@@ -5,7 +5,7 @@ interface LoadingStateProps {
 
 export default function LoadingState({
   title = 'กำลังโหลดข้อมูล',
-  description = 'โปรดรอสักครู่ ระบบกำลังดึงข้อมูลจาก Google Sheet',
+  description = 'โปรดรอสักครู่ ระบบกำลังดึงข้อมูลจากฐานข้อมูล',
 }: LoadingStateProps) {
   return (
     <div className="loading-state-card">
