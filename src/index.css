@@ -2395,18 +2395,9 @@ body {
     background: linear-gradient(180deg, rgba(37, 99, 235, 0.12), rgba(13, 148, 136, 0.08));
   }
 
-  .sidebar {
-    top: 10px;
-    bottom: 10px;
-    left: 10px;
-    border-radius: 28px;
-    overflow: hidden;
-    width: min(86vw, 320px);
-  }
-
+  .sidebar,
   .sidebar-overlay {
-    background: rgba(15, 23, 42, 0.32);
-    backdrop-filter: blur(10px);
+    display: none !important;
   }
 
   .header-user-cluster {
