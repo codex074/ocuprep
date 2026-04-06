@@ -76,18 +76,27 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  height: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
   overflow: hidden;
-  height: 100vh;
+  overflow-x: hidden;
+  height: 100%;
+  max-width: 100vw;
   -webkit-font-smoothing: antialiased;
 }
 
 #root {
-  height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 .page-actions {
@@ -264,7 +273,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: hidden;
   background:
     radial-gradient(ellipse at 20% 30%, rgba(37, 99, 235, 0.18) 0%, transparent 55%),
     radial-gradient(ellipse at 80% 70%, rgba(6, 182, 212, 0.15) 0%, transparent 55%),
@@ -471,7 +481,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: hidden;
   background:
     radial-gradient(ellipse at 20% 30%, rgba(37, 99, 235, 0.18) 0%, transparent 55%),
     radial-gradient(ellipse at 80% 70%, rgba(5, 150, 105, 0.15) 0%, transparent 55%),
@@ -634,7 +645,10 @@ body {
    ============================================================ */
 .app-layout {
   display: flex;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 /* Overlay for mobile sidebar */
@@ -799,6 +813,7 @@ body {
 /* ---- Main Content ---- */
 .main-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -850,8 +865,11 @@ body {
 .main-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 28px;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 /* ============================================================
@@ -927,6 +945,8 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   transition: var(--tr);
+  min-width: 0;
+  max-width: 100%;
 }
 .card:hover { box-shadow: var(--shadow-md); }
 
@@ -2313,6 +2333,7 @@ body {
 @media (max-width: 768px) {
   body {
     overflow: hidden;
+    overflow-x: hidden;
   }
 
   .main-header {
