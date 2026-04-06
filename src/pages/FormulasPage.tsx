@@ -222,19 +222,65 @@ export default function FormulasPage() {
       {loading ? (
         <LoadingState title="กำลังโหลดสูตรตำรับยา" description="ระบบกำลังอ่านรายการสูตรยาจาก Google Sheet" />
       ) : (
-        <div className="formula-grid">
-          {formulas.map(f => (
-            <div className="formula-card" key={f.id} onClick={() => openEdit(f)}>
-              <h4>{f.code ? <span style={{ color: 'var(--primary)', marginRight: '6px' }}>[{f.code}]</span> : null}{f.name}</h4>
-              <div className="fdesc">{f.description || '-'}</div>
-              <div className="fmeta">
-                <span className={`badge-tag ${cc[f.category || 'other'] || 'teal'}`}>{cl[f.category || 'other'] || f.category}</span>
-                <span className="badge-tag amber">{f.concentration}</span>
-                <span className="badge-tag green">อายุ {Math.abs(f.expiry_days)} {f.expiry_days < 0 ? 'ชม.' : 'วัน'}</span>
-                {f.price > 0 && <span className="badge-tag red">{f.price} ฿</span>}
-              </div>
-            </div>
-          ))}
+        <div className="card">
+          <div className="table-wrapper" style={{ padding: '0 0 8px' }}>
+            <table className="responsive-table formula-list-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '70px' }}>รหัส</th>
+                  <th>ชื่อย่อ / ชื่อเต็ม</th>
+                  <th style={{ width: '120px' }}>หมวดหมู่</th>
+                  <th style={{ width: '130px' }}>ความเข้มข้น</th>
+                  <th style={{ width: '90px' }}>อายุยา</th>
+                  <th style={{ width: '80px', textAlign: 'right' }}>ราคา</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formulas.length === 0 && (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>ยังไม่มีสูตรตำรับ</td></tr>
+                )}
+                {formulas.map(f => (
+                  <tr
+                    key={f.id}
+                    onClick={() => openEdit(f)}
+                    className="formula-list-row"
+                  >
+                    <td data-label="รหัส">
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {f.code || '—'}
+                      </span>
+                    </td>
+                    <td data-label="ชื่อ">
+                      <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {f.short_name || f.name}
+                      </div>
+                      {f.short_name && f.short_name !== f.name && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          {f.name}
+                        </div>
+                      )}
+                    </td>
+                    <td data-label="หมวดหมู่">
+                      <span className={`badge-tag ${cc[f.category || 'other'] || 'teal'}`}>
+                        {cl[f.category || 'other'] || f.category}
+                      </span>
+                    </td>
+                    <td data-label="ความเข้มข้น" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      {f.concentration || '—'}
+                    </td>
+                    <td data-label="อายุยา">
+                      <span className="badge-tag green" style={{ fontSize: '11px' }}>
+                        {Math.abs(f.expiry_days)} {f.expiry_days < 0 ? 'ชม.' : 'วัน'}
+                      </span>
+                    </td>
+                    <td data-label="ราคา" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '13px', color: f.price > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                      {f.price > 0 ? `${f.price} ฿` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
