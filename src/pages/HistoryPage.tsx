@@ -248,6 +248,82 @@ export default function HistoryPage() {
 
             {/* Table */}
             <div className="table-wrapper history-table-wrapper" style={{ padding: '0 24px 24px' }}>
+              <div className="history-mobile-list">
+                {visiblePreps.length ? visiblePreps.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="history-mobile-item"
+                    onClick={() => setSelectedPrep(p)}
+                  >
+                    <div className="history-mobile-top">
+                      <div className="history-mobile-date">
+                        <div className="history-mobile-date-main">
+                          {fmtShort(p.date)}
+                          {p.created_at && <span className="history-mobile-date-inline"> · {fmtTime(p.created_at)}</span>}
+                        </div>
+                      </div>
+                      {(user?.role === 'admin' || user?.name === p.prepared_by) && (
+                        <div className="history-mobile-actions" onClick={(e) => e.stopPropagation()}>
+                          <button className="btn btn-sm btn-ghost" onClick={(e) => openEdit(p.id, e)} title="แก้ไขรายการ" style={{ padding: '4px' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </button>
+                          <button className="btn btn-sm btn-ghost" onClick={(e) => handleDelete(p.id, e)} title="ลบรายการ" style={{ padding: '4px' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="history-mobile-formula">
+                      <div className="history-mobile-formula-name">
+                        {shortNameMap[p.formula_name] ?? p.formula_name}
+                        {p.concentration && <span className="history-mobile-formula-strength"> · {p.concentration}</span>}
+                      </div>
+                    </div>
+
+                    <div className="history-mobile-tags">
+                      <span className={`badge-tag ${p.mode === 'patient' ? 'purple' : 'amber'}`}>
+                        {p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}
+                      </span>
+                      <span
+                        className={`badge-tag ${
+                          p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม'
+                            ? 'blue'
+                            : p.location === 'ห้องจ่ายยาผู้ป่วยนอก'
+                              ? 'green'
+                              : 'teal'
+                        }`}
+                      >
+                        {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : p.location)}
+                      </span>
+                    </div>
+
+                    <div className="history-mobile-target">{p.target}</div>
+
+                    <div className="history-mobile-meta">
+                      <span>LOT {p.lot_no.replace('LOT-', '')}</span>
+                      <span>จำนวน {p.qty}</span>
+                      <span>{p.prepared_by}</span>
+                    </div>
+
+                    {p.note && (
+                      <div className="history-mobile-note">{p.note}</div>
+                    )}
+                  </button>
+                )) : (
+                  <div className="history-mobile-empty">ไม่พบรายการ</div>
+                )}
+              </div>
+
               <table className="responsive-table" style={{ minWidth: '1000px' }}>
                 <thead>
                   <tr>

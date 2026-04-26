@@ -259,7 +259,13 @@ export default function PreparePage() {
           <div className="form-row-3">
             <div className="form-group">
               <label>Lot No. <span className="req">*</span></label>
-              <input className="form-input" value={lotNo} onChange={e => setLotNo(e.target.value)} />
+              <input
+                className="form-input"
+                value={lotNo}
+                readOnly
+                aria-readonly="true"
+                style={{ backgroundColor: '#f8fafc', color: '#64748b', fontFamily: 'var(--font-mono)' }}
+              />
             </div>
             <div className="form-group">
               <label>วันที่เตรียม</label>

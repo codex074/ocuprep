@@ -294,7 +294,56 @@ export default function DashboardPage() {
             <button className="btn btn-sm btn-outline" onClick={() => navigate('/history')}>ดูทั้งหมด →</button>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            <div className="table-wrapper dashboard-table-wrapper">
+            <div className="table-wrapper dashboard-table-wrapper dashboard-recent-table-wrapper">
+              <div className="dashboard-recent-mobile-list">
+                {recent.length ? recent.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="dashboard-recent-mobile-item"
+                    onClick={() => setSelectedPrep(p)}
+                  >
+                    <div className="dashboard-recent-mobile-top">
+                      <div className="dashboard-recent-mobile-date">
+                        {fmtShort(p.date)}
+                        {p.created_at && <span className="dashboard-recent-mobile-time"> · {fmtTime(p.created_at)}</span>}
+                      </div>
+                      {(user?.role === 'admin' || user?.name === p.prepared_by) && (
+                        <div className="dashboard-recent-mobile-actions" onClick={(e) => e.stopPropagation()}>
+                          <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); setEditPrep(p); }} title="แก้ไข" style={{ padding: '4px' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" style={{ width: '16px', height: '16px' }}>
+                              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                            </svg>
+                          </button>
+                          <button className="btn btn-sm btn-ghost" onClick={(e) => handleDelete(p.id, e)} title="ลบรายการ" style={{ padding: '4px' }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="dashboard-recent-mobile-formula">
+                      {shortNameMap[p.formula_name] ?? p.formula_name}
+                    </div>
+
+                    <div className="dashboard-recent-mobile-meta">
+                      <span className={`badge-tag ${p.mode === 'patient' ? 'purple' : 'amber'}`}>
+                        {p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}
+                      </span>
+                      <span className="dashboard-recent-mobile-chip">จำนวน {p.qty}</span>
+                      <span className="dashboard-recent-mobile-chip">{p.prepared_by}</span>
+                    </div>
+                  </button>
+                )) : (
+                  <div className="dashboard-recent-mobile-empty">ยังไม่มีรายการ</div>
+                )}
+              </div>
+
               <table className="responsive-table">
                 <thead><tr><th>วันที่</th><th>สูตรยา</th><th>จำนวน</th><th>ประเภท</th><th>ผู้เตรียม</th><th></th></tr></thead>
                 <tbody>
@@ -433,6 +482,28 @@ export default function DashboardPage() {
                       <h3>สัดส่วนตามช่วงเวลา — {currentMonthYear}</h3>
                     </div>
                     <div className="card-body">
+                      <div className="dashboard-slot-mobile-list">
+                        {SLOTS.map((slot) => {
+                          const count = workloadSummary.slotTotals[slot.key];
+                          const pct = workloadSummary.totalPreps > 0 ? Math.round((count / workloadSummary.totalPreps) * 100) : 0;
+                          return (
+                            <div key={slot.key} className="dashboard-slot-mobile-item">
+                              <div className="dashboard-slot-mobile-head">
+                                <div>
+                                  <div className="dashboard-slot-mobile-title">{slot.label}</div>
+                                  <div className="dashboard-slot-mobile-range">{slot.range}</div>
+                                </div>
+                                <div className="dashboard-slot-mobile-count" style={{ color: slot.color }}>{count}</div>
+                              </div>
+                              <div className="dashboard-slot-mobile-bar">
+                                <div style={{ width: `${pct}%`, background: slot.color }} />
+                              </div>
+                              <div className="dashboard-slot-mobile-foot">{pct}% ของทั้งหมด</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
                       <div className="dashboard-slot-grid">
                         {SLOTS.map((slot) => {
                           const count = workloadSummary.slotTotals[slot.key];
@@ -474,6 +545,47 @@ export default function DashboardPage() {
                       <p style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>ไม่มีข้อมูลการผลิตในเดือนนี้</p>
                     ) : (
                       <div className="table-wrapper dashboard-table-wrapper">
+                        <div className="dashboard-daily-mobile-list">
+                          {displayWorkloadRows.map((day) => {
+                            const isEmpty = day.totalPreps === 0;
+                            return (
+                              <div key={day.date} className="dashboard-daily-mobile-item">
+                                <div className="dashboard-daily-mobile-date">{fmtThaiDay(day.date)}</div>
+                                <div className="dashboard-daily-mobile-grid">
+                                  <div className="dashboard-daily-mobile-cell">
+                                    <span>เช้า</span>
+                                    <strong style={{ color: day.morning > 0 ? '#d97706' : 'var(--text-muted)' }}>{day.morning || '—'}</strong>
+                                  </div>
+                                  <div className="dashboard-daily-mobile-cell">
+                                    <span>บ่าย</span>
+                                    <strong style={{ color: day.afternoon > 0 ? '#2563eb' : 'var(--text-muted)' }}>{day.afternoon || '—'}</strong>
+                                  </div>
+                                  <div className="dashboard-daily-mobile-cell">
+                                    <span>นอกเวลา</span>
+                                    <strong style={{ color: day.overtime > 0 ? '#ef4444' : 'var(--text-muted)' }}>{day.overtime || '—'}</strong>
+                                  </div>
+                                  <div className="dashboard-daily-mobile-cell">
+                                    <span>รวม</span>
+                                    <strong>{isEmpty ? '—' : day.totalPreps}</strong>
+                                  </div>
+                                  <div className="dashboard-daily-mobile-cell">
+                                    <span>ขวด</span>
+                                    <strong>{isEmpty ? '—' : day.totalQty}</strong>
+                                  </div>
+                                </div>
+                                {!isEmpty && (
+                                  <div className="dashboard-daily-mobile-stack">
+                                    {SLOTS.map((slot) => {
+                                      const segPct = (day[slot.key] / day.totalPreps) * 100;
+                                      return segPct > 0 ? <div key={slot.key} style={{ width: `${segPct}%`, background: slot.color }} /> : null;
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
                         <table className="responsive-table">
                           <thead>
                             <tr>
