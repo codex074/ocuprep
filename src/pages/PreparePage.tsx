@@ -215,7 +215,7 @@ export default function PreparePage() {
         <LoadingState title="กำลังเตรียมข้อมูลสำหรับบันทึกยา" description="กำลังโหลดสูตรตำรับและเลขล็อตล่าสุดจากฐานข้อมูล" />
       ) : (
         <>
-      <div className="card">
+      <div className="card prepare-card">
         <div className="card-header"><h3>เตรียมยาตาเฉพาะราย</h3></div>
         <div className="card-body">
           <div className="form-group">
@@ -230,7 +230,7 @@ export default function PreparePage() {
 
           <div className="form-group">
             <label>รูปแบบการเตรียม <span className="req">*</span></label>
-            <div className="toggle-group">
+            <div className="toggle-group prepare-mode-toggle">
               <div className={`toggle-option patient${mode === 'patient' ? ' active' : ''}`} onClick={() => setMode('patient')}>เฉพาะราย (Patient)</div>
               <div className={`toggle-option stock${mode === 'stock' ? ' active' : ''}`} onClick={() => setMode('stock')}>Stock</div>
             </div>
@@ -283,10 +283,10 @@ export default function PreparePage() {
           </div>
 
           {selectedFormula && (
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 'var(--radius-md)', padding: '16px' }}>
+            <div className="prepare-formula-panel-wrap">
+              <div className="prepare-formula-panel">
                 <h4 style={{ fontSize: '14px', color: 'var(--accent-blue)', marginBottom: '10px' }}>รายละเอียดสูตรตำรับ</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
+                <div className="prepare-formula-grid" style={{ fontSize: '13px' }}>
                   <div><strong>ชื่อ:</strong> {selectedFormula.name}</div>
                   <div><strong>ความเข้มข้น:</strong> {selectedFormula.concentration}</div>
                   <div>
@@ -310,7 +310,7 @@ export default function PreparePage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
+          <div className="prepare-action-row">
             <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
               {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>บันทึก</>}
             </button>

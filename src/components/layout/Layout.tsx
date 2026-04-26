@@ -7,7 +7,7 @@ import Modal from '../ui/Modal';
 import Swal from 'sweetalert2';
 
 export default function Layout() {
-  const { user, logout, location: stationName, selectStation } = useAuth();
+  const { user, logout, location: stationName, selectStation, sessionRemainingMs } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,6 +49,9 @@ export default function Layout() {
 
   const stationStyle = stationName ? getStationColor(stationName) : { bg: '', text: '' };
   const avatarSrc = resolvePath(user?.profile_image || '/avatars/male-pharmacist.png');
+  const sessionMinutes = Math.floor(sessionRemainingMs / 60000);
+  const sessionSeconds = Math.floor((sessionRemainingMs % 60000) / 1000);
+  const sessionCountdown = `${String(sessionMinutes).padStart(2, '0')}:${String(sessionSeconds).padStart(2, '0')}`;
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -186,6 +189,9 @@ export default function Layout() {
                 <div className="header-user-role">
                   {user?.role === 'admin' ? 'Admin' : 'Pharmacist'}
                 </div>
+              </div>
+              <div className={`header-session-chip${sessionRemainingMs <= 5 * 60 * 1000 ? ' warning' : ''}`} title="ระบบจะออกจากระบบอัตโนมัติหลังไม่มีการใช้งาน 1 ชั่วโมง">
+                <span className="header-session-time">{sessionCountdown}</span>
               </div>
               <div
                 className="header-avatar-button"

@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null;
   location: string;
   loading: boolean;
+  sessionRemainingMs: number;
   login: (phaId: string, password: string) => Promise<string | null>;
   logout: () => void;
   selectStation: (location: string) => void;
@@ -13,6 +14,24 @@ interface AuthState {
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
+const SESSION_TIMEOUT = 60 * 60 * 1000;
+const SESSION_STORAGE_KEY = 'ed-extemp-session';
+
+function readSessionTimestamp(): number | null {
+  const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as { timestamp?: unknown };
+    return typeof parsed.timestamp === 'number' ? parsed.timestamp : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(user: User, location: string, timestamp = Date.now()) {
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ user, location, timestamp }));
+}
 
 function rowToUser(r: Record<string, unknown>): User {
   return {
@@ -32,34 +51,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sessionRemainingMs, setSessionRemainingMs] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem('ed-extemp-session');
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
     if (stored) {
       try {
         const { user: u, location: loc, timestamp } = JSON.parse(stored);
 
-        const SESSION_TIMEOUT = 60 * 60 * 1000;
         if (timestamp && Date.now() - timestamp > SESSION_TIMEOUT) {
-          localStorage.removeItem('ed-extemp-session');
+          localStorage.removeItem(SESSION_STORAGE_KEY);
           setLoading(false);
           return;
         }
 
         if (u) {
           setUser(u);
+          setSessionRemainingMs(Math.max(SESSION_TIMEOUT - (Date.now() - Number(timestamp || Date.now())), 0));
           // Refresh user data from Firestore
           api.getUserById(u.id).then(({ data, error }) => {
             if (!error && data) {
               const freshUser = rowToUser(data);
               setUser(freshUser);
-              localStorage.setItem('ed-extemp-session', JSON.stringify({ user: freshUser, location: loc || '', timestamp: Date.now() }));
+              writeSession(freshUser, loc || '', Number(timestamp || Date.now()));
             }
           });
         }
         if (loc) setLocation(loc);
       } catch {
-        localStorage.removeItem('ed-extemp-session');
+        localStorage.removeItem(SESSION_STORAGE_KEY);
       }
     }
     setLoading(false);
@@ -73,14 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const u = rowToUser(res.data);
     setUser(u);
-    localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location: '', timestamp: Date.now() }));
+    setSessionRemainingMs(SESSION_TIMEOUT);
+    writeSession(u, '');
     return null;
   };
 
   const selectStation = (loc: string) => {
     setLocation(loc);
     if (user) {
-      localStorage.setItem('ed-extemp-session', JSON.stringify({ user, location: loc, timestamp: Date.now() }));
+      const timestamp = readSessionTimestamp() ?? Date.now();
+      writeSession(user, loc, timestamp);
     }
   };
 
@@ -90,38 +112,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.error && res.data) {
       const u = rowToUser(res.data);
       setUser(u);
-      localStorage.setItem('ed-extemp-session', JSON.stringify({ user: u, location, timestamp: Date.now() }));
+      const timestamp = readSessionTimestamp() ?? Date.now();
+      writeSession(u, location, timestamp);
     }
   };
 
   const logout = useCallback(() => {
     setUser(null);
     setLocation('');
-    localStorage.removeItem('ed-extemp-session');
+    setSessionRemainingMs(0);
+    localStorage.removeItem(SESSION_STORAGE_KEY);
   }, []);
 
   // Activity monitor for session timeout (1 hour of inactivity)
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setSessionRemainingMs(0);
+      return;
+    }
 
-    let lastUpdate = Date.now();
-    const SESSION_TIMEOUT = 60 * 60 * 1000;
+    let lastUpdate = readSessionTimestamp() ?? Date.now();
+
+    const syncRemaining = () => {
+      const timestamp = readSessionTimestamp() ?? lastUpdate;
+      lastUpdate = timestamp;
+      const remaining = Math.max(SESSION_TIMEOUT - (Date.now() - timestamp), 0);
+      setSessionRemainingMs(remaining);
+
+      if (remaining <= 0) {
+        logout();
+      }
+    };
 
     const updateActivity = () => {
       const now = Date.now();
-      if (now - lastUpdate > 60000) {
-        const sessionStr = localStorage.getItem('ed-extemp-session');
-        if (sessionStr) {
-          try {
-            const session = JSON.parse(sessionStr);
-            session.timestamp = now;
-            localStorage.setItem('ed-extemp-session', JSON.stringify(session));
-            lastUpdate = now;
-          } catch (e) {
-            console.error('Error updating session timestamp', e);
-          }
-        }
-      }
+      if (now - lastUpdate < 1000) return;
+
+      lastUpdate = now;
+      writeSession(user, location, now);
+      setSessionRemainingMs(SESSION_TIMEOUT);
     };
 
     const handleUserActivity = () => updateActivity();
@@ -131,17 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('click', handleUserActivity);
     window.addEventListener('scroll', handleUserActivity);
 
-    const checkInterval = setInterval(() => {
-      const sessionStr = localStorage.getItem('ed-extemp-session');
-      if (sessionStr) {
-        try {
-          const session = JSON.parse(sessionStr);
-          if (session.timestamp && Date.now() - session.timestamp > SESSION_TIMEOUT) {
-            logout();
-          }
-        } catch (e) {}
-      }
-    }, 10000);
+    syncRemaining();
+    const checkInterval = setInterval(syncRemaining, 1000);
 
     return () => {
       window.removeEventListener('mousemove', handleUserActivity);
@@ -150,10 +170,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('scroll', handleUserActivity);
       clearInterval(checkInterval);
     };
-  }, [user, logout]);
+  }, [user, location, logout]);
 
   return (
-    <AuthContext.Provider value={{ user, location, loading, login, logout, selectStation, refreshUser }}>
+    <AuthContext.Provider value={{ user, location, loading, sessionRemainingMs, login, logout, selectStation, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

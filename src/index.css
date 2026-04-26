@@ -1041,6 +1041,30 @@ body {
   transform: translateY(-1px);
 }
 
+.prepare-formula-panel-wrap {
+  margin-top: 16px;
+}
+
+.prepare-formula-panel {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.prepare-formula-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.prepare-action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
 /* ============================================================
    COMPONENTS – Stat Cards
    ============================================================ */
@@ -1571,12 +1595,120 @@ table tbody tr:last-child td { border-bottom: none; }
   .login-container { padding: 36px 28px 28px; }
 
   .modal { width: 100%; border-radius: var(--radius-lg); }
+
+  .prepare-card .card-header {
+    padding: 16px 18px;
+  }
+
+  .prepare-card .card-header h3 {
+    font-size: 14px;
+  }
+
+  .prepare-card .card-body {
+    padding: 18px 16px 96px;
+  }
+
+  .prepare-card .form-group {
+    margin-bottom: 16px;
+  }
+
+  .prepare-card .form-group label {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .prepare-card .form-input,
+  .prepare-card .form-select,
+  .prepare-card .form-textarea,
+  .prepare-card .combobox-container .form-select {
+    min-height: 52px;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 16px;
+  }
+
+  .prepare-card .form-textarea {
+    min-height: 104px;
+  }
+
+  .prepare-mode-toggle {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .prepare-mode-toggle .toggle-option {
+    min-height: 54px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    font-size: 16px;
+  }
+
+  .prepare-formula-panel {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .prepare-formula-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .prepare-action-row {
+    position: relative;
+    gap: 12px;
+  }
+
+  .prepare-action-row .btn {
+    width: 100%;
+    min-height: 50px;
+    justify-content: center;
+    font-size: 15px;
+    border-radius: 16px;
+  }
 }
 
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
   .filter-bar { flex-direction: column; align-items: stretch; }
   .page-title { font-size: 17px; }
+
+  .prepare-card {
+    border-radius: 24px;
+  }
+
+  .prepare-card .card-header {
+    padding: 14px 16px;
+  }
+
+  .prepare-card .card-body {
+    padding: 16px 14px 104px;
+  }
+
+  .prepare-card .form-group label {
+    font-size: 13px;
+  }
+
+  .prepare-card .form-input,
+  .prepare-card .form-select,
+  .prepare-card .form-textarea,
+  .prepare-card .combobox-container .form-select {
+    min-height: 50px;
+    padding: 11px 14px;
+    font-size: 15px;
+  }
+
+  .prepare-mode-toggle .toggle-option {
+    min-height: 50px;
+    font-size: 15px;
+  }
+
+  .prepare-formula-panel-wrap {
+    margin-top: 12px;
+  }
+
+  .prepare-action-row {
+    margin-top: 18px;
+  }
 }
 
 /* ============================================================
@@ -2505,6 +2637,36 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.header-session-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.header-session-chip.warning {
+  background: rgba(254, 242, 242, 0.92);
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+.header-session-time {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.header-session-chip.warning .header-session-time {
+  color: #dc2626;
 }
 
 .header-user-text {
