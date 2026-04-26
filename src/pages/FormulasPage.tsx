@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
@@ -15,6 +15,7 @@ export default function FormulasPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   
   // Password modal state
   const [showPassword, setShowPassword] = useState(false);
@@ -217,6 +218,15 @@ export default function FormulasPage() {
         return haystacks.some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch));
       })
     : formulas;
+  const pageSize = 20;
+  const totalPages = Math.max(1, Math.ceil(filteredFormulas.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const visibleFormulas = filteredFormulas.slice(startIndex, startIndex + pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   return (
     <div className="page-section">
@@ -276,7 +286,7 @@ export default function FormulasPage() {
                     </td>
                   </tr>
                 )}
-                {filteredFormulas.map(f => (
+                {visibleFormulas.map(f => (
                   <tr
                     key={f.id}
                     onClick={() => openEdit(f)}
@@ -318,6 +328,31 @@ export default function FormulasPage() {
               </tbody>
             </table>
           </div>
+          {filteredFormulas.length > 0 && (
+            <div className="list-pagination">
+              <div className="list-pagination-text">
+                หน้า {safePage} / {totalPages} • แสดง {startIndex + 1}-{startIndex + visibleFormulas.length} จาก {filteredFormulas.length} รายการ
+              </div>
+              <div className="list-pagination-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={safePage <= 1}
+                >
+                  ← ก่อนหน้า
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                  disabled={safePage >= totalPages}
+                >
+                  ถัดไป →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -1065,6 +1065,229 @@ body {
   flex-wrap: wrap;
 }
 
+.action-logs-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.action-logs-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.action-logs-subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.action-logs-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(180px, 0.7fr) minmax(180px, 0.8fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.action-logs-list {
+  display: grid;
+  gap: 12px;
+}
+
+.action-log-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.action-log-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.action-log-head-left {
+  min-width: 0;
+  flex: 1;
+}
+
+.action-log-summary {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.action-log-summary-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.action-log-toggle {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--tr);
+}
+
+.action-log-toggle:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.action-log-time {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.action-log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.action-log-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.action-log-actor {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.action-log-changes {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #dbe5ef;
+  display: grid;
+  gap: 10px;
+}
+
+.action-log-change-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.action-log-field {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  word-break: break-word;
+}
+
+.action-log-values {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.action-log-before,
+.action-log-after {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.action-log-before {
+  color: #b91c1c;
+}
+
+.action-log-after {
+  color: #0f766e;
+}
+
+.action-log-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.action-log-empty {
+  padding: 36px 18px;
+  text-align: center;
+  color: var(--text-muted);
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+
+.list-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.list-pagination-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.list-pagination-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.action-logs-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.action-logs-pagination-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.action-logs-pagination-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 /* ============================================================
    COMPONENTS – Stat Cards
    ============================================================ */
@@ -1664,6 +1887,59 @@ table tbody tr:last-child td { border-bottom: none; }
     justify-content: center;
     font-size: 15px;
     border-radius: 16px;
+  }
+
+  .action-logs-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .action-log-head {
+    flex-direction: column;
+  }
+
+  .action-log-summary-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-log-toggle {
+    width: 100%;
+  }
+
+  .action-log-time {
+    text-align: left;
+  }
+
+  .action-log-change-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .action-log-values {
+    flex-wrap: wrap;
+  }
+
+  .action-logs-pagination-actions {
+    width: 100%;
+  }
+
+  .action-logs-pagination-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .list-pagination {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .list-pagination-actions {
+    width: 100%;
+  }
+
+  .list-pagination-actions .btn {
+    flex: 1;
+    justify-content: center;
   }
 }
 

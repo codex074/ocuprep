@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useUsers } from '../hooks/useUsers';
@@ -16,6 +16,7 @@ export default function UsersPage() {
   const { toast } = useToast();
   const { users, loading, refreshing, fetchUsers, createUser, updateUser, toggleUser, deleteUser } = useUsers();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   
   // Edit/Create state
   const [modalOpen, setModalOpen] = useState(false);
@@ -150,6 +151,15 @@ export default function UsersPage() {
         return haystacks.some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch));
       })
     : users;
+  const pageSize = 20;
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const visibleUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   return (
     <div className="page-section">
@@ -197,7 +207,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               )}
-              {filteredUsers.map((u, i) => (
+              {visibleUsers.map((u, i) => (
                 <tr key={u.id}>
                   <td onClick={() => setViewUser(u)} style={{ cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -261,6 +271,31 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+        {filteredUsers.length > 0 && (
+          <div className="list-pagination">
+            <div className="list-pagination-text">
+              หน้า {safePage} / {totalPages} • แสดง {startIndex + 1}-{startIndex + visibleUsers.length} จาก {filteredUsers.length} รายการ
+            </div>
+            <div className="list-pagination-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={safePage <= 1}
+              >
+                ← ก่อนหน้า
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={safePage >= totalPages}
+              >
+                ถัดไป →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editId ? 'แก้ไขผู้ใช้งาน' : 'เพิ่มผู้ใช้งาน'}

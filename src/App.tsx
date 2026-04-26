@@ -13,6 +13,7 @@ import UsersPage from './pages/UsersPage';
 import ProfilePage from './pages/ProfilePage';
 import StationSelectionPage from './pages/StationSelectionPage';
 import ForceChangePasswordPage from './pages/ForceChangePasswordPage';
+import ActionLogsPage from './pages/ActionLogsPage';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -27,6 +28,14 @@ function RequireStation({ children }: { children: ReactNode }) {
   const { location, loading } = useAuth();
   if (loading) return null;
   if (!location) return <Navigate to="/station-select" replace />;
+  return <>{children}</>;
+}
+
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -58,7 +67,8 @@ function AppRoutes() {
         <Route path="/prepare" element={<PreparePage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/formulas" element={<FormulasPage />} />
-        <Route path="/users" element={<UsersPage />} />
+        <Route path="/users" element={<RequireAdmin><UsersPage /></RequireAdmin>} />
+        <Route path="/action-logs" element={<RequireAdmin><ActionLogsPage /></RequireAdmin>} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

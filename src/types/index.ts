@@ -48,3 +48,23 @@ export interface Prep {
   location: string;
   created_at?: string;
 }
+
+export interface ActionLogChange {
+  field: string;
+  before?: string;
+  after?: string;
+}
+
+export interface ActionLog {
+  id: number;
+  action: 'create' | 'update' | 'delete';
+  entity_type: 'users' | 'formulas' | 'preps';
+  entity_id: number;
+  entity_label: string;
+  actor_user_id?: number;
+  actor_name: string;
+  actor_pha_id: string;
+  summary: string;
+  changes: ActionLogChange[];
+  created_at: string;
+}
