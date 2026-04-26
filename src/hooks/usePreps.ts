@@ -7,10 +7,10 @@ import type { Prep } from '../types';
 const PREPS_ALL_CACHE_KEY = 'preps';
 
 /**
- * Normalize a date value from GAS to "YYYY-MM-DD".
+ * Normalize a migrated date value to "YYYY-MM-DD".
  *
- * Google Sheets auto-converts "2026-04-04" strings → Date objects.
- * GAS's JSON.stringify then serializes them as UTC ISO strings like
+ * Legacy Google Sheets data could convert "2026-04-04" strings → Date objects.
+ * The old GAS layer then serialized them as UTC ISO strings like
  * "2026-04-03T17:00:00.000Z" (midnight Bangkok = 17:00 UTC the day before).
  * Without normalization every date comparison would be off by one day.
  */
@@ -50,7 +50,7 @@ function toPrep(r: Record<string, unknown>): Prep {
  * usePreps(startDate?, endDate?)
  *
  * - ไม่ส่ง args  → โหลดข้อมูลทั้งหมด (HistoryPage)
- * - ส่ง startDate/endDate → GAS filter ฝั่ง server แล้วส่งเฉพาะช่วงที่ต้องการ (DashboardPage)
+ * - ส่ง startDate/endDate → query เฉพาะช่วงที่ต้องการจาก Firestore (DashboardPage)
  *
  * Optimistic updates: create/update/delete อัปเดต local state ทันที
  * ไม่ต้อง refetch ทั้งหมดหลังทำ mutation
@@ -97,7 +97,7 @@ export function usePreps(startDate?: string, endDate?: string) {
       });
       return true;
     }
-    // ส่งคืน error message จาก GAS (ถ้ามี) เพื่อแสดงใน toast
+    // ส่งคืน error message จากฐานข้อมูล (ถ้ามี) เพื่อแสดงใน toast
     return res.error ?? 'บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
   };
 

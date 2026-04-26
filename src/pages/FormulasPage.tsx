@@ -167,6 +167,7 @@ export default function FormulasPage() {
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast('กรุณากรอกชื่อสูตรตำรับ', 'error'); return; }
+    if (!form.code.trim()) { toast('กรุณากรอกรหัสสูตร', 'error'); return; }
     
     if (editId) {
       // Require password for edit

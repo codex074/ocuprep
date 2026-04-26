@@ -10,7 +10,7 @@
 [![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
 [![PWA](https://img.shields.io/badge/PWA-Enabled-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps)
 [![GitHub Pages](https://img.shields.io/badge/Deployed_on-GitHub_Pages-222222?style=flat-square&logo=github&logoColor=white)](https://pages.github.com)
-[![Google Apps Script](https://img.shields.io/badge/Backend-Google_Apps_Script-4285F4?style=flat-square&logo=google&logoColor=white)](https://script.google.com)
+[![Firebase](https://img.shields.io/badge/Database-Firebase_Firestore-FFCA28?style=flat-square&logo=firebase&logoColor=black)](https://firebase.google.com/docs/firestore)
 
 </div>
 
@@ -30,13 +30,13 @@ The system manages the full preparation workflow — from formula selection and 
 |---|---|
 | 🔐 **Authentication** | Login with pharmacist ID, forced password change on first login, 1-hour session timeout |
 | 📊 **Dashboard** | Selectable month & location filter · 6 stat cards · recent list with inline edit/delete · formula summary · built-in workload analysis section · Export to Excel |
-| 🧪 **Preparation Recording** | Patient or stock mode · auto lot number · auto expiry calculation · quantity multiplier · actual GAS error messages surfaced on save failure |
+| 🧪 **Preparation Recording** | Patient or stock mode · auto lot number · auto expiry calculation · quantity multiplier · database error messages surfaced on save failure |
 | 🖨️ **Label Printing** | Batch sheets · standard patient labels · bottle labels · prep stickers — all browser-printable |
 | 💡 **Formula Management** | Admin: create/edit/delete formulas with short names, ingredients, preparation methods, pricing · displayed as a sortable list table |
 | 👥 **User Management** | Admin: manage pharmacist accounts, roles, profile images, active status |
 | 📜 **History** | Full audit log · filter modal (ห้องยา, ประเภท, ช่วงเวลา, วันที่, คำค้นหา) with active filter chips · paginated 20 per load · Export to Excel |
 | 📱 **PWA / Mobile** | Installable on iOS/Android · offline-capable · bottom navigation bar · profile popup in bottom nav (no sidebar on mobile) |
-| ⚡ **Performance** | Server-side date filter · GAS formula cache (1 hr) · optimistic UI updates · load-more pagination |
+| ⚡ **Performance** | Firestore-backed queries · optimistic UI updates · in-memory cache · load-more pagination |
 
 ---
 
@@ -52,16 +52,10 @@ The system manages the full preparation workflow — from formula selection and 
 │  │ (Routes) │  │(Data/API)│  │  Auth · Toast · Prep  │  │
 │  └──────────┘  └──────────┘  └───────────────────────┘  │
 └──────────────────────────┬───────────────────────────────┘
-                           │ HTTP GET (query params)
+                           │ Firestore Web SDK
                            ▼
 ┌──────────────────────────────────────────────────────────┐
-│             Backend (Google Apps Script)                 │
-│                    gas/Code.gs                           │
-└──────────────────────────┬───────────────────────────────┘
-                           │ Sheets API
-                           ▼
-┌──────────────────────────────────────────────────────────┐
-│              Database (Google Sheets)                    │
+│                 Database (Firebase Firestore)            │
 │            users  │  formulas  │  preps                 │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -81,9 +75,10 @@ utth-ed/
 │   │   ├── ProfileCard.tsx
 │   │   └── SummaryDetailsModal.tsx
 │   ├── 📁 contexts/            # AuthContext, ToastContext
-│   ├── 📁 hooks/               # usePreps, useFormulas, useUsers, useGasInit…
+│   ├── 📁 hooks/               # usePreps, useFormulas, useUsers, useFirestoreInit…
 │   ├── 📁 lib/
-│   │   ├── api.ts              # GAS API connector (all HTTP calls)
+│   │   ├── api.ts              # Firestore data access layer
+│   │   ├── firebase.ts         # Firebase app / Firestore init
 │   │   ├── print.ts            # Label / batch sheet HTML generation
 │   │   ├── resourceCache.ts    # In-memory cache with TTL & invalidation
 │   │   └── utils.ts            # Date formatting, helpers
@@ -96,10 +91,12 @@ utth-ed/
 │   │   └── ProfilePage.tsx     # User profile
 │   ├── 📁 types/               # TypeScript interfaces (User, Formula, Prep)
 │   └── App.tsx                 # Routing & auth guards
-├── 📁 gas/
-│   └── Code.gs                 # Google Apps Script backend
 ├── 📁 scripts/
-│   └── import-formulas.mjs     # Bulk-import formulas via GAS API
+│   ├── 📁 lib/
+│   │   ├── firebase.mjs        # Firebase init for migration scripts
+│   │   └── firestore-migration.mjs
+│   ├── import-formulas.mjs     # Import formulas from GAS/Sheets into Firestore
+│   └── migrate-gas-to-firestore.mjs
 ├── 📁 public/
 │   ├── 📁 icons/               # PWA icons (192, 512, maskable)
 │   └── 📁 avatars/             # User profile avatar images
@@ -117,7 +114,7 @@ utth-ed/
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) ≥ 18
-- A Google account (for Google Apps Script backend)
+- A Firebase project with Firestore enabled
 
 ### 1 — Clone & Install
 
@@ -127,17 +124,10 @@ cd utth-ed
 npm install
 ```
 
-### 2 — Configure Environment
+### 2 — Configure Firestore
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and set your GAS Web App URL:
-
-```env
-VITE_GAS_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-```
+The Firebase web config is already wired in `src/lib/firebase.ts`.
+If you need to migrate old Google Sheets data, copy `.env.example` to `.env` and set `VITE_GAS_URL` for the migration script only.
 
 ### 3 — Start Development Server
 
@@ -150,39 +140,36 @@ npm run dev
 
 ## ☁️ Deployment
 
-### Step 1 — Deploy the Backend (Google Apps Script)
+### Step 1 — Enable Firestore
 
-1. Open [Google Apps Script](https://script.google.com/) and create a **new standalone project**.
-2. Copy the full contents of `gas/Code.gs` into the editor.
-3. Click **Deploy → New Deployment → Web app**.
-4. Configure:
-   - **Execute as:** `Me`
-   - **Who has access:** `Anyone`
-5. Click **Deploy**, grant the required permissions, and copy the **Web App URL**.
+1. Open [Firebase Console](https://console.firebase.google.com/).
+2. Select project `yata-e56f7`.
+3. Enable **Cloud Firestore**.
+4. Publish rules from `firestore.rules`.
 
-> **Note:** No manual Google Sheet setup is required — the backend auto-creates and seeds the spreadsheet on the first request.
+### Step 2 — Optional: Migrate Existing GAS / Google Sheets Data
 
-> ⚠️ **Updating GAS:** Pushing to GitHub does **not** redeploy the GAS backend. After any change to `gas/Code.gs`, you must manually redeploy:
-> **Deploy → Manage deployments → ✏️ Edit → New version → Deploy**
-> The Web App URL remains the same.
-
-**Verify deployment:**
+```bash
+cp .env.example .env
+# set VITE_GAS_URL to your existing GAS Web App URL
+npm run migrate:firestore
 ```
-https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=ping
-# Should return: {"ok": true, ...}
+
+To import formulas only:
+
+```bash
+npm run import:formulas
 ```
 
 ---
 
-### Step 2 — Deploy the Frontend (GitHub Pages)
+### Step 3 — Deploy the Frontend (GitHub Pages)
 
 #### Option A — Automated (Recommended)
 
 1. Push to a GitHub repository.
 2. Go to **Settings → Pages**, set **Source = GitHub Actions**.
-3. Go to **Settings → Secrets and variables → Actions → Variables**.
-4. Add a variable `VITE_GAS_URL` with your GAS Web App URL.
-5. Push to `main` — GitHub Actions builds and deploys automatically.
+3. Push to `main` — GitHub Actions builds and deploys automatically.
 
 #### Option B — Manual Deploy
 
@@ -192,7 +179,7 @@ npm run deploy
 
 ---
 
-### Step 3 — First Login
+### Step 4 — First Login
 
 | Field | Value |
 |---|---|
@@ -213,7 +200,7 @@ The Dashboard is the central hub, combining real-time overview and monthly workl
 |---|---|
 | **Month selector** | Dropdown built from all historical prep records — shows every month that has data, plus the current month |
 | **Location filter** | Appears automatically when the selected month has records from more than one station/ward |
-| **Refresh** | Force-refresh data from GAS, bypassing the client-side cache |
+| **Refresh** | Force-refresh data from Firestore, bypassing the client-side cache |
 
 ### Stat Cards (6 cards)
 
@@ -269,7 +256,7 @@ Embedded below the main grid — uses the same month/location filter as the rest
 
 ## 🛢️ Database Schema
 
-Three sheets are created automatically on first run.
+Three Firestore collections are used by the app.
 
 ### `users`
 | Column | Description |
@@ -315,27 +302,6 @@ Three sheets are created automatically on first run.
 
 ---
 
-## 🔌 API Reference
-
-All requests are HTTP GET to the GAS Web App URL:
-
-```
-GET https://script.google.com/.../exec?action=<ACTION>&<params>
-```
-
-| Action | Parameters | Description |
-|---|---|---|
-| `ping` | — | Health check; returns sheet row counts |
-| `login` | `pha_id`, `password` | Authenticate; returns user object or error |
-| `getUsers` | — | List all users |
-| `createUser` / `updateUser` / `deleteUser` | `data` JSON / `id` | User CRUD (admin) |
-| `getFormulas` | — | List formulas — **cached 1 hr** in GAS CacheService |
-| `createFormula` / `updateFormula` / `deleteFormula` | `data` JSON / `id` | Formula CRUD — **auto-invalidates cache** |
-| `getPreps` | `startDate?`, `endDate?` (YYYY-MM-DD) | List preps — **server-side date filter** when dates are provided |
-| `createPrep` / `updatePrep` / `deletePrep` | `data` JSON / `id` | Prep CRUD — protected by `LockService` |
-
----
-
 ## 📦 Available Scripts
 
 ```bash
@@ -343,13 +309,9 @@ npm run dev          # Start local dev server (http://localhost:5173)
 npm run build        # Production build → dist/
 npm run preview      # Preview the production build locally
 npm run lint         # Run ESLint
+npm run migrate:firestore   # Import users/formulas/preps from GAS into Firestore
+npm run import:formulas     # Import formulas only from GAS into Firestore
 npm run deploy       # Build and deploy to GitHub Pages (manual)
-```
-
-### Bulk Import Formulas
-
-```bash
-VITE_GAS_URL=<your-gas-url> node scripts/import-formulas.mjs formular.json
 ```
 
 ---
@@ -365,8 +327,7 @@ VITE_GAS_URL=<your-gas-url> node scripts/import-formulas.mjs formular.json
 | PWA | vite-plugin-pwa 1.2 |
 | Dialogs | SweetAlert2 11.26 |
 | Excel Export | XLSX 0.18 |
-| Backend | Google Apps Script |
-| Database | Google Sheets |
+| Database | Firebase Firestore |
 | Hosting | GitHub Pages |
 | CI/CD | GitHub Actions |
 
@@ -374,14 +335,7 @@ VITE_GAS_URL=<your-gas-url> node scripts/import-formulas.mjs formular.json
 
 ## 🔑 Default Accounts
 
-The backend seeds **44 user accounts** on first initialisation:
-
-| Account | Role | Default Password |
-|---|---|---|
-| `admin` | Administrator | `1234` |
-| `pha0` – `pha211` | Pharmacist | `1234` |
-
-All accounts have `must_change_password = true`. **Change the `admin` password immediately.**
+Use the existing user records migrated into Firestore. If you are starting from an empty database, create an `admin` user in the `users` collection first.
 
 ---
 
@@ -413,27 +367,14 @@ Tapping the avatar at the right end of the bottom nav opens a **slide-up profile
 
 ## ⚡ Performance & Correctness Notes
 
-### Server-side Date Filter
-Dashboard fetches **only the selected month** by passing `startDate`/`endDate` to GAS. Payload size stays constant regardless of total record count.
-
-### Formula Cache
-`getFormulas` results are cached in **GAS CacheService for 1 hour**. Cache is invalidated automatically on any formula mutation (create / update / delete).
+### Firestore Date Filter
+Dashboard fetches the selected month by querying Firestore with `startDate` / `endDate`, then sorts client-side by numeric `id`.
 
 ### Optimistic UI Updates
-`createPrep`, `updatePrep`, and `deletePrep` update the local React state and `resourceCache` immediately after GAS confirms success — no full refetch required.
+`createPrep`, `updatePrep`, and `deletePrep` update the local React state and `resourceCache` immediately after Firestore confirms success — no full refetch required.
 
-### Date Normalization (UTC off-by-one fix)
-Google Sheets silently converts `"YYYY-MM-DD"` strings to `Date` objects. Without correction, GAS's `JSON.stringify` would serialize midnight Bangkok time as the previous UTC day (e.g. `"2026-04-03T17:00:00.000Z"` for April 4), breaking all date-based grouping.
-
-**Two-layer fix:**
-1. **GAS side** — `normalizeCell_()` in `getAll_()` uses `Utilities.formatDate(date, timezone, 'yyyy-MM-dd')` to format date-only fields in the script's local timezone before returning.
-2. **Frontend side** — `toDateOnly()` in `usePreps.ts` converts any ISO datetime string to a `YYYY-MM-DD` local date string as a second safety layer.
-
-### Lock Safety (GAS)
-`LockService.tryLock()` returns `false` if the lock cannot be acquired within the timeout. The previous code always called `releaseLock()` in the `finally` block regardless, which throws a `LockTimeoutException` and silently aborts the save. The fix stores the `tryLock()` return value and only calls `releaseLock()` if the lock was actually acquired.
-
-### Error Surfacing
-`createPrep` in `usePreps.ts` returns `true | string` — `true` on success or the actual GAS error message string on failure. `PreparePage` shows the real error in the toast rather than a generic fallback, making diagnosis easier.
+### Date Normalization
+The frontend still keeps `toDateOnly()` in `usePreps.ts` as a safety layer so migrated records from the old Sheets/GAS system remain stable even if some dates were stored as ISO timestamps.
 
 ### Pagination
 Both Dashboard and History display **20 records at a time** with a load-more button. History resets to page 1 whenever any filter changes. Excel export always includes **all filtered records**.
@@ -443,11 +384,10 @@ Both Dashboard and History display **20 records at a time** with a load-more but
 ## 🗺️ Deployment Checklist
 
 ```
-1. Deploy GAS backend (Code.gs)
-2. Verify with ?action=ping
-3. Set VITE_GAS_URL in .env (dev) and GitHub Actions Variable (CI)
-4. Push to main → GitHub Actions deploys frontend automatically
-5. Login as admin / 1234 → change password immediately
+1. Enable Firestore and publish `firestore.rules`
+2. If migrating old data, set `VITE_GAS_URL` in `.env` and run `npm run migrate:firestore`
+3. Push to main → GitHub Actions deploys frontend automatically
+4. Verify login with a Firestore user account
 ```
 
 ---

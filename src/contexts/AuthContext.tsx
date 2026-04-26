@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (u) {
           setUser(u);
-          // Refresh user data from GAS
+          // Refresh user data from Firestore
           api.getUserById(u.id).then(({ data, error }) => {
             if (!error && data) {
               const freshUser = rowToUser(data);

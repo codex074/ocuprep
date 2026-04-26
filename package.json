@@ -8,11 +8,14 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "migrate:firestore": "node scripts/migrate-gas-to-firestore.mjs",
+    "import:formulas": "node scripts/import-formulas.mjs",
     "predeploy": "npm run build",
     "deploy": "npm run deploy:manual",
     "deploy:manual": "gh-pages -d dist"
   },
   "dependencies": {
+    "firebase": "^12.12.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",

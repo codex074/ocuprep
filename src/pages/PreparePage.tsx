@@ -120,7 +120,7 @@ export default function PreparePage() {
       toast(`บันทึกสำเร็จ: ${selectedFormula.name} (${qty} ขวด)`, 'success');
       setHn(''); setPatientName(''); setNote(''); setQty(1);
     } else {
-      // ok คือ string ที่ได้จาก GAS error หรือ network error
+      // ok คือ string ที่ได้จากฐานข้อมูลหรือ network error
       toast(ok, 'error');
     }
   };
