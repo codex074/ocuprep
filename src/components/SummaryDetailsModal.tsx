@@ -40,7 +40,7 @@ export default function SummaryDetailsModal({ isOpen, onClose, formulaName, prep
                   <td style={{ padding: '12px 16px', fontSize: '13px' }}>{p.prepared_by}</td>
                   <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 500 }}>{p.qty}</td>
                   <td style={{ padding: '12px 16px' }}>
-                    <span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                    <span className={`badge-tag ${p.mode === 'patient' ? 'purple' : 'amber'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
                       {p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}
                     </span>
                   </td>

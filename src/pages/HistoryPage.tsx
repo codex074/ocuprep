@@ -282,7 +282,7 @@ export default function HistoryPage() {
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{p.concentration}</div>
                       </td>
                       <td data-label="ประเภท">
-                        <span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                        <span className={`badge-tag ${p.mode === 'patient' ? 'purple' : 'amber'}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
                           {p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}
                         </span>
                       </td>
@@ -295,7 +295,16 @@ export default function HistoryPage() {
                       </td>
                       <td data-label="ผู้เตรียม" style={{ fontSize: '13px' }}>{p.prepared_by}</td>
                       <td data-label="สถานที่">
-                        <span className="badge-tag green" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                        <span
+                          className={`badge-tag ${
+                            p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม'
+                              ? 'blue'
+                              : p.location === 'ห้องจ่ายยาผู้ป่วยนอก'
+                                ? 'green'
+                                : 'teal'
+                          }`}
+                          style={{ fontSize: '11px', padding: '2px 8px' }}
+                        >
                           {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : p.location)}
                         </span>
                       </td>
@@ -442,7 +451,7 @@ export default function HistoryPage() {
             </div>
           )}
 
-          <EditPrepModal isOpen={!!editPrep} onClose={() => setEditPrep(null)} prep={editPrep} onUpdate={handleUpdate} />
+          <EditPrepModal isOpen={!!editPrep} onClose={() => setEditPrep(null)} prep={editPrep} formulas={formulas} onUpdate={handleUpdate} />
           <PrepDetailsModal isOpen={!!selectedPrep} onClose={() => setSelectedPrep(null)} prep={selectedPrep} />
         </>
       )}

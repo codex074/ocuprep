@@ -15,6 +15,7 @@ export default function UsersPage() {
   const { user: curUser } = useAuth();
   const { toast } = useToast();
   const { users, loading, refreshing, fetchUsers, createUser, updateUser, toggleUser, deleteUser } = useUsers();
+  const [search, setSearch] = useState('');
   
   // Edit/Create state
   const [modalOpen, setModalOpen] = useState(false);
@@ -135,6 +136,21 @@ export default function UsersPage() {
     setVisiblePasswords(next);
   };
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredUsers = normalizedSearch
+    ? users.filter((u) => {
+        const haystacks = [
+          u.name,
+          u.pha_id,
+          u.role,
+          u.active ? 'active' : 'inactive',
+          u.active ? 'ใช้งาน' : 'ปิดใช้งาน',
+          u.role === 'admin' ? 'admin' : 'user',
+        ];
+        return haystacks.some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch));
+      })
+    : users;
+
   return (
     <div className="page-section">
       <div className="page-actions">
@@ -147,14 +163,41 @@ export default function UsersPage() {
         <>
       <div className="card">
         <div className="card-header">
-          <h3>จัดการผู้ใช้งาน</h3>
+          <div>
+            <h3>จัดการผู้ใช้งาน</h3>
+            {normalizedSearch && (
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                พบ {filteredUsers.length} รายการ
+              </p>
+            )}
+          </div>
           <button className="btn btn-sm btn-primary" onClick={openAdd}>เพิ่มผู้ใช้</button>
+        </div>
+        <div style={{ padding: '0 24px 16px' }}>
+          <div className="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อ, username, role หรือสถานะ..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
         </div>
         <div className="table-wrapper">
           <table>
             <thead><tr><th>เภสัชกร</th><th>Username</th><th>รหัสผ่าน</th><th>สิทธิ์</th><th>สถานะ</th><th></th></tr></thead>
             <tbody>
-              {users.map((u, i) => (
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '48px' }}>
+                    {normalizedSearch ? 'ไม่พบผู้ใช้งานที่ตรงกับคำค้นหา' : 'ยังไม่มีผู้ใช้งาน'}
+                  </td>
+                </tr>
+              )}
+              {filteredUsers.map((u, i) => (
                 <tr key={u.id}>
                   <td onClick={() => setViewUser(u)} style={{ cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

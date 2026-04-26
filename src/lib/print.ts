@@ -1,6 +1,8 @@
 import { fmtDate, multiplyAmount, resolvePath } from './utils';
 import type { Prep, Formula } from '../types';
 
+const formatLotDisplay = (lotNo: string | null | undefined) => String(lotNo ?? '').replace(/^LOT-/, '');
+
 export const printHtml = (html: string) => {
   const w = window.open('', '_blank', 'width=400,height=500');
   if (!w) return;
@@ -30,7 +32,7 @@ export const generateLabelHtml = (prep: Prep, formula: Formula) => {
   const pkgSize = formula.package_size ? ` (${formula.package_size})` : '';
   const fullName = `${prep.formula_name}${pkgSize} (${prep.qty} ขวด)`;
   
-  return `<div class="lb"><div class="row"><span>ชื่อยา:</span><strong style="max-width:65%">${fullName}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration || '-'}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong style="max-width:65%">${pn}${hnVal !== '-' ? ' (' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${prep.lot_no}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:#000;font-weight:700"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>ใช้ยาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${preparer} | ${prep.location}</div>`;
+  return `<div class="lb"><div class="row"><span>ชื่อยา:</span><strong style="max-width:65%">${fullName}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration || '-'}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong style="max-width:65%">${pn}${hnVal !== '-' ? ' (' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${formatLotDisplay(prep.lot_no)}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:#000;font-weight:700"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>ใช้ยาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${preparer} | ${prep.location}</div>`;
 };
 
 const getIngredientsHtml = (str: string | null, qty: number = 1) => {
@@ -85,7 +87,7 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;border:1px solid #ccc;padding:12px;border-radius:6px;">
       <div><strong>ความเข้มข้น:</strong> ${formula.concentration || '-'}</div>
       <div><strong>ขนาดบรรจุ:</strong> ${pkgSize}</div>
-      <div><strong>Lot No.:</strong> ${prep.lot_no}</div>
+      <div><strong>Lot No.:</strong> ${formatLotDisplay(prep.lot_no)}</div>
       <div><strong>จำนวน:</strong> ${prep.qty} ขวด</div>
       <div><strong>วันที่ผลิต:</strong> ${dateStr}</div>
       <div><strong>วันหมดอายุ:</strong> ${expStr}</div>
@@ -125,7 +127,16 @@ export const generateBottleLabelsHtml = (
 ): string => {
   const mfgStr = fmtDate(prep.date);
   const expStr = fmtDate(prep.expiry_date);
-  const drugName = (formula.short_name?.trim() || prep.formula_name) + (formula.package_size ? ` (${formula.package_size})` : '');
+  const baseName = formula.short_name?.trim() || prep.formula_name;
+  const packageSize = formula.package_size?.trim();
+  const concentration = (prep.concentration || formula.concentration || '').trim();
+  const drugName = packageSize && concentration
+    ? `${baseName} - ${packageSize} (${concentration})`
+    : packageSize
+      ? `${baseName} - ${packageSize}`
+      : concentration
+        ? `${baseName} (${concentration})`
+        : baseName;
   const qty = prep.qty;
   const totalPages = Math.ceil(qty / 3);
   const pages: string[] = [];
@@ -146,7 +157,7 @@ export const generateBottleLabelsHtml = (
         </div>
         <div class="bl-inline-row">
           <div class="bl-inline-item"><span class="bl-label">By:</span><span>${preparer}</span></div>
-          <div class="bl-inline-item"><span class="bl-label">Lot:</span><span>${prep.lot_no}</span></div>
+          <div class="bl-inline-item"><span class="bl-label">Lot:</span><span>${formatLotDisplay(prep.lot_no)}</span></div>
         </div>
       </div>`;
     }
@@ -184,7 +195,7 @@ export const generatePrepDetailsHtml = (prep: Prep, formula: Formula): string =>
                 `).join('')}
               </tbody>
             </table>
-             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+             <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
     `;
@@ -200,7 +211,7 @@ export const generatePrepDetailsHtml = (prep: Prep, formula: Formula): string =>
             <ol style="padding-left:15px;margin:0;font-size:10px;flex-grow:1;">
               ${method.map((step: string) => `<li style="margin-bottom:2px;">${step}</li>`).join('')}
             </ol>
-             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+             <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
     `;
@@ -214,7 +225,7 @@ export const generatePrepDetailsHtml = (prep: Prep, formula: Formula): string =>
             <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">วิธีการเตรียมอย่างย่อ</div>
              <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name}</div>
             <div style="padding:0;font-size:10px;white-space:pre-wrap;flex-grow:1;">${formula.short_prep}</div>
-             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+             <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
     `;
@@ -234,7 +245,7 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
             <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">วิธีการเตรียมอย่างย่อ</div>
              <div style="text-align:center;margin-bottom:5px;font-size:10px;">${formula.name} (${prep.qty} ขวด)</div>
             <div style="padding:0;font-size:10px;white-space:pre-wrap;flex-grow:1;">${formula.short_prep}</div>
-             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+             <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
     `;
@@ -263,7 +274,7 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
                 `).join('')}
               </tbody>
             </table>
-             <div class="lf" style="margin-top:auto;">Lot: ${prep.lot_no}</div>
+             <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
     `;

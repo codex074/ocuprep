@@ -163,7 +163,7 @@ export default function DashboardPage() {
 
   const priceMap = Object.fromEntries(formulas.map(f => [f.id, f.price ?? 0]));
   const totalValue = filteredPreps.reduce((sum, p) => sum + (priceMap[p.formula_id] ?? 0) * p.qty, 0);
-  const totalValueFormatted = `฿${totalValue.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const totalValueFormatted = totalValue.toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const dailyRows = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
@@ -240,7 +240,7 @@ export default function DashboardPage() {
       c: 'red',
       path: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></>,
     },
-    { v: totalValueFormatted, l: 'มูลค่ายาที่ผลิต', c: 'teal', path: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
+    { v: totalValueFormatted, l: 'มูลค่ายาที่ผลิต', c: 'teal', valueClassName: 'stat-value stat-value-currency stat-value-production', path: <text x="12" y="16" textAnchor="middle" fontSize="16" fontWeight="700" fill="currentColor" stroke="none">฿</text> },
   ];
 
   return (
@@ -278,7 +278,7 @@ export default function DashboardPage() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{s.path}</svg>
             </div>
             <div className="stat-info">
-              <h4 className={typeof s.v === 'string' && s.v.startsWith('฿') ? 'stat-value stat-value-currency' : 'stat-value'}>
+              <h4 className={s.valueClassName ?? 'stat-value'}>
                 {s.v}
               </h4>
               <p>{s.l}</p>
@@ -315,7 +315,7 @@ export default function DashboardPage() {
                       </td>
                       <td data-label="สูตรยา" style={{ fontWeight: 500 }}>{shortNameMap[p.formula_name] ?? p.formula_name}</td>
                       <td data-label="จำนวน">{p.qty}</td>
-                      <td data-label="ประเภท" style={{ whiteSpace: 'nowrap' }}><span className={`badge-tag ${p.mode === 'patient' ? 'blue' : 'teal'}`}>{p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}</span></td>
+                      <td data-label="ประเภท" style={{ whiteSpace: 'nowrap' }}><span className={`badge-tag ${p.mode === 'patient' ? 'purple' : 'amber'}`}>{p.mode === 'patient' ? 'เฉพาะราย' : 'Stock'}</span></td>
                       <td data-label="ผู้เตรียม">{p.prepared_by}</td>
                       <td className="td-actions" style={{ textAlign: 'right' }}>
                         {(user?.role === 'admin' || user?.name === p.prepared_by) && (
@@ -392,6 +392,7 @@ export default function DashboardPage() {
         isOpen={!!editPrep}
         onClose={() => setEditPrep(null)}
         prep={editPrep}
+        formulas={formulas}
         onUpdate={handleUpdate}
       />
 

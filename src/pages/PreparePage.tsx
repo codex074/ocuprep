@@ -231,8 +231,8 @@ export default function PreparePage() {
           <div className="form-group">
             <label>รูปแบบการเตรียม <span className="req">*</span></label>
             <div className="toggle-group">
-              <div className={`toggle-option${mode === 'patient' ? ' active' : ''}`} onClick={() => setMode('patient')}>เฉพาะราย (Patient)</div>
-              <div className={`toggle-option${mode === 'stock' ? ' active' : ''}`} onClick={() => setMode('stock')}>Stock</div>
+              <div className={`toggle-option patient${mode === 'patient' ? ' active' : ''}`} onClick={() => setMode('patient')}>เฉพาะราย (Patient)</div>
+              <div className={`toggle-option stock${mode === 'stock' ? ' active' : ''}`} onClick={() => setMode('stock')}>Stock</div>
             </div>
           </div>
 

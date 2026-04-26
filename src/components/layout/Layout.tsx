@@ -2,14 +2,33 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { resolvePath } from '../../lib/utils';
+import { useToast } from '../../contexts/ToastContext';
+import Modal from '../ui/Modal';
 import Swal from 'sweetalert2';
 
 export default function Layout() {
-  const { user, logout, location: stationName } = useAuth();
+  const { user, logout, location: stationName, selectStation } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [stationModalOpen, setStationModalOpen] = useState(false);
+
+  const stationOptions = [
+    {
+      value: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม',
+      label: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม',
+      subtitle: 'IPD Surgery Ward',
+      tone: 'blue',
+    },
+    {
+      value: 'ห้องจ่ายยาผู้ป่วยนอก',
+      label: 'ห้องจ่ายยาผู้ป่วยนอก',
+      subtitle: 'OPD Pharmacy',
+      tone: 'green',
+    },
+  ] as const;
 
   const getPageTitle = (path: string) => {
     switch (path) {
@@ -47,6 +66,17 @@ export default function Layout() {
     } as any).then((result) => {
       if (result.isConfirmed) { logout(); navigate('/login'); }
     });
+  };
+
+  const handleStationChange = (nextStation: string) => {
+    if (nextStation === stationName) {
+      setStationModalOpen(false);
+      return;
+    }
+
+    selectStation(nextStation);
+    setStationModalOpen(false);
+    toast(`เปลี่ยนห้องทำงานเป็น ${nextStation}`, 'success');
   };
 
   return (
@@ -132,16 +162,22 @@ export default function Layout() {
 
           <div className="header-actions">
             {stationName && (
-              <div
+              <button
+                type="button"
                 className="header-station"
                 style={{ background: stationStyle.bg, color: stationStyle.text }}
+                onClick={() => setStationModalOpen(true)}
+                title="เปลี่ยนห้องทำงาน"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
                 {stationName}
-              </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="header-station-chevron">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
             )}
 
             <div className="header-user-cluster">
@@ -283,6 +319,41 @@ export default function Layout() {
           </div>
         </>
       )}
+
+      <Modal
+        isOpen={stationModalOpen}
+        onClose={() => setStationModalOpen(false)}
+        title="เปลี่ยนห้องทำงาน"
+        width="520px"
+      >
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {stationOptions.map((station) => {
+            const isActive = station.value === stationName;
+            return (
+              <button
+                key={station.value}
+                type="button"
+                className={`station-switch-card ${station.tone}${isActive ? ' active' : ''}`}
+                onClick={() => handleStationChange(station.value)}
+              >
+                <div className={`station-switch-icon ${station.tone}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                </div>
+                <div className="station-switch-info">
+                  <div className="station-switch-name">{station.label}</div>
+                  <div className="station-switch-subtitle">{station.subtitle}</div>
+                </div>
+                <div className="station-switch-status">
+                  {isActive ? 'กำลังใช้งาน' : 'เลือก'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </Modal>
     </div>
   );
 }

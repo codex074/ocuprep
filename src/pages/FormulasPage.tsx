@@ -14,6 +14,7 @@ export default function FormulasPage() {
   const { formulas, loading, refreshing, fetchFormulas, createFormula, updateFormula, deleteFormula } = useFormulas();
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
   
   // Password modal state
   const [showPassword, setShowPassword] = useState(false);
@@ -202,12 +203,30 @@ export default function FormulasPage() {
   const addMet = () => setForm(f => ({ ...f, method: [...f.method, ''] }));
   const removeMet = (idx: number) => setForm(f => ({ ...f, method: f.method.filter((_, i) => i !== idx) }));
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredFormulas = normalizedSearch
+    ? formulas.filter((f) => {
+        const haystacks = [
+          f.code,
+          f.short_name,
+          f.name,
+          f.concentration,
+          f.category,
+          f.package_size,
+        ];
+        return haystacks.some((value) => String(value ?? '').toLowerCase().includes(normalizedSearch));
+      })
+    : formulas;
+
   return (
     <div className="page-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h3 style={{ fontSize: '16px', fontWeight: 600 }}>สูตรตำรับยาทั้งหมด</h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>เพิ่ม แก้ไข หรือลบสูตรตำรับ</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            เพิ่ม แก้ไข หรือลบสูตรตำรับ
+            {normalizedSearch ? ` • พบ ${filteredFormulas.length} รายการ` : ''}
+          </p>
         </div>
         <div className="page-actions" style={{ marginBottom: 0 }}>
           <RefreshButton refreshing={refreshing} onClick={() => fetchFormulas(true)} />
@@ -224,6 +243,19 @@ export default function FormulasPage() {
         <LoadingState title="กำลังโหลดสูตรตำรับยา" description="ระบบกำลังอ่านรายการสูตรยาจากฐานข้อมูล" />
       ) : (
         <div className="card">
+          <div style={{ padding: '20px 24px 0' }}>
+            <div className="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="ค้นหา รหัส, ชื่อย่อ, ชื่อสูตร หรือ ความเข้มข้น..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
           <div className="table-wrapper" style={{ padding: '0 0 8px' }}>
             <table className="responsive-table formula-list-table">
               <thead>
@@ -237,10 +269,14 @@ export default function FormulasPage() {
                 </tr>
               </thead>
               <tbody>
-                {formulas.length === 0 && (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>ยังไม่มีสูตรตำรับ</td></tr>
+                {filteredFormulas.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '60px' }}>
+                      {normalizedSearch ? 'ไม่พบสูตรตำรับที่ตรงกับคำค้นหา' : 'ยังไม่มีสูตรตำรับ'}
+                    </td>
+                  </tr>
                 )}
-                {formulas.map(f => (
+                {filteredFormulas.map(f => (
                   <tr
                     key={f.id}
                     onClick={() => openEdit(f)}
