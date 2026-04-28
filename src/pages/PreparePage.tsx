@@ -10,6 +10,9 @@ import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
+import type { Prep } from '../types';
+
+type PrepPayload = Omit<Prep, 'id' | 'created_at'>;
 
 export default function PreparePage() {
   const { user, location: curLoc } = useAuth();
@@ -29,6 +32,9 @@ export default function PreparePage() {
   const [printContent, setPrintContent] = useState('');
   const [printTitle, setPrintTitle] = useState('');
   const [saving, setSaving] = useState(false);
+  const [chemicalLotModal, setChemicalLotModal] = useState(false);
+  const [chemicalLotNo, setChemicalLotNo] = useState('');
+  const [pendingPrepData, setPendingPrepData] = useState<PrepPayload | null>(null);
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
   useEffect(() => {
@@ -80,7 +86,7 @@ export default function PreparePage() {
     return <pre style={{ fontFamily: 'var(--font-body)', whiteSpace: 'pre-wrap', margin: 0 }}>{str}</pre>;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (saving) return;
     if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return; }
     if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return; }
@@ -93,9 +99,7 @@ export default function PreparePage() {
       target = `Stock → ${room}`;
     }
 
-    setSaving(true);
-    openLoadingModal('กำลังบันทึกรายการผลิตยา...');
-    const ok = await createPrep({
+    setPendingPrepData({
       formula_id: selectedFormula.id,
       formula_name: selectedFormula.name,
       concentration: selectedFormula.concentration,
@@ -106,21 +110,33 @@ export default function PreparePage() {
       dest_room: mode === 'stock' ? room : '',
       lot_no: lotNo.trim(),
       date,
-      expiry_date: addDays(date, selectedFormula.expiry_days), // addDays now handles negative (hours) logic
+      expiry_date: addDays(date, selectedFormula.expiry_days),
       qty,
       note: note.trim(),
       prepared_by: user?.name || '',
       user_pha_id: user?.pha_id || '',
       location: curLoc,
     });
+    setChemicalLotNo('');
+    setChemicalLotModal(true);
+  };
+
+  const doSave = async (chemLot: string) => {
+    if (!pendingPrepData) return;
+    setChemicalLotModal(false);
+    setSaving(true);
+    openLoadingModal('กำลังบันทึกรายการผลิตยา...');
+    const payload: PrepPayload = { ...pendingPrepData };
+    if (chemLot.trim()) payload.chemical_lot_no = chemLot.trim();
+    const ok = await createPrep(payload);
     closeLoadingModal();
     setSaving(false);
+    setPendingPrepData(null);
 
     if (ok === true) {
-      toast(`บันทึกสำเร็จ: ${selectedFormula.name} (${qty} ขวด)`, 'success');
+      toast(`บันทึกสำเร็จ: ${pendingPrepData.formula_name} (${pendingPrepData.qty} ขวด)`, 'success');
       setHn(''); setPatientName(''); setNote(''); setQty(1);
     } else {
-      // ok คือ string ที่ได้จากฐานข้อมูลหรือ network error
       toast(ok, 'error');
     }
   };
@@ -325,6 +341,31 @@ export default function PreparePage() {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={chemicalLotModal}
+        onClose={() => setChemicalLotModal(false)}
+        title="Lot No. สารเคมีที่ใช้เตรียม"
+        width="420px"
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => doSave('')}>ข้ามและบันทึก</button>
+            <button className="btn btn-primary" onClick={() => doSave(chemicalLotNo)}>บันทึก</button>
+          </>
+        }
+      >
+        <p style={{ marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+          กรอก Lot No. ของสารเคมีที่ใช้เตรียมยาครั้งนี้ (ไม่บังคับ)
+        </p>
+        <input
+          className="form-input"
+          placeholder="เช่น CHEM-2026-001"
+          value={chemicalLotNo}
+          onChange={e => setChemicalLotNo(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') doSave(chemicalLotNo); }}
+          autoFocus
+        />
+      </Modal>
 
       <Modal isOpen={printModal} onClose={() => setPrintModal(false)} title={printTitle}
         footer={

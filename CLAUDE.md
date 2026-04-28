@@ -9,8 +9,8 @@ Project context for AI-assisted development. Read this before making changes.
 A **Progressive Web App** for the Pharmacy Department of Uttaradit Hospital to record, track, and report the production of extemporaneous (custom-compounded) eye drops.
 
 - **Frontend:** React 19 + TypeScript + Vite — hosted on GitHub Pages
-- **Backend:** Google Apps Script (`gas/Code.gs`) — serverless, deployed separately
-- **Database:** Google Sheets — three sheets: `users`, `formulas`, `preps`
+- **Backend:** Firebase Firestore (direct SDK, no server) — `src/lib/api.ts`
+- **Database:** Firestore — collections: `users`, `formulas`, `preps`, `action_logs`, `meta`
 
 ---
 
@@ -39,19 +39,19 @@ A **Progressive Web App** for the Pharmacy Department of Uttaradit Hospital to r
 
 | File | Purpose |
 |---|---|
-| `gas/Code.gs` | **Entire backend** — GAS doGet/doPost handler, CRUD for users/formulas/preps, date normalization, lock handling, formula cache |
-| `src/lib/api.ts` | All HTTP calls to GAS — every action is a GET request with query params |
+| `src/lib/api.ts` | **Entire backend client** — Firestore CRUD for users/formulas/preps, action log writes, ID allocation via `meta/counters` transaction |
+| `src/lib/firebase.ts` | Firebase app + Firestore `db` instance |
 | `src/lib/resourceCache.ts` | In-memory cache — `getCachedResource`, `setCachedResource`, `invalidateCachedResource`, `loadCachedResource` (5 min stale) |
 | `src/hooks/usePreps.ts` | Fetch/create/update/delete preps — optimistic updates, `toDateOnly()` normalization |
 | `src/hooks/useFormulas.ts` | Fetch/CRUD formulas — cached in client |
 | `src/hooks/useUsers.ts` | Fetch/CRUD users |
-| `src/hooks/useGasInit.ts` | Pings GAS once on boot to auto-create sheets |
+| `src/hooks/useFirestoreInit.ts` | Pings Firestore once on boot to verify connectivity |
 | `src/hooks/useAppWarmup.ts` | Pre-fetches formulas on startup |
 | `src/contexts/AuthContext.tsx` | Login, logout, station selection — session in `localStorage` key `ed-extemp-session`, 1-hour TTL |
 | `src/pages/DashboardPage.tsx` | Central hub: month/location filter, 6 stat cards, recent list (shows `short_name`), formula summary, workload analysis + Export Excel |
 | `src/pages/HistoryPage.tsx` | Full audit log — filter modal ("ตั้งค่าการกรอง") with draft state, active filter chips, shows `short_name`, pagination, Export Excel |
 | `src/pages/FormulasPage.tsx` | Formula list (table view) — click row to open edit/detail modal |
-| `src/pages/PreparePage.tsx` | Record a new prep — auto lot number, label printing |
+| `src/pages/PreparePage.tsx` | Record a new prep — auto lot number, chemical lot modal, label printing |
 | `src/lib/print.ts` | Generates browser-printable HTML for labels and batch sheets |
 | `src/lib/utils.ts` | Date helpers (`today`, `fmtDate`, `fmtShort`, `fmtTime`, `addDays`, `getMonthRange`, etc.) |
 | `src/types/index.ts` | `User`, `Formula`, `Prep` interfaces |
@@ -78,44 +78,27 @@ Route guards: `ProtectedRoute` (requires login) → `RequireStation` (requires s
 
 ---
 
-## GAS Backend — Critical Notes
+## Firestore Backend — Key Notes
 
-### Every API call is a GET request
+### ID allocation
+IDs are integers allocated via a Firestore transaction on `meta/counters`:
 ```typescript
-// All calls go through gasGet() in src/lib/api.ts
-// Data is JSON.stringify'd into the 'data' query param
-GET https://script.google.com/.../exec?action=createPrep&data={"formula_id":1,...}
+// allocateId('preps') → atomically increments counters.preps, returns next int
+const id = await allocateId('preps');
 ```
 
-### Deployment is manual
-Pushing to GitHub does **NOT** redeploy GAS. After any change to `gas/Code.gs`:
-1. Open [script.google.com](https://script.google.com)
-2. **Deploy → Manage deployments → ✏️ Edit → New version → Deploy**
+### Document keys
+Each collection uses a business key as the Firestore document ID (not the numeric `id`):
+- `users` → `pha_id` (normalized lowercase)
+- `formulas` → `code` (normalized uppercase)
+- `preps` → `lot_no` (normalized, prefix `LOT-` stripped)
 
-The Web App URL never changes. Always remind the user to redeploy after GAS changes.
+### Action logs
+Every create/update/delete writes to `action_logs` automatically via `createActionLog()`.
+Logs older than 90 days are pruned on read (every 15 min interval).
 
-### Google Sheets auto-converts date strings to Date objects
-When GAS writes `"2026-04-04"` via `appendRow`, Sheets converts it to a Date object.
-When `getValues()` reads it back, GAS receives a JS `Date` object, NOT a string.
-`JSON.stringify(Date)` produces a UTC ISO string: `"2026-04-03T17:00:00.000Z"` (Bangkok midnight = previous UTC day).
-
-**Fix — two layers:**
-1. **GAS** `normalizeCell_()` in `getAll_()` — uses `Utilities.formatDate(raw, tz, 'yyyy-MM-dd')` for `date`/`expiry_date` fields, and `raw.toISOString()` for `created_at`.
-2. **Frontend** `toDateOnly()` in `usePreps.ts` — converts any ISO datetime string to YYYY-MM-DD in local timezone as a safety layer.
-
-Never remove either layer. This was a hard-to-find bug.
-
-### Lock safety in create_/update_/remove_
-```javascript
-// CORRECT pattern — tryLock() returns false if lock not acquired
-// Calling releaseLock() without a lock throws LockTimeoutException
-const lockAcquired = lock.tryLock(10000);
-try { ... } finally { if (lockAcquired) lock.releaseLock(); }
-```
-
-### Formula cache
-`getFormulas` → cached in `CacheService` for 1 hour (key: `formulas_v1`).
-Cache is invalidated on every `createFormula`, `updateFormula`, `deleteFormula`.
+### No environment variables required
+Firebase config is hard-coded in `src/lib/firebase.ts`. No `.env` needed.
 
 ---
 
@@ -149,6 +132,7 @@ interface Prep {
   qty: number;
   note: string;
   location: string;           // station/ward — used for location filter
+  chemical_lot_no?: string;   // optional lot no. of chemicals used
   created_at?: string;        // ISO timestamp — used for workload time-slot classification
 }
 
@@ -207,15 +191,15 @@ function classifySlot(created_at?: string): 'morning' | 'afternoon' | 'overtime'
 ## Optimistic Updates Pattern
 
 ```typescript
-// createPrep returns: true (success) | string (error message from GAS)
+// createPrep returns: true (success) | string (error message)
 const result = await createPrep(data);
 if (result === true) {
   toast('สำเร็จ', 'success');
 } else {
-  toast(result, 'error');   // result is the actual GAS error string
+  toast(result, 'error');
 }
 
-// Inside usePreps — after GAS confirms:
+// Inside usePreps — after Firestore confirms:
 setPreps(prev => {
   const next = [newPrep, ...prev];
   setCachedResource(cacheKey, next);              // update monthly/all cache
@@ -243,7 +227,7 @@ LOT-YYYYMM-NNN
 - Stored in `localStorage` key `ed-extemp-session`
 - Structure: `{ user: User, location: string, timestamp: number }`
 - Session expires after **1 hour** (checked on load)
-- On restore: fetches fresh user data from GAS via `getUserById`
+- On restore: fetches fresh user data from Firestore via `getUserById`
 - **Station selection** is required after login (`RequireStation` guard)
 
 ---
@@ -256,10 +240,7 @@ LOT-YYYYMM-NNN
 # Steps: checkout → node 20 → npm ci → npm run build → upload artifact → deploy Pages
 ```
 
-> ⚠️ The workflow does NOT pass `VITE_GAS_URL` to the build step.
-> If the deployed app loses the GAS URL, add it as a **repository variable**
-> (`Settings → Secrets and variables → Actions → Variables → VITE_GAS_URL`)
-> and add `env: VITE_GAS_URL: ${{ vars.VITE_GAS_URL }}` to the build step.
+No environment variables are required for the build — Firebase config is bundled in source.
 
 ---
 
@@ -326,32 +307,8 @@ The FormulasPage list table also shows `short_name` as the primary label with `n
 
 ## Common Pitfalls
 
-1. **After any `gas/Code.gs` change** → remind user to manually redeploy GAS.
-2. **Never use `String(rawDate)` on a Sheets Date value** — produces non-comparable locale string. Always use `toDateOnly()` (frontend) or `Utilities.formatDate()` (GAS).
-3. **`Math.max(...arr)`** is fine for hundreds of IDs but would stack-overflow on 125k+ items — not a concern at current scale.
-4. **HashRouter `#/path`** — all links and redirects must use React Router `<NavLink>` / `navigate()`. Direct `window.location` changes break the router.
-5. **GAS URL query string limit** — all API calls are GET requests. Very long `note` fields or Thai characters are URL-encoded and handled fine, but keep data payloads reasonable.
-6. **`expiry_days < 0` means hours** — `addDays(date, -4)` adds 4 hours and returns a full ISO string. Display via `fmtDate()` still shows a readable date/time.
-7. **Room filter values in HistoryPage** — use `'IPD'`/`'OPD'` as option values, never raw Thai location strings. See History Page — Filter Modal section above.
-
----
-
-## Google Sheets Column Headers (must match exactly)
-
-```javascript
-users:    ['id','name','pha_id','password','role','active','must_change_password','profile_image','created_at']
-formulas: ['id','code','name','short_name','description','concentration','expiry_days','category','price','storage','ingredients','method','short_prep','package_size','created_at']
-preps:    ['id','formula_id','formula_name','concentration','mode','target','hn','patient_name','dest_room','lot_no','date','expiry_date','qty','note','prepared_by','user_pha_id','location','created_at']
-```
-
-`sanitizeData_()` in GAS discards any field not in the header list — this is intentional to prevent arbitrary column injection.
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `VITE_GAS_URL` | ✅ | Full GAS Web App URL — baked into the build at compile time |
-
-Set in `.env` for local dev. Set as a GitHub Actions Variable for CI deployments.
+1. **`Math.max(...arr)`** is fine for hundreds of IDs — not a concern at current scale.
+2. **HashRouter `#/path`** — all links and redirects must use React Router `<NavLink>` / `navigate()`. Direct `window.location` changes break the router.
+3. **`expiry_days < 0` means hours** — `addDays(date, -4)` adds 4 hours and returns a full ISO string. Display via `fmtDate()` still shows a readable date/time.
+4. **Room filter values in HistoryPage** — use `'IPD'`/`'OPD'` as option values, never raw Thai location strings. See History Page — Filter Modal section above.
+5. **`toDateOnly()` in `usePreps.ts`** — normalizes any date string to `YYYY-MM-DD` in local timezone. Keep this; legacy migrated data may contain UTC ISO strings.

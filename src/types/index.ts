@@ -46,6 +46,7 @@ export interface Prep {
   prepared_by: string;
   user_pha_id?: string;
   location: string;
+  chemical_lot_no?: string;
   created_at?: string;
 }
 

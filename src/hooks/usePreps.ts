@@ -6,14 +6,7 @@ import type { Prep } from '../types';
 // Cache key สำหรับ all preps (ใช้ใน HistoryPage)
 const PREPS_ALL_CACHE_KEY = 'preps';
 
-/**
- * Normalize a migrated date value to "YYYY-MM-DD".
- *
- * Legacy Google Sheets data could convert "2026-04-04" strings → Date objects.
- * The old GAS layer then serialized them as UTC ISO strings like
- * "2026-04-03T17:00:00.000Z" (midnight Bangkok = 17:00 UTC the day before).
- * Without normalization every date comparison would be off by one day.
- */
+// Normalize any date value to "YYYY-MM-DD", handling legacy UTC ISO strings from migrated data.
 function toDateOnly(raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '';
   const s = String(raw);
@@ -42,6 +35,7 @@ function toPrep(r: Record<string, unknown>): Prep {
     prepared_by: String(r.prepared_by ?? ''),
     user_pha_id: r.user_pha_id != null ? String(r.user_pha_id) : undefined,
     location: String(r.location ?? ''),
+    chemical_lot_no: r.chemical_lot_no != null ? String(r.chemical_lot_no) : undefined,
     created_at: r.created_at != null ? String(r.created_at) : undefined,
   };
 }
