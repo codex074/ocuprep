@@ -164,6 +164,10 @@ export default function DashboardPage() {
   const priceMap = Object.fromEntries(formulas.map(f => [f.id, f.price ?? 0]));
   const totalValue = filteredPreps.reduce((sum, p) => sum + (priceMap[p.formula_id] ?? 0) * p.qty, 0);
   const totalValueFormatted = totalValue.toLocaleString('th-TH', { maximumFractionDigits: 0 });
+  const expiredValue = filteredPreps
+    .filter(p => p.mode === 'stock' && p.is_expired)
+    .reduce((sum, p) => sum + (priceMap[p.formula_id] ?? 0) * p.qty, 0);
+  const expiredValueFormatted = expiredValue.toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const dailyRows = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
@@ -241,6 +245,7 @@ export default function DashboardPage() {
       path: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></>,
     },
     { v: totalValueFormatted, l: 'มูลค่ายาที่ผลิต', c: 'teal', valueClassName: 'stat-value stat-value-currency stat-value-production', path: <text x="12" y="16" textAnchor="middle" fontSize="16" fontWeight="700" fill="currentColor" stroke="none">฿</text> },
+    { v: expiredValueFormatted, l: 'มูลค่ายาสูญเสีย (Stock หมดอายุ)', c: 'red', valueClassName: 'stat-value stat-value-currency stat-value-expired', path: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></> },
   ];
 
   return (

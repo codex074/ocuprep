@@ -47,6 +47,7 @@ export interface Prep {
   user_pha_id?: string;
   location: string;
   chemical_lot_no?: string;
+  is_expired?: boolean;
   created_at?: string;
 }
 

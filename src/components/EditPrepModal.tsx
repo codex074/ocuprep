@@ -28,7 +28,8 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
     mode: 'patient' as 'patient' | 'stock',
     location: '',
     date: '', lot_no: '', qty: 1, expiry_date: '', note: '',
-    hn: '', patient_name: '', dest_room: ''
+    hn: '', patient_name: '', dest_room: '',
+    is_expired: false
   });
 
   useEffect(() => {
@@ -44,7 +45,8 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
         note: prep.note || '',
         hn: prep.hn || '',
         patient_name: prep.patient_name || '',
-        dest_room: prep.dest_room || ''
+        dest_room: prep.dest_room || '',
+        is_expired: prep.is_expired ?? false
       });
     }
   }, [prep]);
@@ -113,6 +115,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       hn: form.mode === 'patient' ? form.hn.trim() : '',
       patient_name: form.mode === 'patient' ? form.patient_name.trim() : '',
       dest_room: form.mode === 'stock' ? form.dest_room : '',
+      is_expired: form.mode === 'stock' ? form.is_expired : false,
     };
 
     setSaving(true);
@@ -209,10 +212,31 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
           </div>
         </div>
       ) : (
-        <div className="form-group">
-          <label>ห้องปลายทาง</label>
-          <input className="form-input" value={form.dest_room} readOnly style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }} />
-        </div>
+        <>
+          <div className="form-group">
+            <label>ห้องปลายทาง</label>
+            <input className="form-input" value={form.dest_room} readOnly style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }} />
+          </div>
+          <div className="form-group">
+            <label className="switch-label">
+              <span>เตรียมทดแทนขวดที่หมดอายุ</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.is_expired}
+                className={`switch-toggle${form.is_expired ? ' active' : ''}`}
+                onClick={() => setForm(f => ({ ...f, is_expired: !f.is_expired }))}
+              >
+                <span className="switch-knob" />
+              </button>
+            </label>
+            {form.is_expired && (
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--accent-red)' }}>
+                ยาขวดนี้เตรียมขึ้นเพื่อทดแทนขวดเดิมที่หมดอายุโดยยังไม่ได้ใช้ — นับเป็นมูลค่าสูญเสีย
+              </p>
+            )}
+          </div>
+        </>
       )}
 
       <div className="form-group">

@@ -34,6 +34,7 @@ export default function PreparePage() {
   const [saving, setSaving] = useState(false);
   const [chemicalLotModal, setChemicalLotModal] = useState(false);
   const [chemicalLotNo, setChemicalLotNo] = useState('');
+  const [isExpired, setIsExpired] = useState(false);
   const [pendingPrepData, setPendingPrepData] = useState<PrepPayload | null>(null);
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
@@ -116,6 +117,7 @@ export default function PreparePage() {
       prepared_by: user?.name || '',
       user_pha_id: user?.pha_id || '',
       location: curLoc,
+      ...(mode === 'stock' && isExpired ? { is_expired: true } : {}),
     });
     setChemicalLotNo('');
     setChemicalLotModal(true);
@@ -135,7 +137,7 @@ export default function PreparePage() {
 
     if (ok === true) {
       toast(`บันทึกสำเร็จ: ${pendingPrepData.formula_name} (${pendingPrepData.qty} ขวด)`, 'success');
-      setHn(''); setPatientName(''); setNote(''); setQty(1);
+      setHn(''); setPatientName(''); setNote(''); setQty(1); setIsExpired(false);
     } else {
       toast(ok, 'error');
     }
@@ -266,10 +268,31 @@ export default function PreparePage() {
           )}
 
           {mode === 'stock' && (
-            <div className="form-group">
-              <label>ห้องปลายทาง <span className="req">*</span></label>
-              <input className="form-input" value={room} readOnly style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }} />
-            </div>
+            <>
+              <div className="form-group">
+                <label>ห้องปลายทาง <span className="req">*</span></label>
+                <input className="form-input" value={room} readOnly style={{ backgroundColor: '#f3f4f6', color: '#6b7280' }} />
+              </div>
+              <div className="form-group">
+                <label className="switch-label">
+                  <span>เตรียมทดแทนขวดที่หมดอายุ</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isExpired}
+                    className={`switch-toggle${isExpired ? ' active' : ''}`}
+                    onClick={() => setIsExpired(v => !v)}
+                  >
+                    <span className="switch-knob" />
+                  </button>
+                </label>
+                {isExpired && (
+                  <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--accent-red)' }}>
+                    ยาขวดนี้เตรียมขึ้นเพื่อทดแทนขวดเดิมที่หมดอายุโดยยังไม่ได้ใช้ — นับเป็นมูลค่าสูญเสีย
+                  </p>
+                )}
+              </div>
+            </>
           )}
 
           <div className="form-row-3">

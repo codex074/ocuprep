@@ -36,6 +36,7 @@ function toPrep(r: Record<string, unknown>): Prep {
     user_pha_id: r.user_pha_id != null ? String(r.user_pha_id) : undefined,
     location: String(r.location ?? ''),
     chemical_lot_no: r.chemical_lot_no != null ? String(r.chemical_lot_no) : undefined,
+    is_expired: r.is_expired === true,
     created_at: r.created_at != null ? String(r.created_at) : undefined,
   };
 }
