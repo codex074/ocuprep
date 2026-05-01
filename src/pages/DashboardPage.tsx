@@ -235,15 +235,7 @@ export default function DashboardPage() {
 
   const stats = [
     { v: workloadSummary.totalQty, l: 'จำนวนขวดทั้งหมด', c: 'blue', path: <><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></> },
-    { v: patientBottles, l: 'จำนวนขวดเฉพาะราย', c: 'amber', path: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></> },
-    { v: stockBottles, l: 'จำนวนขวด Stock', c: 'purple', path: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></> },
     { v: workloadSummary.avgPerDay, l: 'ขวดเฉลี่ย/วันที่ผลิต', c: 'green', path: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></> },
-    {
-      v: workloadSummary.busiestDay ? `${workloadSummary.busiestDay.totalQty} ขวด` : '—',
-      l: workloadSummary.busiestDay ? `จำนวนขวดวันสูงสุด (${fmtThaiDay(workloadSummary.busiestDay.date)})` : 'จำนวนขวดวันสูงสุด',
-      c: 'red',
-      path: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></>,
-    },
     { v: totalValueFormatted, l: 'มูลค่ายาที่ผลิต', c: 'teal', valueClassName: 'stat-value stat-value-currency stat-value-production', path: <text x="12" y="16" textAnchor="middle" fontSize="16" fontWeight="700" fill="currentColor" stroke="none">฿</text> },
     { v: expiredValueFormatted, l: 'มูลค่ายาสูญเสีย (Stock หมดอายุ)', c: 'red', valueClassName: 'stat-value stat-value-currency stat-value-expired', path: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></> },
   ];
