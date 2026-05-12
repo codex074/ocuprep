@@ -10,7 +10,8 @@ import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
-import type { Prep } from '../types';
+import { chemicalItemsFromIngredients, cleanChemicalItems } from '../lib/chemicalItems';
+import type { ChemicalItem, Prep } from '../types';
 
 type PrepPayload = Omit<Prep, 'id' | 'created_at'>;
 
@@ -32,10 +33,8 @@ export default function PreparePage() {
   const [printContent, setPrintContent] = useState('');
   const [printTitle, setPrintTitle] = useState('');
   const [saving, setSaving] = useState(false);
-  const [chemicalLotModal, setChemicalLotModal] = useState(false);
-  const [chemicalLotNo, setChemicalLotNo] = useState('');
+  const [chemicalItems, setChemicalItems] = useState<ChemicalItem[]>([{ name: '', lot_no: '', expiry_date: '' }]);
   const [isExpired, setIsExpired] = useState(false);
-  const [pendingPrepData, setPendingPrepData] = useState<PrepPayload | null>(null);
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
   useEffect(() => {
@@ -53,6 +52,16 @@ export default function PreparePage() {
   }, [mode, curLoc]);
 
   const selectedFormula = formulas.find(f => f.id === +formulaId);
+
+  useEffect(() => {
+    setChemicalItems(chemicalItemsFromIngredients(selectedFormula?.ingredients ?? null));
+  }, [selectedFormula?.id]);
+
+  const updateChemicalItem = (index: number, field: keyof ChemicalItem, value: string) => {
+    setChemicalItems((current) => current.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [field]: value } : item
+    )));
+  };
 
   // Helper to render ingredients/method
   const renderIngredients = (str: string | null) => {
@@ -87,7 +96,7 @@ export default function PreparePage() {
     return <pre style={{ fontFamily: 'var(--font-body)', whiteSpace: 'pre-wrap', margin: 0 }}>{str}</pre>;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (saving) return;
     if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return; }
     if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return; }
@@ -100,7 +109,14 @@ export default function PreparePage() {
       target = `Stock → ${room}`;
     }
 
-    setPendingPrepData({
+    const preparedChemicalItems = cleanChemicalItems(chemicalItems);
+    const incompleteChemicalItem = preparedChemicalItems.find((item) => !item.name || !item.lot_no || !item.expiry_date);
+    if (incompleteChemicalItem) {
+      toast('กรุณากรอกชื่อสารเคมี, Lot No. และ Exp. ให้ครบทุกแถว', 'error');
+      return;
+    }
+    const firstChemicalItem = preparedChemicalItems[0];
+    const payload: PrepPayload = {
       formula_id: selectedFormula.id,
       formula_name: selectedFormula.name,
       concentration: selectedFormula.concentration,
@@ -117,29 +133,30 @@ export default function PreparePage() {
       prepared_by: user?.name || '',
       user_pha_id: user?.pha_id || '',
       location: curLoc,
+      chemical_items: preparedChemicalItems,
+      ...(firstChemicalItem?.lot_no ? { chemical_lot_no: firstChemicalItem.lot_no } : {}),
+      ...(firstChemicalItem?.expiry_date ? { chemical_expiry_date: firstChemicalItem.expiry_date } : {}),
       ...(mode === 'stock' && isExpired ? { is_expired: true } : {}),
-    });
-    setChemicalLotNo('');
-    setChemicalLotModal(true);
-  };
+    };
 
-  const doSave = async (chemLot: string) => {
-    if (!pendingPrepData) return;
-    setChemicalLotModal(false);
     setSaving(true);
     openLoadingModal('กำลังบันทึกรายการผลิตยา...');
-    const payload: PrepPayload = { ...pendingPrepData };
-    if (chemLot.trim()) payload.chemical_lot_no = chemLot.trim();
-    const ok = await createPrep(payload);
-    closeLoadingModal();
-    setSaving(false);
-    setPendingPrepData(null);
-
-    if (ok === true) {
-      toast(`บันทึกสำเร็จ: ${pendingPrepData.formula_name} (${pendingPrepData.qty} ขวด)`, 'success');
-      setHn(''); setPatientName(''); setNote(''); setQty(1); setIsExpired(false);
-    } else {
-      toast(ok, 'error');
+    try {
+      const ok = await createPrep(payload);
+      if (ok === true) {
+        toast(`บันทึกสำเร็จ: ${payload.formula_name} (${payload.qty} ขวด)`, 'success');
+        setHn('');
+        setPatientName('');
+        setNote('');
+        setChemicalItems(chemicalItemsFromIngredients(selectedFormula.ingredients));
+        setQty(1);
+        setIsExpired(false);
+      } else {
+        toast(ok, 'error');
+      }
+    } finally {
+      closeLoadingModal();
+      setSaving(false);
     }
   };
 
@@ -164,6 +181,8 @@ export default function PreparePage() {
     const d = date || today();
     const exp = addDays(d, selectedFormula.expiry_days);
     setPrintTitle('ใบสูตรผลิต (Batch Sheet)');
+    const preparedChemicalItems = cleanChemicalItems(chemicalItems);
+    const firstChemicalItem = preparedChemicalItems[0];
 
     const mockPrep = {
       id: 0,
@@ -183,6 +202,9 @@ export default function PreparePage() {
       prepared_by: user?.name || '-',
       user_pha_id: user?.pha_id || '',
       location: curLoc,
+      chemical_items: preparedChemicalItems,
+      chemical_lot_no: firstChemicalItem?.lot_no || undefined,
+      chemical_expiry_date: firstChemicalItem?.expiry_date || undefined,
     };
 
     setPrintContent(generateBatchSheetHtml(mockPrep, selectedFormula));
@@ -194,6 +216,8 @@ export default function PreparePage() {
     if (printTitle.includes('Label') && selectedFormula) {
       const d = date || today();
       const exp = addDays(d, selectedFormula.expiry_days);
+      const preparedChemicalItems = cleanChemicalItems(chemicalItems);
+      const firstChemicalItem = preparedChemicalItems[0];
       const mockPrep = {
         id: 0, formula_id: selectedFormula.id, formula_name: selectedFormula.name,
         concentration: selectedFormula.concentration, mode: mode as 'patient' | 'stock',
@@ -202,6 +226,9 @@ export default function PreparePage() {
         dest_room: mode === 'stock' ? room : '',
         lot_no: lotNo, date: d, expiry_date: exp, qty, note: '',
         prepared_by: user?.name || '-', user_pha_id: user?.pha_id || '', location: curLoc,
+        chemical_items: preparedChemicalItems,
+        chemical_lot_no: firstChemicalItem?.lot_no || undefined,
+        chemical_expiry_date: firstChemicalItem?.expiry_date || undefined,
       };
       const patientHtml = generateLabelHtml(mockPrep, selectedFormula);
       const bottleHtml = generateBottleLabelsHtml(mockPrep, selectedFormula);
@@ -317,6 +344,47 @@ export default function PreparePage() {
           </div>
 
           <div className="form-group">
+            <label className="chemical-section-title">สารเคมีที่ใช้เตรียม</label>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                <div>ชื่อสารเคมี</div>
+                <div>Lot No.</div>
+                <div>Exp.</div>
+              </div>
+              {chemicalItems.map((item, index) => (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <input
+                      className="form-input"
+                      placeholder="ชื่อสารเคมีจากสูตรตำรับ"
+                      value={item.name}
+                      readOnly
+                      aria-readonly="true"
+                      style={{ backgroundColor: '#f8fafc', color: '#64748b' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <input
+                      className="form-input"
+                      placeholder="เช่น CHEM-2026-001"
+                      value={item.lot_no}
+                      onChange={e => updateChemicalItem(index, 'lot_no', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <input
+                      className="form-input"
+                      type="date"
+                      value={item.expiry_date}
+                      onChange={e => updateChemicalItem(index, 'expiry_date', e.target.value)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-group">
             <label>หมายเหตุ</label>
             <textarea className="form-textarea" rows={2} placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" value={note} onChange={e => setNote(e.target.value)} />
           </div>
@@ -364,31 +432,6 @@ export default function PreparePage() {
           </div>
         </div>
       </div>
-
-      <Modal
-        isOpen={chemicalLotModal}
-        onClose={() => setChemicalLotModal(false)}
-        title="Lot No. สารเคมีที่ใช้เตรียม"
-        width="420px"
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => doSave('')}>ข้ามและบันทึก</button>
-            <button className="btn btn-primary" onClick={() => doSave(chemicalLotNo)}>บันทึก</button>
-          </>
-        }
-      >
-        <p style={{ marginBottom: '12px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-          กรอก Lot No. ของสารเคมีที่ใช้เตรียมยาครั้งนี้ (ไม่บังคับ)
-        </p>
-        <input
-          className="form-input"
-          placeholder="เช่น CHEM-2026-001"
-          value={chemicalLotNo}
-          onChange={e => setChemicalLotNo(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') doSave(chemicalLotNo); }}
-          autoFocus
-        />
-      </Modal>
 
       <Modal isOpen={printModal} onClose={() => setPrintModal(false)} title={printTitle}
         footer={

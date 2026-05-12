@@ -1,4 +1,5 @@
 import { fmtDate, multiplyAmount, resolvePath } from './utils';
+import { normalizeChemicalItems } from './chemicalItems';
 import type { Prep, Formula } from '../types';
 
 const formatLotDisplay = (lotNo: string | null | undefined) => String(lotNo ?? '').replace(/^LOT-/, '');
@@ -61,6 +62,27 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
   const dateStr = fmtDate(prep.date);
   const expStr = fmtDate(prep.expiry_date);
   const hospitalLogo = resolvePath('/logo/mophlogo.png');
+  const chemicalItems = normalizeChemicalItems(prep.chemical_items, prep.chemical_lot_no, prep.chemical_expiry_date);
+  const chemicalItemsHtml = chemicalItems.length > 0
+    ? `<table style="width:100%;border-collapse:collapse;margin-top:6px;">
+        <thead>
+          <tr>
+            <th style="border:1px solid #ddd;padding:4px;text-align:left;">สารเคมี</th>
+            <th style="border:1px solid #ddd;padding:4px;text-align:left;">Lot No.</th>
+            <th style="border:1px solid #ddd;padding:4px;text-align:left;">Exp.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${chemicalItems.map((item) => `
+            <tr>
+              <td style="border:1px solid #ddd;padding:4px;">${item.name || '-'}</td>
+              <td style="border:1px solid #ddd;padding:4px;">${item.lot_no || '-'}</td>
+              <td style="border:1px solid #ddd;padding:4px;">${item.expiry_date ? fmtDate(item.expiry_date) : '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`
+    : '-';
   
   const ingHtml = getIngredientsHtml(formula.ingredients, prep.qty);
   const metHtml = getMethodHtml(formula.method);
@@ -91,6 +113,7 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
       <div><strong>จำนวน:</strong> ${prep.qty} ขวด</div>
       <div><strong>วันที่ผลิต:</strong> ${dateStr}</div>
       <div><strong>วันหมดอายุ:</strong> ${expStr}</div>
+      <div style="grid-column: span 2;"><strong>สารเคมีที่ใช้เตรียม:</strong> ${chemicalItemsHtml}</div>
       <div style="grid-column: span 2;"><strong>การเก็บรักษา:</strong> ${storage}</div>
     </div>
     

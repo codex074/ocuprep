@@ -974,6 +974,11 @@ body {
   margin-bottom: 6px;
 }
 .form-group label .req { color: var(--accent-red); margin-left: 2px; }
+.form-group label.chemical-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
 
 .form-input,
 .form-select,

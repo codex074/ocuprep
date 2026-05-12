@@ -11,6 +11,7 @@ import RefreshButton from '../components/ui/RefreshButton';
 import Swal from 'sweetalert2';
 import PrepDetailsModal from '../components/PrepDetailsModal';
 import EditPrepModal from '../components/EditPrepModal';
+import { formatChemicalItems } from '../lib/chemicalItems';
 import type { Prep } from '../types';
 
 export default function HistoryPage() {
@@ -172,20 +173,26 @@ export default function HistoryPage() {
   const handleExport = () => {
     const dataToExport = filtered.length ? filtered : preps;
     if (!dataToExport.length) { toast('ไม่มีข้อมูล', 'error'); return; }
-    const exportData = dataToExport.map(p => ({
-      'ID': p.id,
-      'วันที่': p.date,
-      'เวลา': p.created_at ? fmtTime(p.created_at).replace(' น.', '') : '',
-      'สูตรยา': shortNameMap[p.formula_name] ?? p.formula_name,
-      'ประเภท': p.mode === 'patient' ? 'เฉพาะราย' : 'Stock',
-      'ผู้ป่วย/ห้อง': p.target,
-      'Lot': p.lot_no,
-      'จำนวน': p.qty,
-      'ผู้เตรียม': p.prepared_by,
-      'สถานที่': p.location,
-      'วันหมดอายุ': p.expiry_date,
-      'หมายเหตุ': p.note || '',
-    }));
+    const exportData = dataToExport.map(p => {
+      const chemicalItemsText = formatChemicalItems(p.chemical_items);
+      return {
+        'ID': p.id,
+        'วันที่': p.date,
+        'เวลา': p.created_at ? fmtTime(p.created_at).replace(' น.', '') : '',
+        'สูตรยา': shortNameMap[p.formula_name] ?? p.formula_name,
+        'ประเภท': p.mode === 'patient' ? 'เฉพาะราย' : 'Stock',
+        'ผู้ป่วย/ห้อง': p.target,
+        'Lot': p.lot_no,
+        'สารเคมีที่ใช้': chemicalItemsText,
+        'Lot สารเคมี': chemicalItemsText || p.chemical_lot_no || '',
+        'Exp สารเคมี': p.chemical_items?.length ? '' : p.chemical_expiry_date || '',
+        'จำนวน': p.qty,
+        'ผู้เตรียม': p.prepared_by,
+        'สถานที่': p.location,
+        'วันหมดอายุ': p.expiry_date,
+        'หมายเหตุ': p.note || '',
+      };
+    });
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook  = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'History');
@@ -311,6 +318,7 @@ export default function HistoryPage() {
 
                     <div className="history-mobile-meta">
                       <span>LOT {p.lot_no.replace('LOT-', '')}</span>
+                      {formatChemicalItems(p.chemical_items) && <span>สารเคมี {formatChemicalItems(p.chemical_items)}</span>}
                       <span>จำนวน {p.qty}</span>
                       <span>{p.prepared_by}</span>
                     </div>
@@ -367,6 +375,11 @@ export default function HistoryPage() {
                       </td>
                       <td data-label="Lot / จำนวน">
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>{p.lot_no.replace('LOT-', '')}</div>
+                        {(formatChemicalItems(p.chemical_items) || p.chemical_lot_no || p.chemical_expiry_date) && (
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            สารเคมี: {formatChemicalItems(p.chemical_items) || `${p.chemical_lot_no || '-'}${p.chemical_expiry_date ? ` / Exp ${p.chemical_expiry_date}` : ''}`}
+                          </div>
+                        )}
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>จำนวน: {p.qty}</div>
                       </td>
                       <td data-label="ผู้เตรียม" style={{ fontSize: '13px' }}>{p.prepared_by}</td>

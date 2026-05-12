@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { getCachedResource, loadCachedResource, setCachedResource, invalidateCachedResource } from '../lib/resourceCache';
+import { normalizeChemicalItems } from '../lib/chemicalItems';
 import type { Prep } from '../types';
 
 // Cache key สำหรับ all preps (ใช้ใน HistoryPage)
@@ -35,7 +36,9 @@ function toPrep(r: Record<string, unknown>): Prep {
     prepared_by: String(r.prepared_by ?? ''),
     user_pha_id: r.user_pha_id != null ? String(r.user_pha_id) : undefined,
     location: String(r.location ?? ''),
+    chemical_items: normalizeChemicalItems(r.chemical_items, r.chemical_lot_no, r.chemical_expiry_date),
     chemical_lot_no: r.chemical_lot_no != null ? String(r.chemical_lot_no) : undefined,
+    chemical_expiry_date: r.chemical_expiry_date != null ? toDateOnly(r.chemical_expiry_date) : undefined,
     is_expired: r.is_expired === true,
     created_at: r.created_at != null ? String(r.created_at) : undefined,
   };

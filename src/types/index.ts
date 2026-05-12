@@ -28,6 +28,12 @@ export interface Formula {
   created_at?: string;
 }
 
+export interface ChemicalItem {
+  name: string;
+  lot_no: string;
+  expiry_date: string;
+}
+
 export interface Prep {
   id: number;
   formula_id: number;
@@ -46,7 +52,9 @@ export interface Prep {
   prepared_by: string;
   user_pha_id?: string;
   location: string;
+  chemical_items?: ChemicalItem[];
   chemical_lot_no?: string;
+  chemical_expiry_date?: string;
   is_expired?: boolean;
   created_at?: string;
 }

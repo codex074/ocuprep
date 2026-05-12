@@ -4,7 +4,8 @@ import Combobox from './ui/Combobox';
 import { useToast } from '../contexts/ToastContext';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import { addDays } from '../lib/utils';
-import type { Prep } from '../types';
+import { cleanChemicalItems, normalizeChemicalItems } from '../lib/chemicalItems';
+import type { ChemicalItem, Prep } from '../types';
 import type { Formula } from '../types';
 
 interface EditPrepModalProps {
@@ -28,6 +29,8 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
     mode: 'patient' as 'patient' | 'stock',
     location: '',
     date: '', lot_no: '', qty: 1, expiry_date: '', note: '',
+    chemical_items: [{ name: '', lot_no: '', expiry_date: '' }] as ChemicalItem[],
+    chemical_lot_no: '', chemical_expiry_date: '',
     hn: '', patient_name: '', dest_room: '',
     is_expired: false
   });
@@ -43,6 +46,9 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
         qty: prep.qty || 1,
         expiry_date: prep.expiry_date || '',
         note: prep.note || '',
+        chemical_items: normalizeChemicalItems(prep.chemical_items, prep.chemical_lot_no, prep.chemical_expiry_date),
+        chemical_lot_no: prep.chemical_lot_no || '',
+        chemical_expiry_date: prep.chemical_expiry_date || '',
         hn: prep.hn || '',
         patient_name: prep.patient_name || '',
         dest_room: prep.dest_room || '',
@@ -77,6 +83,15 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       : { ...current, dest_room: nextDestRoom });
   }, [form.location, form.mode]);
 
+  const updateChemicalItem = (index: number, field: keyof ChemicalItem, value: string) => {
+    setForm((current) => ({
+      ...current,
+      chemical_items: current.chemical_items.map((item, itemIndex) => (
+        itemIndex === index ? { ...item, [field]: value } : item
+      )),
+    }));
+  };
+
   const handleSave = async () => {
     if (!prep || saving) return;
     if (!selectedFormula) {
@@ -104,6 +119,13 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       newTarget = `Stock → ${form.dest_room}`;
     }
 
+    const chemicalItems = cleanChemicalItems(form.chemical_items);
+    const incompleteChemicalItem = chemicalItems.find((item) => !item.name || !item.lot_no || !item.expiry_date);
+    if (incompleteChemicalItem) {
+      toast('กรุณากรอกชื่อสารเคมี, Lot No. และ Exp. ให้ครบทุกแถว', 'error');
+      return;
+    }
+    const firstChemicalItem = chemicalItems[0];
     const updates = {
       ...form,
       formula_id: selectedFormula.id,
@@ -115,6 +137,9 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       hn: form.mode === 'patient' ? form.hn.trim() : '',
       patient_name: form.mode === 'patient' ? form.patient_name.trim() : '',
       dest_room: form.mode === 'stock' ? form.dest_room : '',
+      chemical_items: chemicalItems,
+      chemical_lot_no: firstChemicalItem?.lot_no || '',
+      chemical_expiry_date: firstChemicalItem?.expiry_date || '',
       is_expired: form.mode === 'stock' ? form.is_expired : false,
     };
 
@@ -129,7 +154,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="แก้ไขรายการผลิต" width="500px"
+    <Modal isOpen={isOpen} onClose={onClose} title="แก้ไขรายการผลิต" width="760px"
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           <button className="btn btn-outline" onClick={onClose} disabled={saving}>ยกเลิก</button>
@@ -243,6 +268,48 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
         <label>วันหมดอายุ</label>
         <input className="form-input" type="text" value={form.expiry_date} readOnly placeholder="YYYY-MM-DD HH:MM" />
         <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>* ระบบคำนวณอัตโนมัติตามวันที่เตรียมและอายุยาของสูตรที่เลือก</div>
+      </div>
+
+      <div className="form-group">
+        <label>Lot No. และ Exp. สารเคมีที่ใช้เตรียม</label>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <div>ชื่อสารเคมี</div>
+            <div>Lot No.</div>
+            <div>Exp.</div>
+          </div>
+          {form.chemical_items.map((item, index) => (
+            <div
+              key={index}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}
+            >
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <input
+                  className="form-input"
+                  value={item.name}
+                  readOnly
+                  aria-readonly="true"
+                  style={{ backgroundColor: '#f8fafc', color: '#64748b' }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <input
+                  className="form-input"
+                  value={item.lot_no}
+                  onChange={e => updateChemicalItem(index, 'lot_no', e.target.value)}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <input
+                  className="form-input"
+                  type="date"
+                  value={item.expiry_date}
+                  onChange={e => updateChemicalItem(index, 'expiry_date', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="form-group">

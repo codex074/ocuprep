@@ -150,9 +150,6 @@ export default function DashboardPage() {
     if (filterLocation && !locations.includes(filterLocation)) setFilterLocation('');
   }, [filterLocation, locations]);
 
-  const patientPreps = filteredPreps.filter(p => p.mode === 'patient');
-  const patientBottles = patientPreps.reduce((sum, p) => sum + p.qty, 0);
-  const stockBottles = filteredPreps.filter(p => p.mode === 'stock').reduce((sum, p) => sum + p.qty, 0);
   const recent = filteredPreps.slice(0, visibleCount);
   const hasMore = filteredPreps.length > visibleCount;
 
