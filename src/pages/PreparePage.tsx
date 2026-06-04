@@ -35,6 +35,7 @@ export default function PreparePage() {
   const [saving, setSaving] = useState(false);
   const [chemicalItems, setChemicalItems] = useState<ChemicalItem[]>([{ name: '', lot_no: '', expiry_date: '' }]);
   const [isExpired, setIsExpired] = useState(false);
+  const [printMockPrep, setPrintMockPrep] = useState<Prep | null>(null);
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
   useEffect(() => {
@@ -96,25 +97,30 @@ export default function PreparePage() {
     return <pre style={{ fontFamily: 'var(--font-body)', whiteSpace: 'pre-wrap', margin: 0 }}>{str}</pre>;
   };
 
-  const handleSave = async () => {
-    if (saving) return;
-    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return; }
-    if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return; }
+  const normalizeHn = (raw: string): string => {
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 9) return '';
+    return digits.padStart(9, '0');
+  };
+
+  const doSave = async (): Promise<boolean> => {
+    if (saving) return false;
+    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return false; }
+    if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return false; }
     let target = '';
+    let normalizedHn = '';
     if (mode === 'patient') {
-      if (!hn.trim() || !patientName.trim()) { toast('กรุณากรอก HN และชื่อผู้ป่วย', 'error'); return; }
-      target = `HN: ${hn.trim()} - ${patientName.trim()}`;
+      normalizedHn = normalizeHn(hn);
+      if (!normalizedHn || !patientName.trim()) {
+        toast('กรุณากรอก HN อย่างน้อย 7 หลัก และชื่อผู้ป่วย', 'error'); return false;
+      }
+      target = `HN: ${normalizedHn} - ${patientName.trim()}`;
     } else {
-      if (!room) { toast('กรุณาเลือกห้องปลายทาง', 'error'); return; }
+      if (!room) { toast('กรุณาเลือกห้องปลายทาง', 'error'); return false; }
       target = `Stock → ${room}`;
     }
 
     const preparedChemicalItems = cleanChemicalItems(chemicalItems);
-    const incompleteChemicalItem = preparedChemicalItems.find((item) => !item.name || !item.lot_no || !item.expiry_date);
-    if (incompleteChemicalItem) {
-      toast('กรุณากรอกชื่อสารเคมี, Lot No. และ Exp. ให้ครบทุกแถว', 'error');
-      return;
-    }
     const firstChemicalItem = preparedChemicalItems[0];
     const payload: PrepPayload = {
       formula_id: selectedFormula.id,
@@ -122,7 +128,7 @@ export default function PreparePage() {
       concentration: selectedFormula.concentration,
       mode,
       target,
-      hn: mode === 'patient' ? hn.trim() : '',
+      hn: mode === 'patient' ? normalizedHn : '',
       patient_name: mode === 'patient' ? patientName.trim() : '',
       dest_room: mode === 'stock' ? room : '',
       lot_no: lotNo.trim(),
@@ -151,8 +157,10 @@ export default function PreparePage() {
         setChemicalItems(chemicalItemsFromIngredients(selectedFormula.ingredients));
         setQty(1);
         setIsExpired(false);
+        return true;
       } else {
         toast(ok, 'error');
+        return false;
       }
     } finally {
       closeLoadingModal();
@@ -160,38 +168,33 @@ export default function PreparePage() {
     }
   };
 
-  const handlePrintLabel = () => {
-    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยาก่อน', 'error'); return; }
-    const d = date || today();
-    // Use full datetime for expiration if it's hours (negative days)
-    const exp = addDays(d, selectedFormula.expiry_days);
-    const expStr = fmtDate(exp);
-    const dateStr = fmtDate(d);
+  const handleSave = () => doSave();
 
-    const pn = mode === 'patient' ? (patientName || '-') : 'Stock';
-    const hnVal = mode === 'patient' ? (hn || '-') : '-';
-    setPrintTitle('ฉลากยา (Patient Label)');
-    
-    setPrintContent(`<div class="label-preview"><div class="lb"><div class="row"><span>ชื่อยา:</span><strong>${selectedFormula.name}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${selectedFormula.concentration}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong>${pn}${hnVal !== '-' ? ' (HN: ' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${lotNo}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:var(--accent-red);font-weight:600"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>หยอดตาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${user?.name || '-'} | ${curLoc}</div></div>`);
-    setPrintModal(true);
+  const handleClear = () => {
+    setFormulaId('');
+    setMode('patient');
+    setHn('');
+    setPatientName('');
+    setRoom('');
+    setDate(today());
+    setQty(1);
+    setNote('');
+    setChemicalItems([{ name: '', lot_no: '', expiry_date: '' }]);
+    setIsExpired(false);
   };
 
-  const handlePrintBatch = () => {
-    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยาก่อน', 'error'); return; }
-    const d = date || today();
-    const exp = addDays(d, selectedFormula.expiry_days);
-    setPrintTitle('ใบสูตรผลิต (Batch Sheet)');
+  const buildPrintSnap = (d: string, exp: string): Prep => {
     const preparedChemicalItems = cleanChemicalItems(chemicalItems);
     const firstChemicalItem = preparedChemicalItems[0];
-
-    const mockPrep = {
+    const hnNorm = mode === 'patient' ? normalizeHn(hn) : '';
+    return {
       id: 0,
-      formula_id: selectedFormula.id,
-      formula_name: selectedFormula.name,
-      concentration: selectedFormula.concentration,
+      formula_id: selectedFormula!.id,
+      formula_name: selectedFormula!.name,
+      concentration: selectedFormula!.concentration,
       mode: mode as 'patient' | 'stock',
-      target: mode === 'patient' ? `HN: ${hn} - ${patientName}` : `Stock → ${room}`,
-      hn: mode === 'patient' ? hn : '',
+      target: mode === 'patient' ? `HN: ${hnNorm} - ${patientName}` : `Stock → ${room}`,
+      hn: hnNorm,
       patient_name: mode === 'patient' ? patientName : '',
       dest_room: mode === 'stock' ? room : '',
       lot_no: lotNo,
@@ -206,33 +209,49 @@ export default function PreparePage() {
       chemical_lot_no: firstChemicalItem?.lot_no || undefined,
       chemical_expiry_date: firstChemicalItem?.expiry_date || undefined,
     };
+  };
 
-    setPrintContent(generateBatchSheetHtml(mockPrep, selectedFormula));
+  const handlePrintLabel = async () => {
+    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยาก่อน', 'error'); return; }
+    if (mode === 'patient' && (!normalizeHn(hn) || !patientName.trim())) {
+      toast('กรุณากรอก HN อย่างน้อย 7 หลัก และชื่อผู้ป่วยก่อนพิมพ์', 'error'); return;
+    }
+    if (mode === 'stock' && !room) { toast('กรุณาเลือกห้องปลายทางก่อนพิมพ์', 'error'); return; }
+
+    const d = date || today();
+    const exp = addDays(d, selectedFormula.expiry_days);
+    const snap = buildPrintSnap(d, exp);
+    setPrintMockPrep(snap);
+    setPrintTitle('ฉลากยา (Patient Label)');
+    const pn = mode === 'patient' ? (patientName || '-') : 'Stock';
+    const hnVal = mode === 'patient' ? (normalizeHn(hn) || '-') : '-';
+    setPrintContent(`<div class="label-preview"><div class="lb"><div class="row"><span>ชื่อยา:</span><strong>${selectedFormula.name}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${selectedFormula.concentration}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong>${pn}${hnVal !== '-' ? ' (HN: ' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${lotNo}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${fmtDate(d)}</span></div><div class="row" style="color:var(--accent-red);font-weight:600"><span>วันหมดอายุ:</span><span>${fmtDate(exp)}</span></div><div class="row"><span>วิธีใช้:</span><span>หยอดตาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${user?.name || '-'} | ${curLoc}</div></div>`);
+    await doSave();
+    setPrintModal(true);
+  };
+
+  const handlePrintBatch = async () => {
+    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยาก่อน', 'error'); return; }
+    if (mode === 'patient' && (!normalizeHn(hn) || !patientName.trim())) {
+      toast('กรุณากรอก HN อย่างน้อย 7 หลัก และชื่อผู้ป่วยก่อนพิมพ์', 'error'); return;
+    }
+    if (mode === 'stock' && !room) { toast('กรุณาเลือกห้องปลายทางก่อนพิมพ์', 'error'); return; }
+
+    const d = date || today();
+    const exp = addDays(d, selectedFormula.expiry_days);
+    const snap = buildPrintSnap(d, exp);
+    setPrintMockPrep(snap);
+    setPrintTitle('ใบสูตรผลิต (Batch Sheet)');
+    setPrintContent(generateBatchSheetHtml(snap, selectedFormula));
+    await doSave();
     setPrintModal(true);
   };
 
   const doPrint = () => {
-    // If printing patient label, combine with bottle labels
-    if (printTitle.includes('Label') && selectedFormula) {
-      const d = date || today();
-      const exp = addDays(d, selectedFormula.expiry_days);
-      const preparedChemicalItems = cleanChemicalItems(chemicalItems);
-      const firstChemicalItem = preparedChemicalItems[0];
-      const mockPrep = {
-        id: 0, formula_id: selectedFormula.id, formula_name: selectedFormula.name,
-        concentration: selectedFormula.concentration, mode: mode as 'patient' | 'stock',
-        target: mode === 'patient' ? `HN: ${hn} - ${patientName}` : `Stock → ${room}`,
-        hn: mode === 'patient' ? hn : '', patient_name: mode === 'patient' ? patientName : '',
-        dest_room: mode === 'stock' ? room : '',
-        lot_no: lotNo, date: d, expiry_date: exp, qty, note: '',
-        prepared_by: user?.name || '-', user_pha_id: user?.pha_id || '', location: curLoc,
-        chemical_items: preparedChemicalItems,
-        chemical_lot_no: firstChemicalItem?.lot_no || undefined,
-        chemical_expiry_date: firstChemicalItem?.expiry_date || undefined,
-      };
-      const patientHtml = generateLabelHtml(mockPrep, selectedFormula);
-      const bottleHtml = generateBottleLabelsHtml(mockPrep, selectedFormula);
-      const prepStickersHtml = generatePrepStickersHtml(mockPrep, selectedFormula);
+    if (printTitle.includes('Label') && printMockPrep && selectedFormula) {
+      const patientHtml = generateLabelHtml(printMockPrep, selectedFormula);
+      const bottleHtml = generateBottleLabelsHtml(printMockPrep, selectedFormula);
+      const prepStickersHtml = generatePrepStickersHtml(printMockPrep, selectedFormula);
       printAllLabels(patientHtml, bottleHtml, prepStickersHtml);
     } else {
       // Batch sheet — existing behavior
@@ -285,7 +304,14 @@ export default function PreparePage() {
             <div className="form-row">
               <div className="form-group">
                 <label>HN ผู้ป่วย <span className="req">*</span></label>
-                <input className="form-input" placeholder="เช่น 12345678" value={hn} onChange={e => setHn(e.target.value.replace(/\D/g, ''))} />
+                <input
+                  className="form-input"
+                  placeholder="เช่น 1234567 (กรอก 7-9 หลัก)"
+                  value={hn}
+                  maxLength={9}
+                  inputMode="numeric"
+                  onChange={e => setHn(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                />
               </div>
               <div className="form-group">
                 <label>ชื่อ-นามสกุล <span className="req">*</span></label>
@@ -348,8 +374,8 @@ export default function PreparePage() {
             <div style={{ display: 'grid', gap: '8px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 <div>ชื่อสารเคมี</div>
-                <div>Lot No.</div>
-                <div>Exp.</div>
+                <div>Lot No. <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ไม่บังคับ)</span></div>
+                <div>Exp. <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ไม่บังคับ)</span></div>
               </div>
               {chemicalItems.map((item, index) => (
                 <div key={index} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
@@ -428,6 +454,10 @@ export default function PreparePage() {
             <button className="btn btn-outline" onClick={handlePrintBatch} disabled={saving}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
               พิมพ์ใบสูตรผลิต
+            </button>
+            <button className="btn btn-outline" onClick={handleClear} disabled={saving} style={{ marginLeft: 'auto', color: 'var(--accent-red)', borderColor: 'var(--accent-red)' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+              ล้างฟอร์ม
             </button>
           </div>
         </div>

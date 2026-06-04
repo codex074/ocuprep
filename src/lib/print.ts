@@ -171,8 +171,13 @@ export const generateBottleLabelsHtml = (
       if (idx >= qty) break;
       const preparer = prep.user_pha_id || prep.prepared_by;
       
-      labelsHtml += `<div class="bl">
+      const isPatient = prep.mode === 'patient';
+      const patientLine = isPatient
+        ? `<div class="bl-patient"><span class="bl-label">HN:</span><span>${prep.hn || '-'}</span><span class="bl-patient-name">${prep.patient_name || '-'}</span></div>`
+        : '';
+      labelsHtml += `<div class="bl${isPatient ? ' bl-patient-mode' : ''}">
         <div class="bl-count">${idx + 1}/${qty}</div>
+        ${patientLine}
         <div class="bl-name">${drugName}</div>
         <div class="bl-half-row">
           <div class="bl-half"><span class="bl-label">Mfg:</span><span>${mfgStr}</span></div>
@@ -329,6 +334,10 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 .bl-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10px;line-height:1.15}
 .bl-inline-item{display:flex;align-items:center;gap:1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bl-label{font-weight:700}
+.bl-patient{font-size:9px;line-height:1.1;display:flex;gap:1.5mm;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8mm}
+.bl-patient .bl-patient-name{flex:1;overflow:hidden;text-overflow:ellipsis}
+.bl-patient-mode .bl-name{font-size:10.5px;padding-right:0}
+.bl-patient-mode .bl-half-row,.bl-patient-mode .bl-inline-row{font-size:8.5px;line-height:1.1}
 
 .bl-num{display:none} 
 .bl-qr{display:none}

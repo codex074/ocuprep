@@ -318,7 +318,6 @@ export default function HistoryPage() {
 
                     <div className="history-mobile-meta">
                       <span>LOT {p.lot_no.replace('LOT-', '')}</span>
-                      {formatChemicalItems(p.chemical_items) && <span>สารเคมี {formatChemicalItems(p.chemical_items)}</span>}
                       <span>จำนวน {p.qty}</span>
                       <span>{p.prepared_by}</span>
                     </div>
@@ -375,11 +374,6 @@ export default function HistoryPage() {
                       </td>
                       <td data-label="Lot / จำนวน">
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>{p.lot_no.replace('LOT-', '')}</div>
-                        {(formatChemicalItems(p.chemical_items) || p.chemical_lot_no || p.chemical_expiry_date) && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            สารเคมี: {formatChemicalItems(p.chemical_items) || `${p.chemical_lot_no || '-'}${p.chemical_expiry_date ? ` / Exp ${p.chemical_expiry_date}` : ''}`}
-                          </div>
-                        )}
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>จำนวน: {p.qty}</div>
                       </td>
                       <td data-label="ผู้เตรียม" style={{ fontSize: '13px' }}>{p.prepared_by}</td>
