@@ -200,7 +200,13 @@ export default function DashboardPage() {
       acc[slot.key] = dailyRows.reduce((sum, day) => sum + day[slot.key], 0);
       return acc;
     }, {} as Record<SlotKey, number>);
-    return { totalPreps, totalQty, totalValue, avgPerDay, busiestDay, slotTotals };
+    const slotBottleTotals = SLOTS.reduce((acc, slot) => {
+      acc[slot.key] = filteredPreps.reduce((sum, prep) => (
+        classifySlot(prep.created_at) === slot.key ? sum + prep.qty : sum
+      ), 0);
+      return acc;
+    }, {} as Record<SlotKey, number>);
+    return { totalPreps, totalQty, totalValue, avgPerDay, busiestDay, slotTotals, slotBottleTotals };
   }, [dailyRows, filteredPreps, priceMap]);
   const maxWorkloadPreps = Math.max(...dailyRows.map((d) => d.totalPreps), 1);
   const displayWorkloadRows = showAllDays ? dailyRows : dailyRows.filter((d) => d.totalPreps > 0);
@@ -470,16 +476,16 @@ export default function DashboardPage() {
 
           <div className="card-body">
             <>
-                {workloadSummary.totalPreps > 0 && (
+                {workloadSummary.totalQty > 0 && (
                   <div className="card dashboard-workload-breakdown-card">
                     <div className="card-header">
-                      <h3>สัดส่วนตามช่วงเวลา — {currentMonthYear}</h3>
+                      <h3>สัดส่วนจำนวนขวดตามช่วงเวลา — {currentMonthYear}</h3>
                     </div>
                     <div className="card-body">
                       <div className="dashboard-slot-mobile-list">
                         {SLOTS.map((slot) => {
-                          const count = workloadSummary.slotTotals[slot.key];
-                          const pct = workloadSummary.totalPreps > 0 ? Math.round((count / workloadSummary.totalPreps) * 100) : 0;
+                          const count = workloadSummary.slotBottleTotals[slot.key];
+                          const pct = workloadSummary.totalQty > 0 ? Math.round((count / workloadSummary.totalQty) * 100) : 0;
                           return (
                             <div key={slot.key} className="dashboard-slot-mobile-item">
                               <div className="dashboard-slot-mobile-head">
@@ -500,8 +506,8 @@ export default function DashboardPage() {
 
                       <div className="dashboard-slot-grid">
                         {SLOTS.map((slot) => {
-                          const count = workloadSummary.slotTotals[slot.key];
-                          const pct = workloadSummary.totalPreps > 0 ? Math.round((count / workloadSummary.totalPreps) * 100) : 0;
+                          const count = workloadSummary.slotBottleTotals[slot.key];
+                          const pct = workloadSummary.totalQty > 0 ? Math.round((count / workloadSummary.totalQty) * 100) : 0;
                           return (
                             <div key={slot.key} className="dashboard-slot-card">
                               <div className="dashboard-slot-head">
@@ -519,7 +525,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="dashboard-slot-overview">
                         {SLOTS.map((slot) => {
-                          const pct = workloadSummary.totalPreps > 0 ? (workloadSummary.slotTotals[slot.key] / workloadSummary.totalPreps) * 100 : 0;
+                          const pct = workloadSummary.totalQty > 0 ? (workloadSummary.slotBottleTotals[slot.key] / workloadSummary.totalQty) * 100 : 0;
                           return pct > 0 ? <div key={slot.key} style={{ width: `${pct}%`, background: slot.color }} /> : null;
                         })}
                       </div>
