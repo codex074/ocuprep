@@ -120,11 +120,6 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
     }
 
     const chemicalItems = cleanChemicalItems(form.chemical_items);
-    const incompleteChemicalItem = chemicalItems.find((item) => !item.name || !item.lot_no || !item.expiry_date);
-    if (incompleteChemicalItem) {
-      toast('กรุณากรอกชื่อสารเคมี, Lot No. และ Exp. ให้ครบทุกแถว', 'error');
-      return;
-    }
     const firstChemicalItem = chemicalItems[0];
     const updates = {
       ...form,
