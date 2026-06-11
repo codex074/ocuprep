@@ -90,6 +90,11 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
   const storage = formula.storage?.trim() || 'เก็บในตู้เย็น 2-8°C';
   const pkgSize = formula.package_size || '-';
 
+  const patientInfoHtml = prep.mode === 'patient'
+    ? `<div><strong>ชื่อผู้ป่วย:</strong> ${prep.patient_name || '-'}</div>
+      <div><strong>HN:</strong> ${prep.hn || '-'}</div>`
+    : `<div style="grid-column: span 2;"><strong>ห้องที่นำไป Stock:</strong> ${prep.dest_room || '-'}</div>`;
+
   return `
   <div style="padding:16px;font-size:13px;line-height:1.8">
     <table style="width:100%;border-collapse:collapse;border:1px solid #000;margin-bottom:16px;">
@@ -107,6 +112,7 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
     </table>
     
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;border:1px solid #ccc;padding:12px;border-radius:6px;">
+      ${patientInfoHtml}
       <div><strong>ความเข้มข้น:</strong> ${formula.concentration || '-'}</div>
       <div><strong>ขนาดบรรจุ:</strong> ${pkgSize}</div>
       <div><strong>Lot No.:</strong> ${formatLotDisplay(prep.lot_no)}</div>
@@ -129,13 +135,15 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
     
     <div style="border-top:2px solid #333;padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;">
       <div style="text-align:center;padding:0 20px;">
+        <strong style="display:block;margin-bottom:8px;">ผู้เตรียม</strong>
         <div style="border-bottom:1px solid #999;height:50px"></div>
-        <strong style="display:block;margin-top:8px;">ผู้เตรียม (Prepared by)</strong>
+        <div style="margin-top:8px;">( ${prep.prepared_by || '-'} )</div>
         <div style="color:#666;font-size:11px;margin-top:4px;">วันที่: ____/____/____</div>
       </div>
       <div style="text-align:center;padding:0 20px;">
+        <strong style="display:block;margin-bottom:8px;">ผู้ตรวจสอบ</strong>
         <div style="border-bottom:1px solid #999;height:50px"></div>
-        <strong style="display:block;margin-top:8px;">ผู้ตรวจสอบ (Checked by)</strong>
+        <div style="margin-top:8px;">( ........................... )</div>
         <div style="color:#666;font-size:11px;margin-top:4px;">วันที่: ____/____/____</div>
       </div>
     </div>

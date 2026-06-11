@@ -103,7 +103,7 @@ export default function PreparePage() {
     return digits.padStart(9, '0');
   };
 
-  const doSave = async (): Promise<boolean> => {
+  const doSave = async (clearForm = true): Promise<boolean> => {
     if (saving) return false;
     if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return false; }
     if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return false; }
@@ -151,12 +151,14 @@ export default function PreparePage() {
       const ok = await createPrep(payload);
       if (ok === true) {
         toast(`บันทึกสำเร็จ: ${payload.formula_name} (${payload.qty} ขวด)`, 'success');
-        setHn('');
-        setPatientName('');
-        setNote('');
-        setChemicalItems(chemicalItemsFromIngredients(selectedFormula.ingredients));
-        setQty(1);
-        setIsExpired(false);
+        if (clearForm) {
+          setHn('');
+          setPatientName('');
+          setNote('');
+          setChemicalItems(chemicalItemsFromIngredients(selectedFormula.ingredients));
+          setQty(1);
+          setIsExpired(false);
+        }
         return true;
       } else {
         toast(ok, 'error');
@@ -226,7 +228,7 @@ export default function PreparePage() {
     const pn = mode === 'patient' ? (patientName || '-') : 'Stock';
     const hnVal = mode === 'patient' ? (normalizeHn(hn) || '-') : '-';
     setPrintContent(`<div class="label-preview"><div class="lb"><div class="row"><span>ชื่อยา:</span><strong>${selectedFormula.name}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${selectedFormula.concentration}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong>${pn}${hnVal !== '-' ? ' (HN: ' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${lotNo}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${fmtDate(d)}</span></div><div class="row" style="color:var(--accent-red);font-weight:600"><span>วันหมดอายุ:</span><span>${fmtDate(exp)}</span></div><div class="row"><span>วิธีใช้:</span><span>หยอดตาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${user?.name || '-'} | ${curLoc}</div></div>`);
-    await doSave();
+    await doSave(false);
     setPrintModal(true);
   };
 
@@ -243,7 +245,7 @@ export default function PreparePage() {
     setPrintMockPrep(snap);
     setPrintTitle('ใบสูตรผลิต (Batch Sheet)');
     setPrintContent(generateBatchSheetHtml(snap, selectedFormula));
-    await doSave();
+    await doSave(false);
     setPrintModal(true);
   };
 

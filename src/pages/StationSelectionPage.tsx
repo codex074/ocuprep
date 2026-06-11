@@ -65,6 +65,21 @@ export default function StationSelectionPage() {
             </div>
             <div className="station-arrow">→</div>
           </button>
+
+          <button className="station-card purple" onClick={() => handleSelect('ห้องเคมีบำบัด')}>
+            <div className="station-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 2v6.4a2 2 0 0 1-.3 1.05L4.3 16.5A2 2 0 0 0 6 19.6h12a2 2 0 0 0 1.7-3.1l-4.4-7.05A2 2 0 0 1 15 8.4V2" />
+                <line x1="8" y1="2" x2="16" y2="2" />
+                <line x1="6.5" y1="14" x2="17.5" y2="14" />
+              </svg>
+            </div>
+            <div className="station-info">
+              <h3>ห้องเคมีบำบัด</h3>
+              <span>Chemotherapy Unit</span>
+            </div>
+            <div className="station-arrow">→</div>
+          </button>
         </div>
 
         {/* Back button */}

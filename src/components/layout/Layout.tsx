@@ -28,6 +28,12 @@ export default function Layout() {
       subtitle: 'OPD Pharmacy',
       tone: 'green',
     },
+    {
+      value: 'ห้องเคมีบำบัด',
+      label: 'ห้องเคมีบำบัด',
+      subtitle: 'Chemotherapy Unit',
+      tone: 'purple',
+    },
   ] as const;
 
   const getPageTitle = (path: string) => {
@@ -45,6 +51,7 @@ export default function Layout() {
   const getStationColor = (name: string) => {
     if (name.includes('ศัลยกรรม'))  return { bg: 'var(--accent-blue-light)',  text: 'var(--accent-blue)' };
     if (name.includes('ผู้ป่วยนอก')) return { bg: 'var(--accent-green-light)', text: 'var(--accent-green)' };
+    if (name.includes('เคมีบำบัด')) return { bg: 'var(--accent-purple-light)', text: 'var(--accent-purple)' };
     return { bg: 'var(--accent-blue-light)', text: 'var(--accent-blue)' };
   };
 

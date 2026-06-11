@@ -126,6 +126,23 @@ export default function HistoryPage() {
   const visiblePreps = filtered.slice(0, visibleCount);
   const hasMore = filtered.length > visibleCount;
 
+  // Render the "ผู้ป่วย/ห้อง" cell:
+  // - stock mode → destination room only
+  // - patient mode → HN on the first line, name on the second
+  // - fall back to the legacy combined `target` when structured fields are empty
+  const renderTarget = (p: Prep) => {
+    if (p.mode === 'stock') return p.dest_room || p.target;
+    if (p.hn || p.patient_name) {
+      return (
+        <>
+          {p.hn && <div>HN: {p.hn}</div>}
+          {p.patient_name && <div>{p.patient_name}</div>}
+        </>
+      );
+    }
+    return p.target;
+  };
+
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const prep = preps.find(p => p.id === id);
@@ -244,7 +261,7 @@ export default function HistoryPage() {
             {activeFilterCount > 0 && (
               <div className="history-filter-chips">
                 {search && <span className="filter-chip">ค้นหา: {search}<button onClick={() => setSearch('')}>×</button></span>}
-                {roomFilter && <span className="filter-chip">{roomFilter === 'IPD' ? 'IPD Surg' : 'OPD'}<button onClick={() => setRoomFilter('')}>×</button></span>}
+                {roomFilter && <span className="filter-chip">{roomFilter === 'IPD' ? 'IPD Surg' : roomFilter === 'OPD' ? 'OPD' : roomFilter}<button onClick={() => setRoomFilter('')}>×</button></span>}
                 {modeFilter && <span className="filter-chip">{modeFilter === 'patient' ? 'เฉพาะราย' : 'Stock'}<button onClick={() => setModeFilter('')}>×</button></span>}
                 {timeFilter && <span className="filter-chip">{timeFilter === 'morning' ? 'เช้า' : 'บ่าย'}<button onClick={() => setTimeFilter('')}>×</button></span>}
                 {dateFrom && <span className="filter-chip">จาก {dateFrom}<button onClick={() => setDateFrom('')}>×</button></span>}
@@ -307,14 +324,16 @@ export default function HistoryPage() {
                             ? 'blue'
                             : p.location === 'ห้องจ่ายยาผู้ป่วยนอก'
                               ? 'green'
-                              : 'teal'
+                              : p.location === 'ห้องเคมีบำบัด'
+                                ? 'purple'
+                                : 'teal'
                         }`}
                       >
-                        {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : p.location)}
+                        {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : (p.location === 'ห้องเคมีบำบัด' ? 'Chemo' : p.location))}
                       </span>
                     </div>
 
-                    <div className="history-mobile-target">{p.target}</div>
+                    <div className="history-mobile-target">{renderTarget(p)}</div>
 
                     <div className="history-mobile-meta">
                       <span>LOT {p.lot_no.replace('LOT-', '')}</span>
@@ -341,7 +360,7 @@ export default function HistoryPage() {
                     <th style={{ width: '200px' }}>ผู้ป่วย/ห้อง</th>
                     <th style={{ width: '120px' }}>Lot / Qty</th>
                     <th style={{ width: '120px' }}>ผู้เตรียม</th>
-                    <th style={{ width: '100px' }}>สถานที่</th>
+                    <th style={{ width: '100px', textAlign: 'center' }}>สถานที่</th>
                     <th style={{ width: '160px' }}>หมายเหตุ</th>
                     <th style={{ width: '80px', textAlign: 'right' }}></th>
                   </tr>
@@ -370,25 +389,27 @@ export default function HistoryPage() {
                         </span>
                       </td>
                       <td data-label="ผู้ป่วย/ห้อง">
-                        <div style={{ fontSize: '13px', lineHeight: '1.4' }}>{p.target}</div>
+                        <div style={{ fontSize: '13px', lineHeight: '1.4' }}>{renderTarget(p)}</div>
                       </td>
                       <td data-label="Lot / จำนวน">
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>{p.lot_no.replace('LOT-', '')}</div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>จำนวน: {p.qty}</div>
                       </td>
                       <td data-label="ผู้เตรียม" style={{ fontSize: '13px' }}>{p.prepared_by}</td>
-                      <td data-label="สถานที่">
+                      <td data-label="สถานที่" style={{ textAlign: 'center' }}>
                         <span
                           className={`badge-tag ${
                             p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม'
                               ? 'blue'
                               : p.location === 'ห้องจ่ายยาผู้ป่วยนอก'
                                 ? 'green'
-                                : 'teal'
+                                : p.location === 'ห้องเคมีบำบัด'
+                                  ? 'purple'
+                                  : 'teal'
                           }`}
                           style={{ fontSize: '11px', padding: '2px 8px' }}
                         >
-                          {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : p.location)}
+                          {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : (p.location === 'ห้องเคมีบำบัด' ? 'Chemo' : p.location))}
                         </span>
                       </td>
                       <td data-label="หมายเหตุ" style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '160px' }}>
@@ -481,6 +502,7 @@ export default function HistoryPage() {
                       <option value="">ทุกห้องยา</option>
                       <option value="IPD">ห้องจ่ายยาผู้ป่วยในศัลยกรรม (IPD Surg)</option>
                       <option value="OPD">ห้องจ่ายยาผู้ป่วยนอก (OPD)</option>
+                      <option value="ห้องเคมีบำบัด">ห้องเคมีบำบัด (Chemotherapy)</option>
                     </select>
                   </div>
 
