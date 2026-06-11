@@ -19,6 +19,7 @@ interface EditPrepModalProps {
 const STATION_OPTIONS = [
   'ห้องจ่ายยาผู้ป่วยในศัลยกรรม',
   'ห้องจ่ายยาผู้ป่วยนอก',
+  'ห้องเคมีบำบัด',
 ];
 
 export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdate }: EditPrepModalProps) {
