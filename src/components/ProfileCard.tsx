@@ -200,28 +200,21 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
         <div className="avatar-picker">
           <div className="avatar-picker-title">เลือกรูปโปรไฟล์</div>
           <div className="avatar-picker-options">
-            <div 
-              className={`avatar-option ${tempAvatar === '/avatars/male-pharmacist.png' ? 'active' : ''}`}
-              onClick={() => setTempAvatar('/avatars/male-pharmacist.png')}
-            >
-              <img src={resolvePath('/avatars/male-pharmacist.png')} alt="ชาย" />
-              <span>ชาย</span>
-            </div>
-            <div 
-              className={`avatar-option ${tempAvatar === '/avatars/female-pharmacist.png' ? 'active' : ''}`}
-              onClick={() => setTempAvatar('/avatars/female-pharmacist.png')}
-            >
-              <img src={resolvePath('/avatars/female-pharmacist.png')} alt="หญิง" />
-              <span>หญิง</span>
-            </div>
+            {[
+              { path: '/avatars/male-pharmacist.png', label: 'ชาย 1' },
+              { path: '/avatars/female-pharmacist.png', label: 'หญิง 1' },
+            ].map(av => (
+              <div
+                key={av.path}
+                className={`avatar-option ${tempAvatar === av.path ? 'active' : ''}`}
+                onClick={() => setTempAvatar(av.path)}
+              >
+                <img src={resolvePath(av.path)} alt={av.label} />
+                <span>{av.label}</span>
+              </div>
+            ))}
           </div>
-          <div className="avatar-picker-divider">
-            <span>เลือกได้เฉพาะรูปโปรไฟล์เริ่มต้น</span>
-          </div>
-          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
-            ระบบใช้ avatar มาตรฐานเพื่อให้แสดงผลได้สม่ำเสมอทุกอุปกรณ์
-          </div>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
             <button className="btn btn-sm btn-primary" onClick={saveAvatar} style={{ flex: 1 }} disabled={busySection !== null}>
               {busySection === 'avatar' ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'ยืนยันเปลี่ยนรูป'}
             </button>

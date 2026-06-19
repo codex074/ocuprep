@@ -9,6 +9,7 @@ export const printHtml = (html: string) => {
   if (!w) return;
   w.document.write(`<html><head><title>พิมพ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>@page{size:8.5cm 6cm;margin:0}body{font-family:'Sarabun',sans-serif;margin:0;padding:3mm 3mm 3mm 8mm;width:8.5cm;height:6cm;box-sizing:border-box;overflow:hidden}.lb{line-height:1.2;font-size:10px}.lb .row{display:flex;justify-content:space-between;margin-bottom:2px;align-items:baseline}.lb span,.lb strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lf{border-top:1px solid #000;margin-top:4px;padding-top:2px;font-size:8px;text-align:center;color:#000}</style></head><body>${html}</body></html>`);
   w.document.close();
+  w.onafterprint = () => w.close();
   w.onload = () => w.print();
 };
 
@@ -17,6 +18,7 @@ export const printA4Html = (html: string) => {
   if (!w) return;
   w.document.write(`<html><head><title>พิมพ์ Batch Sheet</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>@page{size:A4;margin:10mm}body{font-family:'Sarabun',sans-serif;margin:0;padding:0;box-sizing:border-box}</style></head><body>${html}</body></html>`);
   w.document.close();
+  w.onafterprint = () => w.close();
   w.onload = () => w.print();
 };
 
@@ -351,5 +353,6 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 .bl-qr{display:none}
 </style></head><body><div class="pp"><div class="lb">${patientHtml}</div></div>${prepStickersHtml}${bottleHtml}</body></html>`);
   w.document.close();
+  w.onafterprint = () => w.close();
   w.onload = () => w.print();
 };

@@ -261,6 +261,7 @@ export default function PreparePage() {
       if (!w) return;
       w.document.write(`<html><head><title>พิมพ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Sarabun',sans-serif;padding:20px}pre{font-family:'Sarabun',sans-serif;white-space:pre-wrap}</style></head><body>${printContent}</body></html>`);
       w.document.close();
+      w.onafterprint = () => w.close();
       w.onload = () => w.print();
     }
   };

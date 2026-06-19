@@ -333,21 +333,20 @@ export default function UsersPage() {
         </div>
         <div className="form-group">
           <label>รูปโปรไฟล์</label>
-          <div className="avatar-picker-options" style={{ justifyContent: 'flex-start' }}>
-            <div 
-              className={`avatar-option ${form.profile_image === '/avatars/male-pharmacist.png' ? 'active' : ''}`}
-              onClick={() => setForm(f => ({ ...f, profile_image: '/avatars/male-pharmacist.png' }))}
-            >
-              <img src={resolvePath('/avatars/male-pharmacist.png')} alt="ชาย" />
-              <span>ชาย</span>
-            </div>
-            <div 
-              className={`avatar-option ${form.profile_image === '/avatars/female-pharmacist.png' ? 'active' : ''}`}
-              onClick={() => setForm(f => ({ ...f, profile_image: '/avatars/female-pharmacist.png' }))}
-            >
-              <img src={resolvePath('/avatars/female-pharmacist.png')} alt="หญิง" />
-              <span>หญิง</span>
-            </div>
+          <div className="avatar-picker-options">
+            {[
+              { path: '/avatars/male-pharmacist.png', label: 'ชาย 1' },
+              { path: '/avatars/female-pharmacist.png', label: 'หญิง 1' },
+            ].map(av => (
+              <div
+                key={av.path}
+                className={`avatar-option ${form.profile_image === av.path ? 'active' : ''}`}
+                onClick={() => setForm(f => ({ ...f, profile_image: av.path }))}
+              >
+                <img src={resolvePath(av.path)} alt={av.label} />
+                <span>{av.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </Modal>

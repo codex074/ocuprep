@@ -125,8 +125,6 @@ export default function DashboardPage() {
     }
   };
 
-  const [visibleCount, setVisibleCount] = useState(20);
-
   const currentMonth = defaultMonth;
   const monthOptions = useMemo(
     () => buildMonthOptions(allPreps.map((p) => p.date.slice(0, 7)), currentMonth),
@@ -143,15 +141,10 @@ export default function DashboardPage() {
   );
 
   useEffect(() => {
-    setVisibleCount(20);
-  }, [filteredPreps.length, selectedMonth, filterLocation]);
-
-  useEffect(() => {
     if (filterLocation && !locations.includes(filterLocation)) setFilterLocation('');
   }, [filterLocation, locations]);
 
-  const recent = filteredPreps.slice(0, visibleCount);
-  const hasMore = filteredPreps.length > visibleCount;
+  const recent = filteredPreps.slice(0, 10);
 
   const cnt: Record<string, number> = {};
   filteredPreps.forEach(p => { cnt[p.formula_name] = (cnt[p.formula_name] || 0) + p.qty; });
@@ -392,20 +385,6 @@ export default function DashboardPage() {
                 </tbody>
               </table>
             </div>
-            {hasMore && (
-              <div style={{ padding: '12px 16px', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={() => setVisibleCount(c => c + 20)}
-                  style={{ width: '100%', color: 'var(--text-secondary)', gap: '6px' }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px', display: 'inline', marginRight: '6px' }}>
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                  โหลดเพิ่มอีก 20 รายการ ({filteredPreps.length - visibleCount} รายการที่เหลือ)
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
