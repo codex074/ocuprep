@@ -30,6 +30,7 @@ The app covers the full workflow:
 - station selection before entering the app
 - preparation recording for `stock` and `patient`
 - automatic lot number and expiry calculation
+- duplicate-production warning with required reason
 - browser printing for labels and batch sheets
 - history, monthly dashboard, Excel export
 - admin management for formulas and users
@@ -92,9 +93,19 @@ Numeric `id` fields are still stored inside documents for sorting, compatibility
 - choose `เฉพาะราย` or `Stock`
 - auto lot number generation
 - auto expiry date calculation from formula shelf life
+- same-day duplicate warning for patient/formula/HN or stock/formula/destination
+- required reason when intentionally producing a duplicate item
 - label printing and batch sheet printing
+- repeated printing from the same filled form does not create another prep record
 - bottle label now includes package size and concentration
 - printed lot number shows `202604-001` instead of `LOT-202604-001`
+
+Printing safeguards:
+
+- first print from a new filled form saves one prep, then opens the print preview
+- printing the label or batch sheet again from unchanged form data reuses the saved prep
+- clearing the form resets this print state; entering data again creates a new prep
+- changing production fields after a save clears the saved print state and generates the next lot number
 
 ### Edit Production Modal
 
@@ -124,6 +135,7 @@ Numeric `id` fields are still stored inside documents for sorting, compatibility
 - filter modal with chips
 - location tags and mode tags use distinct color themes
 - record detail modal and edit modal
+- Excel export includes duplicate-production reasons
 
 ### Station Handling
 
@@ -239,7 +251,19 @@ Key fields:
 - `prepared_by`
 - `user_pha_id`
 - `location`
+- `chemical_items`
+- `chemical_lot_no`
+- `chemical_expiry_date`
+- `is_expired`
+- `duplicate_reason`
 - `created_at`
+
+Duplicate-production handling:
+
+- patient duplicate = same `date`, same formula, same normalized HN
+- stock duplicate = same `date`, same formula, same destination room, same location
+- `duplicate_reason` stores the required reason for intentional duplicate production
+- `duplicate_check_passed` is an internal client flag only and is removed before Firestore writes
 
 ## Local Development
 
@@ -346,6 +370,8 @@ Example login shape:
 - production value on dashboard is currently displayed as an integer
 - lot display in print output omits the `LOT-` prefix for readability
 - Firestore numeric counters are stored in `meta/counters`
+- duplicate checks query only the selected day; avoid loading all preps before save
+- print actions must reuse the saved prep while the form is unchanged to avoid duplicate records
 
 ---
 

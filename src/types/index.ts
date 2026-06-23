@@ -56,6 +56,7 @@ export interface Prep {
   chemical_lot_no?: string;
   chemical_expiry_date?: string;
   is_expired?: boolean;
+  duplicate_reason?: string;
   created_at?: string;
 }
 

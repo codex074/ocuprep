@@ -51,7 +51,7 @@ A **Progressive Web App** for the Pharmacy Department of Uttaradit Hospital to r
 | `src/pages/DashboardPage.tsx` | Central hub: month/location filter, 6 stat cards, recent list (shows `short_name`), formula summary, workload analysis + Export Excel |
 | `src/pages/HistoryPage.tsx` | Full audit log — filter modal ("ตั้งค่าการกรอง") with draft state, active filter chips, shows `short_name`, pagination, Export Excel |
 | `src/pages/FormulasPage.tsx` | Formula list (table view) — click row to open edit/detail modal |
-| `src/pages/PreparePage.tsx` | Record a new prep — auto lot number, chemical lot modal, label printing |
+| `src/pages/PreparePage.tsx` | Record a new prep — auto lot number, duplicate-production warning, chemical lot inputs, label/batch printing |
 | `src/lib/print.ts` | Generates browser-printable HTML for labels and batch sheets |
 | `src/lib/utils.ts` | Date helpers (`today`, `fmtDate`, `fmtShort`, `fmtTime`, `addDays`, `getMonthRange`, etc.) |
 | `src/types/index.ts` | `User`, `Formula`, `Prep` interfaces |
@@ -133,6 +133,7 @@ interface Prep {
   note: string;
   location: string;           // station/ward — used for location filter
   chemical_lot_no?: string;   // optional lot no. of chemicals used
+  duplicate_reason?: string;  // reason required when intentionally producing a duplicate patient/formula/day item
   created_at?: string;        // ISO timestamp — used for workload time-slot classification
 }
 
@@ -185,6 +186,32 @@ function classifySlot(created_at?: string): 'morning' | 'afternoon' | 'overtime'
   return 'overtime';                                      // before 08:30 or after 16:30
 }
 ```
+
+---
+
+## Prepare Page — Duplicate Warning + Printing
+
+`PreparePage.tsx` guards against accidental duplicate production before `createPrep()`.
+
+Duplicate match rules:
+- Patient mode: same `date` + same formula (`formula_id` or `formula_name`) + same normalized HN
+- Stock mode: same `date` + same formula + same `dest_room`/target + same `location`
+
+Flow:
+- Before saving, query only same-day preps via `api.getPreps(date, date)`; do **not** force-load all `preps`.
+- If duplicates are found, show a SweetAlert warning with a required textarea reason.
+- The reason is saved in `duplicate_reason` and appended to `note` with prefix `เหตุผลการผลิตซ้ำ:`.
+- `HistoryPage` Excel export includes `เหตุผลการผลิตซ้ำ`.
+- `api.createPrep()` has a fallback duplicate guard (`ensurePrepHasDuplicateReasonWhenNeeded`) unless the internal `duplicate_check_passed` flag is true.
+- `duplicate_check_passed` is client/internal only. It must be deleted before Firestore writes and stripped from optimistic cache records.
+
+Printing behavior:
+- `พิมพ์ฉลากยา` and `พิมพ์ใบสูตรผลิต` both call `getSavedOrNewPrepForPrint()`.
+- First print from a filled form saves one prep and stores `lastSavedPrintPrep`.
+- Re-printing label/batch sheet from the unchanged filled form uses the saved prep and must **not** create another record.
+- Changing any production field clears `lastSavedPrintPrep` and generates the next lot number.
+- Clicking `ล้างฟอร์ม` clears `lastSavedPrintPrep`; entering data again is treated as a new prep.
+- While the form still represents the saved prep, keep the displayed `lotNo` as the saved lot number so the form and printed output match.
 
 ---
 
@@ -312,3 +339,5 @@ The FormulasPage list table also shows `short_name` as the primary label with `n
 3. **`expiry_days < 0` means hours** — `addDays(date, -4)` adds 4 hours and returns a full ISO string. Display via `fmtDate()` still shows a readable date/time.
 4. **Room filter values in HistoryPage** — use `'IPD'`/`'OPD'` as option values, never raw Thai location strings. See History Page — Filter Modal section above.
 5. **`toDateOnly()` in `usePreps.ts`** — normalizes any date string to `YYYY-MM-DD` in local timezone. Keep this; legacy migrated data may contain UTC ISO strings.
+6. **Duplicate production checks** — do not replace the same-day query with `fetchPreps(true)`; loading all preps makes the save flow slow.
+7. **Printing from PreparePage** — do not call `createPrep()` on every print click. Reuse `lastSavedPrintPrep` while the form has not changed.

@@ -208,6 +208,7 @@ export default function HistoryPage() {
         'สถานที่': p.location,
         'วันหมดอายุ': p.expiry_date,
         'หมายเหตุ': p.note || '',
+        'เหตุผลการผลิตซ้ำ': p.duplicate_reason || '',
       };
     });
     const worksheet = XLSX.utils.json_to_sheet(exportData);

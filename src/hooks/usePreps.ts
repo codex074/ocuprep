@@ -6,6 +6,7 @@ import type { Prep } from '../types';
 
 // Cache key สำหรับ all preps (ใช้ใน HistoryPage)
 const PREPS_ALL_CACHE_KEY = 'preps';
+type CreatePrepPayload = Omit<Prep, 'id' | 'created_at'> & { duplicate_check_passed?: boolean };
 
 // Normalize any date value to "YYYY-MM-DD", handling legacy UTC ISO strings from migrated data.
 function toDateOnly(raw: unknown): string {
@@ -40,6 +41,7 @@ function toPrep(r: Record<string, unknown>): Prep {
     chemical_lot_no: r.chemical_lot_no != null ? String(r.chemical_lot_no) : undefined,
     chemical_expiry_date: r.chemical_expiry_date != null ? toDateOnly(r.chemical_expiry_date) : undefined,
     is_expired: r.is_expired === true,
+    duplicate_reason: r.duplicate_reason != null ? String(r.duplicate_reason) : undefined,
     created_at: r.created_at != null ? String(r.created_at) : undefined,
   };
 }
@@ -70,8 +72,10 @@ export function usePreps(startDate?: string, endDate?: string) {
         return data.map(toPrep).sort((a, b) => b.id - a.id);
       }, { force });
       setPreps(mapped);
+      return mapped;
     } catch (e) {
       console.error('fetchPreps error', e);
+      return getCachedResource<Prep[]>(cacheKey) ?? preps;
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -82,10 +86,11 @@ export function usePreps(startDate?: string, endDate?: string) {
 
   // --- Optimistic create ---
   // คืนค่า true เมื่อสำเร็จ หรือ string (ข้อความ error) เมื่อล้มเหลว
-  const createPrep = async (p: Omit<Prep, 'id' | 'created_at'>): Promise<true | string> => {
+  const createPrep = async (p: CreatePrepPayload): Promise<true | string> => {
     const res = await api.createPrep(p);
     if (res.success && res.id) {
-      const newPrep: Prep = { ...p, id: res.id, created_at: new Date().toISOString() };
+      const { duplicate_check_passed: _duplicateCheckPassed, ...storedPrep } = p;
+      const newPrep: Prep = { ...storedPrep, id: res.id, created_at: new Date().toISOString() };
       setPreps(prev => {
         const next = [newPrep, ...prev];
         setCachedResource(cacheKey, next);

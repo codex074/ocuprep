@@ -51,6 +51,7 @@ function toPrep(r: Record<string, unknown>): Prep {
     chemical_lot_no: r.chemical_lot_no != null ? String(r.chemical_lot_no) : undefined,
     chemical_expiry_date: r.chemical_expiry_date != null ? String(r.chemical_expiry_date) : undefined,
     is_expired: r.is_expired === true,
+    duplicate_reason: r.duplicate_reason != null ? String(r.duplicate_reason) : undefined,
     created_at: r.created_at != null ? String(r.created_at) : undefined,
   };
 }

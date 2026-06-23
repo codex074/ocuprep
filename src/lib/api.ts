@@ -69,6 +69,16 @@ function normalizePrepLotId(value: unknown): string {
     .replace(/^LOT-/, '');
 }
 
+function normalizeMatchText(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function normalizeHnForMatch(value: unknown): string {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (digits.length >= 7 && digits.length <= 9) return digits.padStart(9, '0');
+  return digits;
+}
+
 function toRecord(data: FirestoreRecord | undefined, fallbackId?: string): FirestoreRecord {
   if (!data) return {};
   const next = { ...data };
@@ -333,6 +343,41 @@ async function ensureUniquePrepLotNo(lotNo: string, excludeId?: number): Promise
   throw new Error('Lot No. นี้มีอยู่แล้ว');
 }
 
+function isDuplicatePrepRecord(record: FirestoreRecord, payload: FirestoreRecord): boolean {
+  if (normalizeMatchText(record.date) !== normalizeMatchText(payload.date)) return false;
+  if (normalizeMatchText(record.mode) !== normalizeMatchText(payload.mode)) return false;
+
+  const sameFormula = Number(record.formula_id) === Number(payload.formula_id)
+    || normalizeMatchText(record.formula_name) === normalizeMatchText(payload.formula_name);
+  if (!sameFormula) return false;
+
+  if (normalizeMatchText(payload.mode) === 'patient') {
+    const currentHn = normalizeHnForMatch(record.hn);
+    const nextHn = normalizeHnForMatch(payload.hn);
+    return Boolean(currentHn && nextHn && currentHn === nextHn);
+  }
+
+  const currentRoom = normalizeMatchText(record.dest_room || record.target);
+  const nextRoom = normalizeMatchText(payload.dest_room || payload.target);
+  return Boolean(
+    currentRoom
+    && nextRoom
+    && currentRoom === nextRoom
+    && normalizeMatchText(record.location) === normalizeMatchText(payload.location)
+  );
+}
+
+async function ensurePrepHasDuplicateReasonWhenNeeded(payload: FirestoreRecord): Promise<void> {
+  if (normalizeMatchText(payload.duplicate_reason)) return;
+  const date = normalizeMatchText(payload.date);
+  if (!date) return;
+
+  const sameDayRecords = await getPrepRecords(date, date);
+  if (sameDayRecords.some((record) => isDuplicatePrepRecord(record, payload))) {
+    throw new Error('พบรายการผลิตซ้ำในวันที่เลือก กรุณายืนยันการผลิตเพิ่มและระบุเหตุผล');
+  }
+}
+
 export function getApiErrorMessage(error: unknown, fallback = 'เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล'): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
@@ -555,8 +600,13 @@ export const api = {
   createPrep: (data: object) =>
     withErrorResult<OkResult>((async () => {
       const payload = stripUndefined(data as FirestoreRecord);
+      const duplicateCheckPassed = payload.duplicate_check_passed === true;
+      delete payload.duplicate_check_passed;
       const lotId = normalizePrepLotId(payload.lot_no);
       await ensureUniquePrepLotNo(lotId);
+      if (!duplicateCheckPassed) {
+        await ensurePrepHasDuplicateReasonWhenNeeded(payload);
+      }
 
       const id = await allocateId('preps');
       const record = stripUndefined({

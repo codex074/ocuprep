@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
-import { today, addDays, fmtDate, multiplyAmount } from '../lib/utils';
+import { api } from '../lib/api';
+import { today, addDays, fmtDate, fmtTime, multiplyAmount } from '../lib/utils';
 import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
@@ -14,6 +16,152 @@ import { chemicalItemsFromIngredients, cleanChemicalItems } from '../lib/chemica
 import type { ChemicalItem, Prep } from '../types';
 
 type PrepPayload = Omit<Prep, 'id' | 'created_at'>;
+type PrepPayloadToSave = PrepPayload & { duplicate_check_passed?: boolean };
+type DuplicatePrepCandidate = Pick<Prep, 'formula_id' | 'formula_name' | 'mode' | 'target' | 'hn' | 'dest_room' | 'lot_no' | 'date' | 'qty' | 'prepared_by' | 'location' | 'created_at'>;
+type SavedPrintPrep = { signature: string; prep: Prep };
+const DUPLICATE_REASON_PREFIX = 'เหตุผลการผลิตซ้ำ:';
+
+const normalizeForMatch = (value: string | undefined | null): string => String(value ?? '').trim().toLowerCase();
+
+const normalizeHnForMatch = (value: string | undefined | null): string => {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (digits.length >= 7 && digits.length <= 9) return digits.padStart(9, '0');
+  return digits;
+};
+
+const escapeHtml = (value: string | number | undefined | null): string => String(value ?? '').replace(/[&<>"']/g, (char) => (
+  {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char] ?? char
+));
+
+const isSameFormula = (prep: DuplicatePrepCandidate, payload: PrepPayload): boolean => (
+  Number(prep.formula_id) === Number(payload.formula_id)
+  || normalizeForMatch(prep.formula_name) === normalizeForMatch(payload.formula_name)
+);
+
+const toDuplicatePrepCandidate = (record: Record<string, unknown>): DuplicatePrepCandidate => ({
+  formula_id: Number(record.formula_id),
+  formula_name: String(record.formula_name ?? ''),
+  mode: (record.mode as 'patient' | 'stock') ?? 'patient',
+  target: String(record.target ?? ''),
+  hn: String(record.hn ?? ''),
+  dest_room: String(record.dest_room ?? ''),
+  lot_no: String(record.lot_no ?? ''),
+  date: String(record.date ?? '').slice(0, 10),
+  qty: Number(record.qty),
+  prepared_by: String(record.prepared_by ?? ''),
+  location: String(record.location ?? ''),
+  created_at: record.created_at != null ? String(record.created_at) : undefined,
+});
+
+const findDuplicatePreps = (currentPreps: DuplicatePrepCandidate[], payload: PrepPayload): DuplicatePrepCandidate[] => {
+  return currentPreps.filter((prep) => {
+    if (prep.date !== payload.date || prep.mode !== payload.mode || !isSameFormula(prep, payload)) return false;
+
+    if (payload.mode === 'patient') {
+      const currentHn = normalizeHnForMatch(prep.hn);
+      const nextHn = normalizeHnForMatch(payload.hn);
+      return Boolean(currentHn && nextHn && currentHn === nextHn);
+    }
+
+    const currentRoom = normalizeForMatch(prep.dest_room || prep.target);
+    const nextRoom = normalizeForMatch(payload.dest_room || payload.target);
+    return Boolean(
+      currentRoom
+      && nextRoom
+      && currentRoom === nextRoom
+      && normalizeForMatch(prep.location) === normalizeForMatch(payload.location)
+    );
+  });
+};
+
+const buildDuplicateHtml = (payload: PrepPayload, matches: DuplicatePrepCandidate[]): string => {
+  const subject = payload.mode === 'patient'
+    ? `HN ${payload.hn} ${payload.patient_name}`
+    : `Stock ${payload.dest_room || payload.target}`;
+  const matchItems = matches.slice(0, 3).map((prep) => {
+    const time = prep.created_at ? ` เวลา ${fmtTime(prep.created_at).replace(' น.', '')}` : '';
+    const preparer = prep.prepared_by ? ` โดย ${prep.prepared_by}` : '';
+    return `<li>Lot ${escapeHtml(prep.lot_no.replace(/^LOT-/, ''))} (${escapeHtml(prep.qty)} ขวด)${escapeHtml(time)}${escapeHtml(preparer)}</li>`;
+  }).join('');
+  const moreItems = matches.length > 3 ? `<li>และอีก ${matches.length - 3} รายการ</li>` : '';
+
+  return `
+    <div class="duplicate-prep-alert">
+      <p><strong>${escapeHtml(subject)}</strong></p>
+      <p>ผลิต <strong>${escapeHtml(payload.formula_name)}</strong> ไปแล้วในวันที่ ${escapeHtml(fmtDate(payload.date))}</p>
+      <ul>${matchItems}${moreItems}</ul>
+      <p>หากต้องการผลิตเพิ่ม กรุณาระบุเหตุผลก่อนยืนยัน</p>
+    </div>
+  `;
+};
+
+const requestDuplicateReason = async (payload: PrepPayload, matches: DuplicatePrepCandidate[]): Promise<string | null> => {
+  const result = await Swal.fire<string>({
+    title: 'พบรายการผลิตซ้ำในวันที่เลือก',
+    html: buildDuplicateHtml(payload, matches),
+    icon: 'warning',
+    input: 'textarea',
+    inputLabel: 'เหตุผลในการผลิตเพิ่ม',
+    inputPlaceholder: 'เช่น แพทย์สั่งเพิ่ม / ขวดยาแตก / ผลิตทดแทน',
+    inputAttributes: {
+      'aria-label': 'เหตุผลในการผลิตเพิ่ม',
+    },
+    showCancelButton: true,
+    confirmButtonText: 'ยืนยันผลิตเพิ่ม',
+    cancelButtonText: 'ยกเลิก',
+    reverseButtons: true,
+    inputValidator: (value) => {
+      if (!value?.trim()) return 'กรุณาระบุเหตุผลในการผลิตเพิ่ม';
+      if (value.trim().length < 3) return 'กรุณาระบุเหตุผลให้ชัดเจนมากขึ้น';
+      return undefined;
+    },
+  });
+
+  return result.isConfirmed ? (result.value ?? '').trim() : null;
+};
+
+const appendDuplicateReason = (note: string, reason: string): string => {
+  const duplicateReasonLine = `${DUPLICATE_REASON_PREFIX} ${reason}`;
+  return note ? `${note}\n${duplicateReasonLine}` : duplicateReasonLine;
+};
+
+const getPayloadSignature = (payload: PrepPayload): string => {
+  const {
+    lot_no: _lotNo,
+    expiry_date: _expiryDate,
+    duplicate_reason: _duplicateReason,
+    ...signaturePayload
+  } = payload;
+  return JSON.stringify(signaturePayload);
+};
+
+const payloadToPrep = (payload: PrepPayload, createdAt?: string): Prep => ({
+  ...payload,
+  id: 0,
+  ...(createdAt ? { created_at: createdAt } : {}),
+});
+
+const loadSameDayPrepsForDuplicateCheck = async (date: string, fallbackPreps: Prep[]) => {
+  try {
+    const records = await api.getPreps(date, date);
+    return {
+      preps: records.map(toDuplicatePrepCandidate),
+      passed: true,
+    };
+  } catch (error) {
+    console.error('duplicate prep check error', error);
+    return {
+      preps: fallbackPreps.filter((prep) => prep.date === date),
+      passed: false,
+    };
+  }
+};
 
 export default function PreparePage() {
   const { user, location: curLoc } = useAuth();
@@ -36,13 +184,19 @@ export default function PreparePage() {
   const [chemicalItems, setChemicalItems] = useState<ChemicalItem[]>([{ name: '', lot_no: '', expiry_date: '' }]);
   const [isExpired, setIsExpired] = useState(false);
   const [printMockPrep, setPrintMockPrep] = useState<Prep | null>(null);
+  const [lastSavedPrintPrep, setLastSavedPrintPrep] = useState<SavedPrintPrep | null>(null);
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
-  useEffect(() => {
+  const getNextLotNo = () => {
     const nextId = preps.length > 0 ? Math.max(...preps.map(p => p.id)) + 1 : 1;
     const now = new Date();
-    setLotNo(`LOT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(nextId).padStart(3, '0')}`);
-  }, [preps]);
+    return `LOT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(nextId).padStart(3, '0')}`;
+  };
+
+  useEffect(() => {
+    if (lastSavedPrintPrep) return;
+    setLotNo(getNextLotNo());
+  }, [preps, lastSavedPrintPrep]);
 
   useEffect(() => {
     if (mode === 'stock') {
@@ -103,26 +257,35 @@ export default function PreparePage() {
     return digits.padStart(9, '0');
   };
 
-  const doSave = async (clearForm = true): Promise<boolean> => {
-    if (saving) return false;
-    if (!selectedFormula) { toast('กรุณาเลือกสูตรตำรับยา', 'error'); return false; }
-    if (!lotNo.trim()) { toast('กรุณากรอก Lot No.', 'error'); return false; }
+  const buildPayload = (showErrors = true): PrepPayload | null => {
+    if (!selectedFormula) {
+      if (showErrors) toast('กรุณาเลือกสูตรตำรับยา', 'error');
+      return null;
+    }
+    if (!lotNo.trim()) {
+      if (showErrors) toast('กรุณากรอก Lot No.', 'error');
+      return null;
+    }
     let target = '';
     let normalizedHn = '';
     if (mode === 'patient') {
       normalizedHn = normalizeHn(hn);
       if (!normalizedHn || !patientName.trim()) {
-        toast('กรุณากรอก HN อย่างน้อย 7 หลัก และชื่อผู้ป่วย', 'error'); return false;
+        if (showErrors) toast('กรุณากรอก HN อย่างน้อย 7 หลัก และชื่อผู้ป่วย', 'error');
+        return null;
       }
       target = `HN: ${normalizedHn} - ${patientName.trim()}`;
     } else {
-      if (!room) { toast('กรุณาเลือกห้องปลายทาง', 'error'); return false; }
+      if (!room) {
+        if (showErrors) toast('กรุณาเลือกห้องปลายทาง', 'error');
+        return null;
+      }
       target = `Stock → ${room}`;
     }
 
     const preparedChemicalItems = cleanChemicalItems(chemicalItems);
     const firstChemicalItem = preparedChemicalItems[0];
-    const payload: PrepPayload = {
+    return {
       formula_id: selectedFormula.id,
       formula_name: selectedFormula.name,
       concentration: selectedFormula.concentration,
@@ -144,35 +307,80 @@ export default function PreparePage() {
       ...(firstChemicalItem?.expiry_date ? { chemical_expiry_date: firstChemicalItem.expiry_date } : {}),
       ...(mode === 'stock' && isExpired ? { is_expired: true } : {}),
     };
+  };
+
+  useEffect(() => {
+    if (!lastSavedPrintPrep) return;
+
+    const payload = buildPayload(false);
+    if (!payload) return;
+
+    if (getPayloadSignature(payload) !== lastSavedPrintPrep.signature) {
+      setLastSavedPrintPrep(null);
+      setLotNo(getNextLotNo());
+    }
+  }, [formulaId, mode, hn, patientName, room, date, qty, note, chemicalItems, isExpired, curLoc, user?.name, user?.pha_id, selectedFormula?.id, lastSavedPrintPrep]);
+
+  const doSave = async (clearForm = true): Promise<Prep | null> => {
+    if (saving) return null;
+    const payload = buildPayload();
+    if (!payload) return null;
+    const payloadSignature = getPayloadSignature(payload);
 
     setSaving(true);
-    openLoadingModal('กำลังบันทึกรายการผลิตยา...');
+    let loadingModalOpen = false;
     try {
-      const ok = await createPrep(payload);
+      const duplicateCheck = await loadSameDayPrepsForDuplicateCheck(payload.date, preps);
+      const duplicateMatches = findDuplicatePreps(duplicateCheck.preps, payload);
+      const duplicateReason = duplicateMatches.length > 0
+        ? await requestDuplicateReason(payload, duplicateMatches)
+        : null;
+
+      if (duplicateMatches.length > 0 && !duplicateReason) return null;
+
+      const payloadToSave: PrepPayloadToSave = duplicateReason
+        ? {
+            ...payload,
+            note: appendDuplicateReason(payload.note, duplicateReason),
+            duplicate_reason: duplicateReason,
+            duplicate_check_passed: duplicateCheck.passed,
+          }
+        : { ...payload, duplicate_check_passed: duplicateCheck.passed };
+
+      openLoadingModal('กำลังบันทึกรายการผลิตยา...');
+      loadingModalOpen = true;
+      const ok = await createPrep(payloadToSave);
       if (ok === true) {
-        toast(`บันทึกสำเร็จ: ${payload.formula_name} (${payload.qty} ขวด)`, 'success');
+        const { duplicate_check_passed: _duplicateCheckPassed, ...storedPayload } = payloadToSave;
+        const savedPrep = payloadToPrep(storedPayload, new Date().toISOString());
+        toast(`บันทึกสำเร็จ: ${payloadToSave.formula_name} (${payloadToSave.qty} ขวด)`, 'success');
         if (clearForm) {
           setHn('');
           setPatientName('');
           setNote('');
-          setChemicalItems(chemicalItemsFromIngredients(selectedFormula.ingredients));
+          setChemicalItems(chemicalItemsFromIngredients(selectedFormula?.ingredients ?? null));
           setQty(1);
           setIsExpired(false);
+          setLastSavedPrintPrep(null);
+        } else {
+          setLastSavedPrintPrep({ signature: payloadSignature, prep: savedPrep });
+          setLotNo(savedPrep.lot_no);
         }
-        return true;
+        return savedPrep;
       } else {
         toast(ok, 'error');
-        return false;
+        return null;
       }
     } finally {
-      closeLoadingModal();
+      if (loadingModalOpen) closeLoadingModal();
       setSaving(false);
     }
   };
 
-  const handleSave = () => doSave();
+  const handleSave = () => { void doSave(); };
 
   const handleClear = () => {
+    setLastSavedPrintPrep(null);
     setFormulaId('');
     setMode('patient');
     setHn('');
@@ -183,34 +391,27 @@ export default function PreparePage() {
     setNote('');
     setChemicalItems([{ name: '', lot_no: '', expiry_date: '' }]);
     setIsExpired(false);
+    setLotNo(getNextLotNo());
   };
 
-  const buildPrintSnap = (d: string, exp: string): Prep => {
-    const preparedChemicalItems = cleanChemicalItems(chemicalItems);
-    const firstChemicalItem = preparedChemicalItems[0];
-    const hnNorm = mode === 'patient' ? normalizeHn(hn) : '';
-    return {
-      id: 0,
-      formula_id: selectedFormula!.id,
-      formula_name: selectedFormula!.name,
-      concentration: selectedFormula!.concentration,
-      mode: mode as 'patient' | 'stock',
-      target: mode === 'patient' ? `HN: ${hnNorm} - ${patientName}` : `Stock → ${room}`,
-      hn: hnNorm,
-      patient_name: mode === 'patient' ? patientName : '',
-      dest_room: mode === 'stock' ? room : '',
-      lot_no: lotNo,
-      date: d,
-      expiry_date: exp,
-      qty,
-      note: note.trim(),
-      prepared_by: user?.name || '-',
-      user_pha_id: user?.pha_id || '',
-      location: curLoc,
-      chemical_items: preparedChemicalItems,
-      chemical_lot_no: firstChemicalItem?.lot_no || undefined,
-      chemical_expiry_date: firstChemicalItem?.expiry_date || undefined,
-    };
+  const getSavedOrNewPrepForPrint = async (): Promise<Prep | null> => {
+    const payload = buildPayload();
+    if (!payload) return null;
+
+    const signature = getPayloadSignature(payload);
+    if (lastSavedPrintPrep?.signature === signature) {
+      return lastSavedPrintPrep.prep;
+    }
+
+    return doSave(false);
+  };
+
+  const openLabelPreview = (prep: Prep) => {
+    setPrintMockPrep(prep);
+    setPrintTitle('ฉลากยา (Patient Label)');
+    const pn = prep.mode === 'patient' ? (prep.patient_name || '-') : 'Stock';
+    const hnVal = prep.mode === 'patient' ? (prep.hn || '-') : '-';
+    setPrintContent(`<div class="label-preview"><div class="lb"><div class="row"><span>ชื่อยา:</span><strong>${prep.formula_name}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong>${pn}${hnVal !== '-' ? ' (HN: ' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${prep.lot_no}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${fmtDate(prep.date)}</span></div><div class="row" style="color:var(--accent-red);font-weight:600"><span>วันหมดอายุ:</span><span>${fmtDate(prep.expiry_date)}</span></div><div class="row"><span>วิธีใช้:</span><span>หยอดตาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${prep.prepared_by || '-'} | ${prep.location}</div></div>`);
   };
 
   const handlePrintLabel = async () => {
@@ -220,15 +421,9 @@ export default function PreparePage() {
     }
     if (mode === 'stock' && !room) { toast('กรุณาเลือกห้องปลายทางก่อนพิมพ์', 'error'); return; }
 
-    const d = date || today();
-    const exp = addDays(d, selectedFormula.expiry_days);
-    const snap = buildPrintSnap(d, exp);
-    setPrintMockPrep(snap);
-    setPrintTitle('ฉลากยา (Patient Label)');
-    const pn = mode === 'patient' ? (patientName || '-') : 'Stock';
-    const hnVal = mode === 'patient' ? (normalizeHn(hn) || '-') : '-';
-    setPrintContent(`<div class="label-preview"><div class="lb"><div class="row"><span>ชื่อยา:</span><strong>${selectedFormula.name}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${selectedFormula.concentration}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong>${pn}${hnVal !== '-' ? ' (HN: ' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${lotNo}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${fmtDate(d)}</span></div><div class="row" style="color:var(--accent-red);font-weight:600"><span>วันหมดอายุ:</span><span>${fmtDate(exp)}</span></div><div class="row"><span>วิธีใช้:</span><span>หยอดตาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${user?.name || '-'} | ${curLoc}</div></div>`);
-    await doSave(false);
+    const prepToPrint = await getSavedOrNewPrepForPrint();
+    if (!prepToPrint) return;
+    openLabelPreview(prepToPrint);
     setPrintModal(true);
   };
 
@@ -239,13 +434,11 @@ export default function PreparePage() {
     }
     if (mode === 'stock' && !room) { toast('กรุณาเลือกห้องปลายทางก่อนพิมพ์', 'error'); return; }
 
-    const d = date || today();
-    const exp = addDays(d, selectedFormula.expiry_days);
-    const snap = buildPrintSnap(d, exp);
-    setPrintMockPrep(snap);
+    const prepToPrint = await getSavedOrNewPrepForPrint();
+    if (!prepToPrint) return;
+    setPrintMockPrep(prepToPrint);
     setPrintTitle('ใบสูตรผลิต (Batch Sheet)');
-    setPrintContent(generateBatchSheetHtml(snap, selectedFormula));
-    await doSave(false);
+    setPrintContent(generateBatchSheetHtml(prepToPrint, selectedFormula));
     setPrintModal(true);
   };
 
