@@ -185,7 +185,43 @@ export default function PreparePage() {
   const [isExpired, setIsExpired] = useState(false);
   const [printMockPrep, setPrintMockPrep] = useState<Prep | null>(null);
   const [lastSavedPrintPrep, setLastSavedPrintPrep] = useState<SavedPrintPrep | null>(null);
+  const [hnStatus, setHnStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>('idle');
   const isRefreshing = formulasRefreshing || prepsRefreshing;
+
+  const lookupPatientByHN = async (rawHn: string) => {
+    const digits = rawHn.replace(/\D/g, '');
+    if (digits.length < 7) return;
+    setHnStatus('loading');
+    try {
+      let ok = false;
+      let fullName = '';
+
+      if (window.electronAPI?.lookupHN) {
+        // Electron: IPC → main process calls HOSxP directly
+        const result = await window.electronAPI.lookupHN(digits);
+        ok = result.ok;
+        fullName = result.patient?.fullName ?? '';
+      } else {
+        // Browser: call standalone proxy at localhost:3100
+        const res = await fetch(
+          `http://127.0.0.1:3100/api/patient?q=${encodeURIComponent(digits)}`,
+          { signal: AbortSignal.timeout(5000) },
+        );
+        const data = await res.json() as { ok: boolean; patient?: { fullName: string } };
+        ok = data.ok;
+        fullName = data.patient?.fullName ?? '';
+      }
+
+      if (ok && fullName) {
+        setPatientName(fullName);
+        setHnStatus('found');
+      } else {
+        setHnStatus('notfound');
+      }
+    } catch {
+      setHnStatus('offline');
+    }
+  };
 
   const getNextLotNo = () => {
     const nextId = preps.length > 0 ? Math.max(...preps.map(p => p.id)) + 1 : 1;
@@ -500,14 +536,45 @@ export default function PreparePage() {
             <div className="form-row">
               <div className="form-group">
                 <label>HN ผู้ป่วย <span className="req">*</span></label>
-                <input
-                  className="form-input"
-                  placeholder="เช่น 1234567 (กรอก 7-9 หลัก)"
-                  value={hn}
-                  maxLength={9}
-                  inputMode="numeric"
-                  onChange={e => setHn(e.target.value.replace(/\D/g, '').slice(0, 9))}
-                />
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    className="form-input"
+                    placeholder="เช่น 003812345"
+                    value={hn}
+                    maxLength={9}
+                    inputMode="numeric"
+                    onChange={e => { setHn(e.target.value.replace(/\D/g, '').slice(0, 9)); setHnStatus('idle'); }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && hn.replace(/\D/g, '').length >= 7) {
+                        e.preventDefault();
+                        void lookupPatientByHN(hn);
+                      }
+                    }}
+                    onBlur={() => { if (hn.replace(/\D/g, '').length >= 7) void lookupPatientByHN(hn); }}
+                  />
+                  <button
+                    type="button"
+                    title="ค้นหาชื่อผู้ป่วยจาก HN"
+                    disabled={hnStatus === 'loading' || hn.replace(/\D/g, '').length < 7}
+                    onClick={() => void lookupPatientByHN(hn)}
+                    style={{ padding: '0 10px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                  >
+                    {hnStatus === 'loading'
+                      ? <span className="btn-spinner" />
+                      : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                    }
+                  </button>
+                </div>
+                {hnStatus === 'found' && <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px' }}>พบข้อมูลผู้ป่วย — กรอกชื่อโดยอัตโนมัติแล้ว</p>}
+                {hnStatus === 'notfound' && <p style={{ fontSize: '12px', color: '#f59e0b', marginTop: '4px' }}>ไม่พบ HN นี้ในระบบ — กรอกชื่อด้วยตนเอง</p>}
+                {hnStatus === 'offline' && (
+                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                    {window.electronAPI
+                      ? 'ไม่สามารถเชื่อมต่อ HOSxP — ตรวจสอบเครือข่ายภายในหรือติดต่อผู้ดูแลระบบ'
+                      : 'ไม่สามารถเชื่อมต่อ HN Lookup — กรุณาเปิดแอป HN Lookup ก่อน'
+                    }
+                  </p>
+                )}
               </div>
               <div className="form-group">
                 <label>ชื่อ-นามสกุล <span className="req">*</span></label>

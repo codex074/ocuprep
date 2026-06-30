@@ -1,0 +1,35 @@
+{
+  "appId": "th.go.uttaradit.yata",
+  "productName": "YATA",
+  "copyright": "โรงพยาบาลอุตรดิตถ์ กลุ่มงานเภสัชกรรม",
+  "directories": {
+    "output": "electron-dist"
+  },
+  "files": [
+    "electron/**",
+    "dist/**",
+    "!node_modules/**",
+    "!src/**",
+    "!hn-lookup-electron/**",
+    "!scripts/**",
+    "!*.ts",
+    "!*.config.*",
+    "!tsconfig*"
+  ],
+  "extraMetadata": {
+    "main": "electron/main.cjs",
+    "dependencies": {}
+  },
+  "win": {
+    "icon": "public/icons/icon-512x512.png",
+    "target": [
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "portable": {
+    "artifactName": "YATA-${version}-portable.exe"
+  }
+}
