@@ -21,7 +21,7 @@
     "dependencies": {}
   },
   "win": {
-    "icon": "public/icons/icon-512x512.png",
+    "icon": "public/icons/icon.ico",
     "target": [
       {
         "target": "portable",

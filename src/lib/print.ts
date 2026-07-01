@@ -322,11 +322,11 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
 };
 
 export const printAllLabels = (patientHtml: string, bottleHtml: string, prepStickersHtml: string = '') => {
-  const w = window.open('', '_blank', 'width=400,height=600');
-  if (!w) return;
-  w.document.write(`<html><head><title>พิมพ์ฉลาก</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
+  const doc = `<html><head><title>พิมพ์ฉลาก</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
 @page{size:8.5cm 6cm;margin:0}
 body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
+/* Avoid a trailing blank page after the last label */
+body>*:last-child{page-break-after:auto}
 /* Patient label page */
 .pp{padding:8mm 3mm 3mm 3mm;width:8.5cm;height:6cm;box-sizing:border-box;overflow:hidden;page-break-after:always;display:flex;flex-direction:column;}
 .lb{line-height:1.2;font-size:10px;width:100%;}
@@ -349,9 +349,22 @@ body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 .bl-patient-mode .bl-name{font-size:10.5px;padding-right:0}
 .bl-patient-mode .bl-half-row,.bl-patient-mode .bl-inline-row{font-size:8.5px;line-height:1.1}
 
-.bl-num{display:none} 
+.bl-num{display:none}
 .bl-qr{display:none}
-</style></head><body><div class="pp"><div class="lb">${patientHtml}</div></div>${prepStickersHtml}${bottleHtml}</body></html>`);
+</style></head><body><div class="pp"><div class="lb">${patientHtml}</div></div>${prepStickersHtml}${bottleHtml}</body></html>`;
+
+  // In the Electron desktop app, print with a page size locked from the program
+  // (8.5×6cm) so the output no longer depends on each machine's printer default —
+  // this stops the "skipping several blank stickers" problem on some PCs.
+  // On the web/PWA build (no electronAPI), fall back to the browser print window.
+  if (window.electronAPI?.printLabels) {
+    void window.electronAPI.printLabels(doc);
+    return;
+  }
+
+  const w = window.open('', '_blank', 'width=600,height=400');
+  if (!w) return;
+  w.document.write(doc);
   w.document.close();
   w.onafterprint = () => w.close();
   w.onload = () => w.print();

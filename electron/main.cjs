@@ -393,6 +393,61 @@ ipcMain.handle('get-app-info', () => ({
 }));
 ipcMain.handle('check-for-updates', () => checkForUpdates({ interactive: true }));
 
+// --- Label printing with a program-locked page size (8.5×6cm) ---
+// The renderer sends the full label HTML; we render it in a hidden window and
+// print via webContents.print() with an explicit pageSize. This makes every PC
+// print identically regardless of its printer-driver default paper size — which
+// was causing some machines to feed/skip several blank stickers per label.
+// silent:false keeps the normal print dialog so the user still picks the printer.
+let printSeq = 0;
+ipcMain.handle('print-labels', async (_event, html) => {
+  if (typeof html !== 'string' || !html) {
+    return { ok: false, message: 'ไม่มีเนื้อหาให้พิมพ์' };
+  }
+  const tmpFile = path.join(app.getPath('temp'), `yata-label-${process.pid}-${printSeq++}.html`);
+  let printWin = null;
+  try {
+    fs.writeFileSync(tmpFile, html, 'utf8');
+    printWin = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false, contextIsolation: true },
+    });
+    await printWin.loadFile(tmpFile);
+
+    // Wait for web fonts (Sarabun) so the label lays out at its intended height
+    // before printing; a fallback font can be taller and overflow the 6cm page.
+    try {
+      await printWin.webContents.executeJavaScript(
+        'document.fonts && document.fonts.ready ? document.fonts.ready.then(() => true) : true',
+      );
+    } catch {}
+
+    const result = await new Promise((resolve) => {
+      printWin.webContents.print(
+        {
+          silent: false,
+          printBackground: true,
+          margins: { marginType: 'none' },
+          // 8.5cm × 6cm expressed in microns (1cm = 10000 microns).
+          // width > height already describes the physical landscape label.
+          pageSize: { width: 85000, height: 60000 },
+          landscape: false,
+        },
+        (success, reason) => resolve({ success, reason }),
+      );
+    });
+
+    if (!result.success) return { ok: false, message: result.reason || 'ยกเลิกการพิมพ์' };
+    return { ok: true };
+  } catch (e) {
+    console.error('[print-labels]', e.message);
+    return { ok: false, message: e.message };
+  } finally {
+    if (printWin && !printWin.isDestroyed()) printWin.close();
+    fs.rm(tmpFile, { force: true }, () => {});
+  }
+});
+
 // --- Window ---
 let win;
 let staticServer;
@@ -425,7 +480,7 @@ async function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'YATA — ระบบบันทึกการผลิตยาตาเฉพาะราย',
-    icon: path.join(distPath, 'icons', 'icon-512x512.png'),
+    icon: path.join(distPath, 'icons', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,

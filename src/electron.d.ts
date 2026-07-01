@@ -35,6 +35,10 @@ interface ElectronAPI {
     version?: string;
     message?: string;
   }>;
+  /** Print a full HTML document as 8.5×6cm labels with the page size locked
+   *  by the program (independent of the machine's printer default). Shows the
+   *  print dialog for printer selection; resolves ok:false if cancelled. */
+  printLabels: (html: string) => Promise<{ ok: boolean; message?: string }>;
 }
 
 declare global {
