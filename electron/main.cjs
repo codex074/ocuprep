@@ -26,6 +26,10 @@ const EMBEDDED_HOSXP_TOKEN_HIS = embeddedSecrets.hosxpTokenHis || '';
 const DEFAULT_SETTINGS = {
   hosxpApiUrl: 'http://172.17.1.70:3000',
   updateManifestUrl: '',
+  // Saved label-printer name. When set (and the printer exists), labels print
+  // silently with the program-locked page size — the driver's default paper
+  // size on that machine no longer matters. '' = ask via the print dialog.
+  labelPrinter: '',
 };
 
 function loadSettings() {
@@ -50,6 +54,23 @@ function saveSettings(s) {
 }
 
 let settings = loadSettings();
+
+// Network/shared printers can leave Electron waiting indefinitely while the
+// Windows print spooler tries to contact the host PC. Keep those waits bounded
+// so a disconnected host never makes the rest of YATA unusable.
+const PRINTER_LIST_TIMEOUT_MS = 8000;
+const PRINT_JOB_TIMEOUT_MS = 30000;
+const PRINT_FONT_TIMEOUT_MS = 5000;
+
+function withTimeout(promise, timeoutMs, message) {
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
 
 // --- Static file server (serves dist/ so Firebase gets http:// origin) ---
 const MIME = {
@@ -399,6 +420,14 @@ ipcMain.handle('check-for-updates', () => checkForUpdates({ interactive: true })
 // print identically regardless of its printer-driver default paper size — which
 // was causing some machines to feed/skip several blank stickers per label.
 // silent:false keeps the normal print dialog so the user still picks the printer.
+//
+// ⚠️ pageSize/landscape encoding — see Audit.md P0 before changing:
+// Windows DEVMODE convention requires portrait-normalized paper (width ≤ length)
+// with orientation as a separate flag. Sending { width: 85000, height: 60000 },
+// landscape: false is non-canonical; some Seagull/BarTender driver builds swap it
+// to a 60×85 portrait canvas and Chromium's autorotate then prints the label
+// rotated 90°. The canonical encoding below matches what desktop Chrome sends
+// for @page { size: 8.5cm 6cm } and prints correctly on the whole fleet.
 let printSeq = 0;
 ipcMain.handle('print-labels', async (_event, html) => {
   if (typeof html !== 'string' || !html) {
@@ -416,29 +445,68 @@ ipcMain.handle('print-labels', async (_event, html) => {
 
     // Wait for web fonts (Sarabun) so the label lays out at its intended height
     // before printing; a fallback font can be taller and overflow the 6cm page.
+    // Continue with the fallback font if the client cannot reach Google Fonts.
     try {
-      await printWin.webContents.executeJavaScript(
-        'document.fonts && document.fonts.ready ? document.fonts.ready.then(() => true) : true',
+      await withTimeout(
+        printWin.webContents.executeJavaScript(
+          'document.fonts && document.fonts.ready ? document.fonts.ready.then(() => true) : true',
+        ),
+        PRINT_FONT_TIMEOUT_MS,
+        'โหลดฟอนต์สำหรับพิมพ์ไม่สำเร็จภายใน 5 วินาที',
       );
     } catch {}
 
-    const result = await new Promise((resolve) => {
-      printWin.webContents.print(
-        {
-          silent: false,
-          printBackground: true,
-          margins: { marginType: 'none' },
-          // 8.5cm × 6cm expressed in microns (1cm = 10000 microns).
-          // width > height already describes the physical landscape label.
-          pageSize: { width: 85000, height: 60000 },
-          landscape: false,
-        },
-        (success, reason) => resolve({ success, reason }),
-      );
+    // Do not enumerate printers before every print. On a client that uses a
+    // printer shared by another PC, getPrintersAsync() can wait on the remote
+    // spooler and previously left the whole print request hanging. Electron can
+    // send directly to the saved device name and report a missing/offline
+    // printer through the print callback instead.
+    const deviceName = settings.labelPrinter || '';
+
+    const result = await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      };
+      const timer = setTimeout(() => {
+        finish({
+          success: false,
+          reason: 'เครื่องพิมพ์ไม่ตอบสนองภายใน 30 วินาที กรุณาตรวจสอบเครื่องแม่ข่ายหรือ Print Spooler',
+        });
+      }, PRINT_JOB_TIMEOUT_MS);
+
+      try {
+        printWin.webContents.print(
+          {
+            silent: Boolean(deviceName),
+            ...(deviceName ? { deviceName } : {}),
+            printBackground: true,
+            margins: { marginType: 'none' },
+            // 6cm × 8.5cm portrait-normalized paper + landscape flag = 8.5×6cm label.
+            // Do NOT change to { width: 85000, height: 60000 }, landscape: false —
+            // that combination is the 90°-rotation bug (Audit.md P0).
+            pageSize: { width: 60000, height: 85000 },
+            landscape: true,
+          },
+          (success, reason) => finish({ success, reason }),
+        );
+      } catch (error) {
+        clearTimeout(timer);
+        reject(error);
+      }
     });
 
-    if (!result.success) return { ok: false, message: result.reason || 'ยกเลิกการพิมพ์' };
-    return { ok: true };
+    if (!result.success) {
+      return {
+        ok: false,
+        message: result.reason || 'ยกเลิกการพิมพ์',
+        ...(deviceName ? { silentPrinter: deviceName } : {}),
+      };
+    }
+    return { ok: true, ...(deviceName ? { silentPrinter: deviceName } : {}) };
   } catch (e) {
     console.error('[print-labels]', e.message);
     return { ok: false, message: e.message };
@@ -446,6 +514,35 @@ ipcMain.handle('print-labels', async (_event, html) => {
     if (printWin && !printWin.isDestroyed()) printWin.close();
     fs.rm(tmpFile, { force: true }, () => {});
   }
+});
+
+// --- Label printer selection (for silent printing) ---
+ipcMain.handle('get-label-printer-settings', async () => {
+  let printers = [];
+  let warning = '';
+  try {
+    if (win && !win.isDestroyed()) {
+      printers = await withTimeout(
+        win.webContents.getPrintersAsync(),
+        PRINTER_LIST_TIMEOUT_MS,
+        'โหลดรายชื่อเครื่องพิมพ์ไม่สำเร็จภายใน 8 วินาที',
+      );
+    }
+  } catch (e) {
+    console.error('[get-label-printer-settings]', e.message);
+    warning = `${e.message} กรุณาตรวจสอบเครื่องแม่ข่ายหรือ Print Spooler แล้วลองใหม่`;
+  }
+  return {
+    printers: printers.map((p) => ({ name: p.name, isDefault: Boolean(p.isDefault) })),
+    labelPrinter: settings.labelPrinter || '',
+    warning,
+  };
+});
+
+ipcMain.handle('save-label-printer', (_event, name) => {
+  settings.labelPrinter = typeof name === 'string' ? name : '';
+  saveSettings(settings);
+  return { ok: true };
 });
 
 // --- Window ---
@@ -489,7 +586,29 @@ async function createWindow() {
   });
 
   win.setMenuBarVisibility(false);
-  win.loadURL(`http://127.0.0.1:${APP_PORT}/`);
+  win.on('closed', () => {
+    win = null;
+  });
+
+  // Older desktop builds registered the PWA service worker on this localhost
+  // origin. Its auto-update handler reloads the page when a new app bundle is
+  // detected, which can clear a Login form that is already being filled in.
+  // Electron has its own updater, so remove only SW/Cache Storage here while
+  // preserving localStorage (the signed-in session and other app settings).
+  try {
+    await withTimeout(
+      win.webContents.session.clearStorageData({
+        origin: `http://127.0.0.1:${APP_PORT}`,
+        storages: ['serviceworkers', 'cachestorage'],
+      }),
+      5000,
+      'ล้าง service worker เดิมไม่สำเร็จภายใน 5 วินาที',
+    );
+  } catch (error) {
+    console.warn('[desktop-cache-cleanup]', error.message);
+  }
+
+  await win.loadURL(`http://127.0.0.1:${APP_PORT}/`);
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -497,8 +616,9 @@ if (!hasSingleInstanceLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (win) {
+    if (win && !win.isDestroyed()) {
       if (win.isMinimized()) win.restore();
+      if (!win.isVisible()) win.show();
       win.focus();
     }
   });

@@ -1,7 +1,7 @@
 {
   "name": "ed-extemp",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.14",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -16,6 +16,7 @@
     "deploy:manual": "gh-pages -d dist",
     "electron:dev": "npm run build && electron .",
     "electron:build": "npm run build && electron-builder --config electron/electron-builder.json --win",
+    "electron:build:portable": "npm run build && electron-builder --config electron/electron-builder.json --win portable --x64",
     "electron:manifest": "node scripts/create-electron-update-manifest.mjs"
   },
   "dependencies": {

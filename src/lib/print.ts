@@ -1,3 +1,4 @@
+import Swal from 'sweetalert2';
 import { fmtDate, multiplyAmount, resolvePath } from './utils';
 import { normalizeChemicalItems } from './chemicalItems';
 import type { Prep, Formula } from '../types';
@@ -199,7 +200,7 @@ export const generateBottleLabelsHtml = (
         </div>
       </div>`;
     }
-    pages.push(`<div class="bp">${labelsHtml}</div>`);
+    pages.push(`<div class="pp bottle-page"><div class="bottle-label-stack">${labelsHtml}</div></div>`);
   }
   return pages.join('');
 };
@@ -321,8 +322,12 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
   return shortPrepHtml + ingredientsHtml;
 };
 
-export const printAllLabels = (patientHtml: string, bottleHtml: string, prepStickersHtml: string = '') => {
-  const doc = `<html><head><title>พิมพ์ฉลาก</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
+export const buildLabelPrintDocument = (
+  patientHtml: string,
+  bottleHtml: string,
+  prepStickersHtml: string = '',
+  options: { includePatientPage?: boolean; title?: string } = {},
+) => `<html><head><title>${options.title ?? 'พิมพ์ฉลาก'}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
 @page{size:8.5cm 6cm;margin:0}
 body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
 /* Avoid a trailing blank page after the last label */
@@ -333,8 +338,11 @@ body>*:last-child{page-break-after:auto}
 .lb .row{display:flex;justify-content:space-between;margin-bottom:2px;align-items:baseline}
 .lb span,.lb strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lf{border-top:1px solid #000;margin-top:4px;padding-top:2px;font-size:8px;text-align:center;color:#000;width:100%;}
-/* Bottle label pages */
-.bp{width:8.5cm;height:6cm;box-sizing:border-box;padding:8mm 2mm 0 2mm;page-break-after:always;display:flex;flex-direction:column;gap:0;justify-content:flex-start;align-items:center}
+/* Bottle label pages use the same pp page container as pages 1–3.
+   Keeping one page structure prevents Chromium/printer drivers from assigning
+   a different orientation to this final page. */
+.pp.bottle-page{padding:8mm 2mm 0 2mm}
+.bottle-label-stack{width:100%;display:flex;flex-direction:column;gap:0;justify-content:flex-start;align-items:center}
 /* .bl size: 7cm x 1.7cm */
 .bl{width:7cm;height:1.7cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:column;justify-content:space-between;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
 .bl-name{font-weight:700;font-size:12px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8mm}
@@ -351,14 +359,35 @@ body>*:last-child{page-break-after:auto}
 
 .bl-num{display:none}
 .bl-qr{display:none}
-</style></head><body><div class="pp"><div class="lb">${patientHtml}</div></div>${prepStickersHtml}${bottleHtml}</body></html>`;
+@media screen{
+  html{background:#e2e8f0}
+  body{width:8.5cm;margin:16px auto;background:transparent}
+  .pp{margin:0 0 16px;box-shadow:0 2px 10px rgba(15,23,42,.2);background:#fff}
+}
+</style></head><body>${options.includePatientPage === false ? '' : `<div class="pp"><div class="lb">${patientHtml}</div></div>`}${prepStickersHtml}${bottleHtml}</body></html>`;
+
+export const printAllLabels = (patientHtml: string, bottleHtml: string, prepStickersHtml: string = '') => {
+  const doc = buildLabelPrintDocument(patientHtml, bottleHtml, prepStickersHtml);
 
   // In the Electron desktop app, print with a page size locked from the program
   // (8.5×6cm) so the output no longer depends on each machine's printer default —
-  // this stops the "skipping several blank stickers" problem on some PCs.
+  // this stops both the "skipping several blank stickers" problem and the
+  // 90°-rotated output on strict driver builds (see Audit.md P0). If a label
+  // printer is saved in settings the job is sent silently (no dialog), so a
+  // failure must be surfaced here — silent printing gives no other feedback.
   // On the web/PWA build (no electronAPI), fall back to the browser print window.
   if (window.electronAPI?.printLabels) {
-    void window.electronAPI.printLabels(doc);
+    void window.electronAPI.printLabels(doc).then((res) => {
+      if (!res.ok && res.message && !/cancel|ยกเลิก/i.test(res.message)) {
+        void Swal.fire({
+          icon: 'error',
+          title: 'พิมพ์ฉลากไม่สำเร็จ',
+          text: res.silentPrinter
+            ? `${res.message} (เครื่องพิมพ์: ${res.silentPrinter}) — ตรวจสอบเครื่องพิมพ์ หรือเปลี่ยนการตั้งค่าเครื่องพิมพ์ฉลากที่หน้าโปรไฟล์`
+            : res.message,
+        });
+      }
+    });
     return;
   }
 

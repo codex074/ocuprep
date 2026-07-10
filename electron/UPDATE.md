@@ -23,7 +23,7 @@
 ## ขั้นตอน release
 
 1. เปลี่ยน `version` ใน `package.json`
-2. Build บน Windows: `npm run electron:build`
+2. Build ไฟล์ portable บน Windows: `npm run electron:build:portable`
 3. สร้าง manifest:
    `ELECTRON_DOWNLOAD_BASE_URL=https://... npm run electron:manifest`
 4. อัปโหลด `.exe` ไปยัง URL ที่กำหนด และ deploy `latest.json` ไป Vercel

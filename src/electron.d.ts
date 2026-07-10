@@ -36,9 +36,19 @@ interface ElectronAPI {
     message?: string;
   }>;
   /** Print a full HTML document as 8.5×6cm labels with the page size locked
-   *  by the program (independent of the machine's printer default). Shows the
-   *  print dialog for printer selection; resolves ok:false if cancelled. */
-  printLabels: (html: string) => Promise<{ ok: boolean; message?: string }>;
+   *  by the program (independent of the machine's printer default). If a label
+   *  printer is saved in settings, prints silently to it; otherwise shows the
+   *  print dialog. Resolves ok:false if cancelled or the job fails. */
+  printLabels: (html: string) => Promise<{ ok: boolean; message?: string; silentPrinter?: string }>;
+  /** List installed printers and the currently saved label printer ('' = ask
+   *  via print dialog every time). */
+  getLabelPrinterSettings: () => Promise<{
+    printers: { name: string; isDefault: boolean }[];
+    labelPrinter: string;
+    warning?: string;
+  }>;
+  /** Save the label printer used for silent printing ('' to always ask). */
+  saveLabelPrinter: (name: string) => Promise<{ ok: true }>;
 }
 
 declare global {
