@@ -171,6 +171,23 @@ Severity: 🔴 high · 🟠 medium · 🟡 low. Line refs are as of this audit d
   (even anonymous sign-in + custom claims) with restrictive rules, or route writes through a
   small server. Interim: enable App Check and schedule Firestore exports/backups.
 
+### ✅ SEC-5 — HN Lookup proxy leaked patient names to any website (FIXED 2026-07-13)
+- **Was:** `hn-lookup-electron/main.js` served `/api/patient` on `127.0.0.1:3100` with
+  `Access-Control-Allow-Origin: *` **and** `Access-Control-Allow-Private-Network: true`.
+  Any page open in the same browser could read patient names off localhost by walking
+  HN values — no auth, no origin check. This is PHI leaving via a drive-by page.
+- **Fix:** the browser path is closed. The CORS/PNA headers are gone and any request
+  carrying an `Origin` header (i.e. every browser request) gets a 403. Verified: no origin,
+  including the app's own GitHub Pages origin, can read a response; native callers still can.
+- **Why this is safe:** every station runs the YATA **desktop** app, which reaches HOSxP over
+  IPC (`ipcMain.handle('lookup-hn')`) and never touches this server. The standalone proxy
+  existed only to serve the PWA in a browser.
+- **Consequence:** the web/PWA build can no longer look up patient names. Accepted — the
+  fleet is on the desktop app.
+- ❌ **Do NOT restore `Access-Control-Allow-Origin: *`.** If the browser path is ever needed
+  again, add an explicit origin allowlist checked against `req.headers.origin` — a wildcard
+  on a localhost service that returns PHI is a drive-by data leak, not a convenience.
+
 ### 🟠 SEC-3 — HOSxP API tokens embedded in the exe
 - `electron/secrets.cjs` is correctly gitignored, but it is bundled into `app.asar` and
   trivially extractable from the portable exe.
