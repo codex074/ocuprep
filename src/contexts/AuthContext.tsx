@@ -30,7 +30,8 @@ function readSessionTimestamp(): number | null {
 }
 
 function writeSession(user: User, location: string, timestamp = Date.now()) {
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ user, location, timestamp }));
+  const { password: _password, ...sessionUser } = user;
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ user: sessionUser, location, timestamp }));
 }
 
 function rowToUser(r: Record<string, unknown>): User {
@@ -38,7 +39,9 @@ function rowToUser(r: Record<string, unknown>): User {
     id: Number(r.id),
     name: String(r.name ?? ''),
     pha_id: String(r.pha_id ?? ''),
-    password: String(r.password ?? ''),
+    // Passwords are used only during credential verification and must never
+    // enter React auth state or the localStorage session.
+    password: '',
     role: (r.role as 'admin' | 'user') ?? 'user',
     active: r.active === true || r.active === 'TRUE',
     must_change_password: r.must_change_password === true || r.must_change_password === 'TRUE',
@@ -66,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (u) {
-          setUser(u);
+          const sessionUser = rowToUser(u);
+          setUser(sessionUser);
+          // Rewrite legacy sessions immediately so any persisted password is removed.
+          writeSession(sessionUser, loc || '', Number(timestamp || Date.now()));
           setSessionRemainingMs(Math.max(SESSION_TIMEOUT - (Date.now() - Number(timestamp || Date.now())), 0));
           // Refresh user data from Firestore
           api.getUserById(u.id).then(({ data, error }) => {

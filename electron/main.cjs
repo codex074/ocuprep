@@ -26,9 +26,10 @@ const EMBEDDED_HOSXP_TOKEN_HIS = embeddedSecrets.hosxpTokenHis || '';
 const DEFAULT_SETTINGS = {
   hosxpApiUrl: 'http://172.17.1.70:3000',
   updateManifestUrl: '',
-  // Saved label-printer name. When set (and the printer exists), labels print
-  // silently with the program-locked page size — the driver's default paper
-  // size on that machine no longer matters. '' = ask via the print dialog.
+  // Saved label-printer name. When set (and the printer exists), labels are
+  // rendered to an exact 8.5×6cm PDF and spooled silently via bundled SumatraPDF.
+  // The driver default stock must still be USER 85×60 mm (one-time setup).
+  // '' = ask via the print dialog.
   labelPrinter: '',
 };
 
@@ -183,27 +184,42 @@ function normalizePatient(raw, source) {
   };
 }
 
+// Distinguishes "asked HOSxP and it genuinely has no such patient" (patient: null,
+// failure: false) from "couldn't get a real answer" — non-200 (e.g. 401 from an
+// expired embedded token) or a network error (failure: true). Both endpoints used
+// to fall through to the same "not found" result on a non-200 response, which
+// silently hid auth/connectivity problems behind a misleading "HN not found" UI.
 async function lookupPatient(hn) {
   const { hosxpApiUrl } = settings;
   if (!EMBEDDED_HOSXP_TOKEN && !EMBEDDED_HOSXP_TOKEN_HIS) {
     throw new Error('แอปชุดนี้ไม่ได้ฝัง Token สำหรับเชื่อมต่อ HOSxP');
   }
 
+  let failure = false;
+
   if (EMBEDDED_HOSXP_TOKEN) try {
     const r = await callHosxpApi(hosxpApiUrl, '/api/hosxp/patient', EMBEDDED_HOSXP_TOKEN, hn);
     if (r.statusCode === 200 && r.body?.data?.[0]) {
-      return normalizePatient(r.body.data[0], 'hosxp/patient');
+      return { patient: normalizePatient(r.body.data[0], 'hosxp/patient'), failure: false };
     }
-  } catch (e) { console.error('[HN] primary:', e.message); }
+    if (r.statusCode !== 200) {
+      console.error('[HN] primary non-200:', r.statusCode, JSON.stringify(r.body).slice(0, 300));
+      failure = true;
+    }
+  } catch (e) { console.error('[HN] primary:', e.message); failure = true; }
 
   if (EMBEDDED_HOSXP_TOKEN_HIS) try {
     const r = await callHosxpApi(hosxpApiUrl, '/api/hosxp/HIS', EMBEDDED_HOSXP_TOKEN_HIS, hn);
     if (r.statusCode === 200 && r.body?.data?.[0]) {
-      return normalizePatient(r.body.data[0], 'hosxp/HIS');
+      return { patient: normalizePatient(r.body.data[0], 'hosxp/HIS'), failure: false };
     }
-  } catch (e) { console.error('[HN] HIS fallback:', e.message); }
+    if (r.statusCode !== 200) {
+      console.error('[HN] HIS non-200:', r.statusCode, JSON.stringify(r.body).slice(0, 300));
+      failure = true;
+    }
+  } catch (e) { console.error('[HN] HIS fallback:', e.message); failure = true; }
 
-  return null;
+  return { patient: null, failure };
 }
 
 // --- IPC Handlers ---
@@ -214,11 +230,18 @@ ipcMain.handle('lookup-hn', async (_event, hn) => {
   }
   const normalizedHN = digits.padStart(9, '0');
   try {
-    const patient = await lookupPatient(normalizedHN);
+    const { patient, failure } = await lookupPatient(normalizedHN);
     if (patient) return { ok: true, patient };
+    if (failure) {
+      return {
+        ok: false,
+        failure: true,
+        message: 'เชื่อมต่อ HOSxP ไม่สำเร็จ (token อาจหมดอายุ หรือเครือข่ายขัดข้อง) กรุณาติดต่อผู้ดูแลระบบ',
+      };
+    }
     return { ok: false, message: `ไม่พบข้อมูลผู้ป่วย (HN: ${normalizedHN})` };
   } catch (e) {
-    return { ok: false, message: String(e.message) };
+    return { ok: false, failure: true, message: String(e.message) };
   }
 });
 
@@ -414,21 +437,71 @@ ipcMain.handle('get-app-info', () => ({
 }));
 ipcMain.handle('check-for-updates', () => checkForUpdates({ interactive: true }));
 
-// --- Label printing with a program-locked page size (8.5×6cm) ---
-// The renderer sends the full label HTML; we render it in a hidden window and
-// print via webContents.print() with an explicit pageSize. This makes every PC
-// print identically regardless of its printer-driver default paper size — which
-// was causing some machines to feed/skip several blank stickers per label.
-// silent:false keeps the normal print dialog so the user still picks the printer.
+// --- Label printing (8.5×6cm) — two delivery paths, see Audit.md P0 ---
+// The renderer sends the full label HTML; we render it in a hidden window, then:
 //
-// ⚠️ pageSize/landscape encoding — see Audit.md P0 before changing:
-// Windows DEVMODE convention requires portrait-normalized paper (width ≤ length)
-// with orientation as a separate flag. Sending { width: 85000, height: 60000 },
-// landscape: false is non-canonical; some Seagull/BarTender driver builds swap it
-// to a 60×85 portrait canvas and Chromium's autorotate then prints the label
-// rotated 90°. The canonical encoding below matches what desktop Chrome sends
-// for @page { size: 8.5cm 6cm } and prints correctly on the whole fleet.
+// • SILENT path (a label printer is saved in settings): render an exact 8.5×6cm
+//   PDF via printToPDF({ preferCSSPageSize: true }) — this pipeline honors
+//   @page { size: 8.5cm 6cm } deterministically — and hand the file to the
+//   bundled SumatraPDF to spool to the saved printer at 100% scale.
+//   webContents.print({ silent: true }) is NOT used here: on Electron 30/Windows
+//   it drops the custom pageSize from the job while still applying the landscape
+//   flag, which rotated every label 90° on the field fleet (Zebra ZD230,
+//   2026-07-10 — rotated with landscape:true AND landscape:false, even with a
+//   correct 85×60 driver default stock). Paper size still comes from the driver
+//   default stock, so each machine keeps the one-time USER 85×60 driver setup
+//   (Printing Preferences AND Printer Properties → Advanced → Printing Defaults).
+//
+// • DIALOG path (no saved printer): webContents.print() with the canonical
+//   Windows DEVMODE encoding — portrait-normalized paper (width ≤ length) plus
+//   the orientation flag: { width: 60000, height: 85000 }, landscape: true.
+//   Validated fleet-wide in v1.0.13. Do NOT change to
+//   { width: 85000, height: 60000 }, landscape: false — that combination is the
+//   original 90°-rotation P0 bug.
 let printSeq = 0;
+
+// Bundled SumatraPDF (electron/vendor/SumatraPDF.exe in dev; extraResources in
+// the packaged app). Returns '' when the binary is missing so callers can fall
+// back to the print dialog.
+function getSumatraPath() {
+  const p = app.isPackaged
+    ? path.join(process.resourcesPath, 'SumatraPDF.exe')
+    : path.join(__dirname, 'vendor', 'SumatraPDF.exe');
+  try {
+    return fs.existsSync(p) ? p : '';
+  } catch {
+    return '';
+  }
+}
+
+function printPdfViaSumatra(sumatraPath, pdfPath, printerName) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (success, reason) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ success, reason });
+    };
+    const timer = setTimeout(() => {
+      try {
+        child.kill();
+      } catch {}
+      finish(false, 'เครื่องพิมพ์ไม่ตอบสนองภายใน 30 วินาที กรุณาตรวจสอบเครื่องแม่ข่ายหรือ Print Spooler');
+    }, PRINT_JOB_TIMEOUT_MS);
+    const child = spawn(
+      sumatraPath,
+      // noscale = print the 8.5×6cm PDF at 100% onto the driver's default stock.
+      ['-print-to', printerName, '-print-settings', 'noscale', '-silent', pdfPath],
+      { windowsHide: true },
+    );
+    child.on('error', (e) => finish(false, `เรียกตัวส่งงานพิมพ์ไม่สำเร็จ: ${e.message}`));
+    child.on('exit', (code) => {
+      if (code === 0) finish(true, '');
+      else finish(false, `ส่งงานพิมพ์ไม่สำเร็จ (รหัส ${code}) กรุณาตรวจสอบชื่อเครื่องพิมพ์ในหน้าโปรไฟล์`);
+    });
+  });
+}
 ipcMain.handle('print-labels', async (_event, html) => {
   if (typeof html !== 'string' || !html) {
     return { ok: false, message: 'ไม่มีเนื้อหาให้พิมพ์' };
@@ -458,10 +531,35 @@ ipcMain.handle('print-labels', async (_event, html) => {
 
     // Do not enumerate printers before every print. On a client that uses a
     // printer shared by another PC, getPrintersAsync() can wait on the remote
-    // spooler and previously left the whole print request hanging. Electron can
-    // send directly to the saved device name and report a missing/offline
-    // printer through the print callback instead.
+    // spooler and previously left the whole print request hanging. Send directly
+    // to the saved device name and report a missing/offline printer through the
+    // job result instead.
     const deviceName = settings.labelPrinter || '';
+    const sumatraPath = deviceName ? getSumatraPath() : '';
+    if (deviceName && !sumatraPath) {
+      // Old/broken package without the bundled binary — fall through to the
+      // dialog path rather than the known-rotated Electron silent path.
+      console.error('[print-labels] SumatraPDF binary not found; falling back to print dialog');
+    }
+
+    if (deviceName && sumatraPath) {
+      const pdfPath = `${tmpFile}.pdf`;
+      try {
+        const pdfData = await withTimeout(
+          printWin.webContents.printToPDF({ printBackground: true, preferCSSPageSize: true }),
+          PRINT_JOB_TIMEOUT_MS,
+          'สร้างไฟล์ฉลากไม่สำเร็จภายใน 30 วินาที',
+        );
+        fs.writeFileSync(pdfPath, pdfData);
+        const result = await printPdfViaSumatra(sumatraPath, pdfPath, deviceName);
+        if (!result.success) {
+          return { ok: false, message: result.reason || 'ส่งงานพิมพ์ไม่สำเร็จ', silentPrinter: deviceName };
+        }
+        return { ok: true, silentPrinter: deviceName };
+      } finally {
+        fs.rm(pdfPath, { force: true }, () => {});
+      }
+    }
 
     const result = await new Promise((resolve, reject) => {
       let settled = false;
@@ -481,13 +579,11 @@ ipcMain.handle('print-labels', async (_event, html) => {
       try {
         printWin.webContents.print(
           {
-            silent: Boolean(deviceName),
-            ...(deviceName ? { deviceName } : {}),
+            silent: false,
             printBackground: true,
             margins: { marginType: 'none' },
-            // 6cm × 8.5cm portrait-normalized paper + landscape flag = 8.5×6cm label.
-            // Do NOT change to { width: 85000, height: 60000 }, landscape: false —
-            // that combination is the 90°-rotation bug (Audit.md P0).
+            // Canonical DEVMODE encoding for the dialog path — see the comment
+            // above the handler and Audit.md P0 before changing either value.
             pageSize: { width: 60000, height: 85000 },
             landscape: true,
           },
@@ -500,13 +596,9 @@ ipcMain.handle('print-labels', async (_event, html) => {
     });
 
     if (!result.success) {
-      return {
-        ok: false,
-        message: result.reason || 'ยกเลิกการพิมพ์',
-        ...(deviceName ? { silentPrinter: deviceName } : {}),
-      };
+      return { ok: false, message: result.reason || 'ยกเลิกการพิมพ์' };
     }
-    return { ok: true, ...(deviceName ? { silentPrinter: deviceName } : {}) };
+    return { ok: true };
   } catch (e) {
     console.error('[print-labels]', e.message);
     return { ok: false, message: e.message };

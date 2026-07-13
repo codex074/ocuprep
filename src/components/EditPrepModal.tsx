@@ -22,9 +22,18 @@ const STATION_OPTIONS = [
   'ห้องเคมีบำบัด',
 ];
 
+type HnStatus = 'idle' | 'loading' | 'found' | 'notfound' | 'offline';
+
+const normalizeHn = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 9) return '';
+  return digits.padStart(9, '0');
+};
+
 export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdate }: EditPrepModalProps) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [hnStatus, setHnStatus] = useState<HnStatus>('idle');
   const [form, setForm] = useState({
     formula_id: 0,
     mode: 'patient' as 'patient' | 'stock',
@@ -55,6 +64,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
         dest_room: prep.dest_room || '',
         is_expired: prep.is_expired ?? false
       });
+      setHnStatus('idle');
     }
   }, [prep]);
 
@@ -93,6 +103,49 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
     }));
   };
 
+  const lookupPatientByHN = async (rawHn: string) => {
+    const digits = rawHn.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 9) return;
+
+    setHnStatus('loading');
+    try {
+      let ok = false;
+      let fullName = '';
+
+      let failure = false;
+
+      if (window.electronAPI?.lookupHN) {
+        const result = await window.electronAPI.lookupHN(digits);
+        ok = result.ok;
+        fullName = result.patient?.fullName ?? '';
+        failure = Boolean(result.failure);
+      } else {
+        const response = await fetch(
+          `http://127.0.0.1:3100/api/patient?q=${encodeURIComponent(digits)}`,
+          { signal: AbortSignal.timeout(5000) },
+        );
+        const data = await response.json() as { ok: boolean; patient?: { fullName: string } };
+        ok = data.ok;
+        fullName = data.patient?.fullName ?? '';
+      }
+
+      if (ok && fullName) {
+        setForm((current) => (
+          current.hn.replace(/\D/g, '') === digits
+            ? { ...current, patient_name: fullName }
+            : current
+        ));
+        setHnStatus('found');
+      } else if (failure) {
+        setHnStatus('offline');
+      } else {
+        setHnStatus('notfound');
+      }
+    } catch {
+      setHnStatus('offline');
+    }
+  };
+
   const handleSave = async () => {
     if (!prep || saving) return;
     if (!selectedFormula) {
@@ -106,12 +159,14 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
 
     // Calculate new target string
     let newTarget = prep.target;
+    let normalizedHn = '';
     if (form.mode === 'patient') {
-      if (!form.hn.trim() || !form.patient_name.trim()) { 
-        toast('กรุณากรอก HN และชื่อผู้ป่วย', 'error'); 
+      normalizedHn = normalizeHn(form.hn);
+      if (!normalizedHn || !form.patient_name.trim()) {
+        toast('กรุณากรอก HN อย่างน้อย 7 หลัก และชื่อผู้ป่วย', 'error');
         return; 
       }
-      newTarget = `HN: ${form.hn.trim()} - ${form.patient_name.trim()}`;
+      newTarget = `HN: ${normalizedHn} - ${form.patient_name.trim()}`;
     } else {
       if (!form.dest_room) {
         toast('ไม่สามารถกำหนดห้องปลายทางจากห้องทำงานได้', 'error');
@@ -130,7 +185,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       location: form.location,
       target: newTarget,
       qty: +form.qty,
-      hn: form.mode === 'patient' ? form.hn.trim() : '',
+      hn: form.mode === 'patient' ? normalizedHn : '',
       patient_name: form.mode === 'patient' ? form.patient_name.trim() : '',
       dest_room: form.mode === 'stock' ? form.dest_room : '',
       chemical_items: chemicalItems,
@@ -224,11 +279,54 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       {form.mode === 'patient' ? (
         <div className="form-row">
           <div className="form-group">
-            <label>HN</label>
-            <input className="form-input" value={form.hn} onChange={e => setForm(f => ({ ...f, hn: e.target.value.replace(/\D/g, '') }))} />
+            <label>HN ผู้ป่วย <span className="req">*</span></label>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                className="form-input"
+                placeholder="เช่น 003812345"
+                value={form.hn}
+                maxLength={9}
+                inputMode="numeric"
+                onChange={e => {
+                  setForm(current => ({ ...current, hn: e.target.value.replace(/\D/g, '').slice(0, 9) }));
+                  setHnStatus('idle');
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && form.hn.replace(/\D/g, '').length >= 7) {
+                    e.preventDefault();
+                    void lookupPatientByHN(form.hn);
+                  }
+                }}
+                onBlur={() => {
+                  if (form.hn.replace(/\D/g, '').length >= 7) void lookupPatientByHN(form.hn);
+                }}
+              />
+              <button
+                type="button"
+                title="ค้นหาชื่อผู้ป่วยจาก HN"
+                disabled={hnStatus === 'loading' || form.hn.replace(/\D/g, '').length < 7}
+                onClick={() => void lookupPatientByHN(form.hn)}
+                style={{ padding: '0 10px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+              >
+                {hnStatus === 'loading'
+                  ? <span className="btn-spinner" />
+                  : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                }
+              </button>
+            </div>
+            {hnStatus === 'found' && <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px' }}>พบข้อมูลผู้ป่วย — กรอกชื่อโดยอัตโนมัติแล้ว</p>}
+            {hnStatus === 'notfound' && <p style={{ fontSize: '12px', color: '#f59e0b', marginTop: '4px' }}>ไม่พบ HN นี้ในระบบ — กรอกชื่อด้วยตนเอง</p>}
+            {hnStatus === 'offline' && (
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                {window.electronAPI
+                  ? 'ไม่สามารถเชื่อมต่อ HOSxP — ตรวจสอบเครือข่ายภายในหรือติดต่อผู้ดูแลระบบ'
+                  : 'ไม่สามารถเชื่อมต่อ HN Lookup — กรุณาเปิดแอป HN Lookup ก่อน'
+                }
+              </p>
+            )}
           </div>
           <div className="form-group">
-            <label>ชื่อผู้ป่วย</label>
+            <label>ชื่อ-นามสกุล <span className="req">*</span></label>
             <input className="form-input" value={form.patient_name} onChange={e => setForm(f => ({ ...f, patient_name: e.target.value }))} />
           </div>
         </div>

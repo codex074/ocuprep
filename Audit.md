@@ -64,6 +64,66 @@ landscape: true,
   driver defaults and can override the app's `pageSize` on some drivers). When no printer is
   saved (or it disappeared), the dialog fallback is used. Silent printing alone still does
   not replace the rotation encoding below — keep both.
+  - ⚠️ **FIELD EVIDENCE 2026-07-10 (v1.0.15): the silent path printed rotated 90° CCW on all
+    pages** (Zebra ZD230). This was the FIRST physical test of the silent path — the v1.0.14
+    "verification" only grepped app.asar for the code, it never printed on a real device.
+    **ROOT CAUSE (confirmed by isolation test):** on Electron 30/Windows the silent pipeline
+    **drops the custom `pageSize` from the print job but still applies the `landscape` flag.**
+    Proof: silent-printing to "Microsoft Print to PDF" produced a correctly-oriented page at
+    the driver-DEFAULT size, not 60×85 (pageSize dropped, content not rotated by Chromium);
+    on the ZD230 the surviving `landscape: true` rotated the driver's default stock 90°,
+    rotating every label. This also explains why setting the driver default to 85×60 "didn't
+    help" before — the app itself was rotating that correct stock. Related upstream issues:
+    electron#39702 (custom pageSize ineffective on Windows, closed not-planned),
+    electron#39179 / PR #41811 (silent-path settings handled differently from dialog),
+    PR #50808 (silent mediaSize regression fixed only in Electron 41/42).
+    **FIX (v1.0.16):** the silent path now sends `landscape: false` (`landscape: !deviceName`
+    in `print-labels`); the dialog path keeps the validated `landscape: true` encoding.
+    Because pageSize never reaches the driver when silent, each machine's driver default
+    stock MUST be set once to USER 85×60 mm — in BOTH Printing Preferences and
+    Printer Properties → Advanced → Printing Defaults (the latter is the machine-wide one).
+  - ❌ Do NOT send `landscape: true` on the SILENT path while on Electron 30 — pageSize is
+    dropped there, so the flag rotates whatever the driver default stock is (this was the
+    v1.0.14–1.0.15 silent-path rotation). `landscape: true` remains correct on the dialog path.
+  - If the fleet ever upgrades Electron to ≥41/42 (silent mediaSize fix, PR #50808), re-test
+    whether the silent path can go back to program-locked pageSize; until then the silent
+    path depends on the driver default stock.
+  - **FIELD TEST 2026-07-10 (v1.0.16, `landscape:false` silent):** Microsoft Print to PDF now
+    prints ROTATED — this is EXPECTED and is not a failure signal: MS PDF's default paper is
+    portrait A4, pageSize still can't reach it, and Chromium auto-rotates the landscape-shaped
+    CSS page (8.5×6cm) onto portrait paper. **MS Print to PDF is NOT a valid oracle for the
+    silent path anymore**; the only valid test is a label printer whose driver default stock
+    is set to USER 85×60. Zebra ZD230 also still rotated in this test → consistent with the
+    driver default stock NOT being 85×60 at test time (Chromium rotates CSS-landscape content
+    onto any portrait-shaped default paper, e.g. 109.5×297). Pending: verify/set ZD230 default
+    stock 85(W)×60(H) in Printing Preferences AND Printing Defaults, retest v1.0.16.
+    If it STILL rotates with a confirmed 85×60 default stock, stop iterating on
+    webContents.print and switch architecture: printToPDF(preferCSSPageSize) → hand the exact
+    85×60 PDF to the printer (bundled SumatraPDF `-print-to`), or raw ZPL for Zebra units.
+  - **2026-07-10 (v1.0.16 retest): STILL rotated with the 85×60 default stock confirmed in
+    both Printing Preferences and Printing Defaults** → Electron 30's silent
+    webContents.print() is unusable on this driver regardless of the landscape flag.
+    **ARCHITECTURE CHANGE (v1.0.17):** the silent path no longer uses webContents.print().
+    It renders an exact 8.5×6cm PDF via `printToPDF({ preferCSSPageSize: true })` (this
+    pipeline honors `@page` deterministically) and spools it with a bundled SumatraPDF:
+    `SumatraPDF.exe -print-to <printer> -print-settings noscale -silent <pdf>`.
+    Binary at `electron/vendor/SumatraPDF.exe` (v3.5.2 x64, portable), packaged via
+    electron-builder `extraResources` → `process.resourcesPath/SumatraPDF.exe`
+    (excluded from the asar via `!electron/vendor/**`). If the binary is missing at
+    runtime the handler falls back to the DIALOG path (never to Electron silent print).
+    The dialog path and its validated v1.0.13 encoding are unchanged.
+    Machines still need the one-time driver default stock USER 85×60 (SumatraPDF
+    `noscale` prints at 100% onto the driver default paper).
+  - **Fleet observation 2026-07-10:** the paper size shown in the app's print dialog
+    (`user 109.5×297` vs `85×60`) IS the driver-default stock the silent path will print
+    onto — use it as the per-machine readiness check. Machines stuck at 109.5×297 after
+    "setting the driver" usually mean: (1) the printer is SHARED from another PC — defaults
+    must be set on the HOST machine, not the client; (2) a duplicate driver entry was
+    configured instead of the one saved in the app profile; or (3) only one of
+    Printing Preferences / Printing Defaults was set. On an unconfigured machine the
+    v1.0.17 silent path prints the label at correct size/orientation but feeds a 297 mm
+    page → several blank stickers per job. Do not enable silent printing there until the
+    dialog shows 85×60.
 - ❌ Do NOT change the CSS to `size: 6cm 8.5cm` or pre-rotate content with CSS transforms —
   the physical stock feeds 85 mm across the head × 60 mm long; content must be authored 85 wide.
 

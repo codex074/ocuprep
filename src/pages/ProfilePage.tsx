@@ -91,9 +91,10 @@ function LabelPrinterCard() {
           </select>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-          เมื่อเลือกเครื่องพิมพ์ไว้ แอปจะพิมพ์ฉลากขนาด 8.5×6 ซม. ไปที่เครื่องนั้นทันที
-          โดยล็อกขนาดกระดาษจากโปรแกรม — ไม่ขึ้นกับค่า default ของไดรเวอร์เครื่องนั้น
-          และไม่ต้องกดผ่านหน้าต่างพิมพ์ทุกครั้ง
+          เมื่อเลือกเครื่องพิมพ์ไว้ แอปจะส่งงานพิมพ์ฉลากไปที่เครื่องนั้นทันที
+          โดยไม่ต้องกดผ่านหน้าต่างพิมพ์ทุกครั้ง — เงื่อนไข: ไดรเวอร์เครื่องพิมพ์นั้น
+          ต้องตั้งขนาดสติ๊กเกอร์เริ่มต้นเป็น 85×60 มม. ไว้ (ตั้งครั้งเดียว ทั้งใน
+          Printing Preferences และ Printer Properties → Advanced → Printing Defaults)
         </p>
         {loadWarning && (
           <div style={{ fontSize: '12px', lineHeight: 1.5, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 10px' }}>

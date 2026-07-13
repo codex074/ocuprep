@@ -6,7 +6,7 @@ import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
 import { api } from '../lib/api';
 import { today, addDays, fmtDate, fmtTime, multiplyAmount } from '../lib/utils';
-import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
+import { buildLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
@@ -196,11 +196,14 @@ export default function PreparePage() {
       let ok = false;
       let fullName = '';
 
+      let failure = false;
+
       if (window.electronAPI?.lookupHN) {
         // Electron: IPC → main process calls HOSxP directly
         const result = await window.electronAPI.lookupHN(digits);
         ok = result.ok;
         fullName = result.patient?.fullName ?? '';
+        failure = Boolean(result.failure);
       } else {
         // Browser: call standalone proxy at localhost:3100
         const res = await fetch(
@@ -215,6 +218,10 @@ export default function PreparePage() {
       if (ok && fullName) {
         setPatientName(fullName);
         setHnStatus('found');
+      } else if (failure) {
+        // Could not get a real answer from HOSxP (non-200/expired token/network) —
+        // don't tell the user "HN not found" when we never actually checked.
+        setHnStatus('offline');
       } else {
         setHnStatus('notfound');
       }
@@ -413,8 +420,6 @@ export default function PreparePage() {
     }
   };
 
-  const handleSave = () => { void doSave(); };
-
   const handleClear = () => {
     setLastSavedPrintPrep(null);
     setFormulaId('');
@@ -443,11 +448,14 @@ export default function PreparePage() {
   };
 
   const openLabelPreview = (prep: Prep) => {
+    if (!selectedFormula) return;
     setPrintMockPrep(prep);
-    setPrintTitle('ฉลากยา (Patient Label)');
-    const pn = prep.mode === 'patient' ? (prep.patient_name || '-') : 'Stock';
-    const hnVal = prep.mode === 'patient' ? (prep.hn || '-') : '-';
-    setPrintContent(`<div class="label-preview"><div class="lb"><div class="row"><span>ชื่อยา:</span><strong>${prep.formula_name}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong>${pn}${hnVal !== '-' ? ' (HN: ' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${prep.lot_no}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${fmtDate(prep.date)}</span></div><div class="row" style="color:var(--accent-red);font-weight:600"><span>วันหมดอายุ:</span><span>${fmtDate(prep.expiry_date)}</span></div><div class="row"><span>วิธีใช้:</span><span>หยอดตาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${prep.prepared_by || '-'} | ${prep.location}</div></div>`);
+    setPrintTitle('ตัวอย่างก่อนพิมพ์ฉลากยา (8.5 × 6 ซม.)');
+    setPrintContent(buildLabelPrintDocument(
+      generateLabelHtml(prep, selectedFormula),
+      generateBottleLabelsHtml(prep, selectedFormula),
+      generatePrepStickersHtml(prep, selectedFormula),
+    ));
   };
 
   const handlePrintLabel = async () => {
@@ -479,7 +487,7 @@ export default function PreparePage() {
   };
 
   const doPrint = () => {
-    if (printTitle.includes('Label') && printMockPrep && selectedFormula) {
+    if (printTitle.includes('ฉลากยา') && printMockPrep && selectedFormula) {
       const patientHtml = generateLabelHtml(printMockPrep, selectedFormula);
       const bottleHtml = generateBottleLabelsHtml(printMockPrep, selectedFormula);
       const prepStickersHtml = generatePrepStickersHtml(printMockPrep, selectedFormula);
@@ -637,8 +645,8 @@ export default function PreparePage() {
             <div style={{ display: 'grid', gap: '8px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 <div>ชื่อสารเคมี</div>
-                <div>Lot No. <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ไม่บังคับ)</span></div>
-                <div>Exp. <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ไม่บังคับ)</span></div>
+                <div>Lot No.</div>
+                <div>Exp.</div>
               </div>
               {chemicalItems.map((item, index) => (
                 <div key={index} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
@@ -707,12 +715,8 @@ export default function PreparePage() {
           )}
 
           <div className="prepare-action-row">
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>บันทึก</>}
-            </button>
             <button className="btn btn-success" onClick={handlePrintLabel} disabled={saving}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
-              พิมพ์ฉลากยา
+              {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>บันทึกและพิมพ์ฉลากยา</>}
             </button>
             <button className="btn btn-outline" onClick={handlePrintBatch} disabled={saving}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
@@ -733,9 +737,16 @@ export default function PreparePage() {
             <button className="btn btn-primary" onClick={doPrint}>พิมพ์</button>
           </>
         }
-        width="520px"
+        width={printTitle.includes('ตัวอย่างก่อนพิมพ์ฉลากยา') ? '760px' : '520px'}
       >
-        <div dangerouslySetInnerHTML={{ __html: printContent }} />
+        {printTitle.includes('ตัวอย่างก่อนพิมพ์ฉลากยา') ? (
+          <div className="label-print-preview">
+            <p>ตัวอย่างนี้ใช้ HTML และ CSS ชุดเดียวกับงานพิมพ์จริง แต่ทิศทางกระดาษสุดท้ายยังขึ้นกับ driver ของเครื่องพิมพ์</p>
+            <iframe title="ตัวอย่างฉลากก่อนพิมพ์" srcDoc={printContent} />
+          </div>
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: printContent }} />
+        )}
       </Modal>
         </>
       )}

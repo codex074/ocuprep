@@ -14,6 +14,9 @@ interface ElectronAPI {
     ok: boolean;
     patient?: HnPatient;
     message?: string;
+    /** true when HOSxP could not be reached or answered with a non-200 status
+     *  (e.g. an expired embedded token) — distinct from a genuine "not found". */
+    failure?: boolean;
   }>;
   getHnSettings: () => Promise<{
     hosxpApiUrl: string;

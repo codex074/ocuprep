@@ -6,6 +6,7 @@ import { useUsers } from '../hooks/useUsers';
 import { usePreps } from '../hooks/usePreps';
 import { resolvePath } from '../lib/utils';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
+import { api } from '../lib/api';
 import type { User } from '../types';
 import Swal from 'sweetalert2';
 
@@ -131,7 +132,11 @@ export default function ProfileCard({ targetUser, isOwnProfile, isAdmin, onClose
     // Require old password only if it's the user checking themselves, NOT admin
     if (isOwnProfile && !isAdmin) {
         if (!oldPassword) { toast('กรุณากรอกรหัสผ่านเดิม', 'error'); return; }
-        if (oldPassword !== targetUser.password) { toast('รหัสผ่านเดิมไม่ถูกต้อง', 'error'); return; }
+        const verification = await api.login(targetUser.pha_id, oldPassword);
+        if (verification.error || !verification.data) {
+          toast('รหัสผ่านเดิมไม่ถูกต้อง', 'error');
+          return;
+        }
     }
     
     setBusySection('password');

@@ -2,6 +2,10 @@
 
 Project context for AI-assisted development. Read this before making changes.
 
+> ⚠️ **Active issues & risk register: see [`Audit.md`](Audit.md).**
+> Read it BEFORE touching any printing code (`src/lib/print.ts`, `electron/main.cjs`) —
+> it documents the label-rotation P0 bug, the verified fix, and regression traps.
+
 ---
 
 ## What This Project Is

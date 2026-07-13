@@ -1520,6 +1520,12 @@ table tbody tr:last-child td { border-bottom: none; }
   transform: scale(0.94) translateY(16px);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
+/* Header/footer stay pinned; only the body scrolls */
+.modal:not(.clean) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .modal-overlay.show .modal { transform: scale(1) translateY(0); }
 
 .modal-header {
@@ -1528,6 +1534,7 @@ table tbody tr:last-child td { border-bottom: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 .modal-header h3 { font-size: 17px; font-weight: 700; }
 
@@ -1544,13 +1551,20 @@ table tbody tr:last-child td { border-bottom: none; }
 .modal-close:hover { background: #f1f5f9; color: var(--text-primary); }
 .modal-close svg { width: 20px; height: 20px; }
 
-.modal-body   { padding: 24px; }
+.modal-body   {
+  padding: 24px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-card-solid);
 }
 
 /* ============================================================
@@ -1692,6 +1706,19 @@ table tbody tr:last-child td { border-bottom: none; }
 .label-preview .lb { line-height: 1.8; }
 .label-preview .lb .row { display: flex; justify-content: space-between; }
 .label-preview .lf { border-top: 1px solid #333; margin-top: 10px; padding-top: 8px; font-size: 11px; text-align: center; color: #666; }
+.label-print-preview > p {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.label-print-preview iframe {
+  display: block;
+  width: 100%;
+  height: min(68vh, 680px);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #e2e8f0;
+}
 
 /* ============================================================
    COMPONENTS – User Avatar (small)

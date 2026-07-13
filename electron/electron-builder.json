@@ -14,7 +14,14 @@
     "!scripts/**",
     "!*.ts",
     "!*.config.*",
-    "!tsconfig*"
+    "!tsconfig*",
+    "!electron/vendor/**"
+  ],
+  "extraResources": [
+    {
+      "from": "electron/vendor/SumatraPDF.exe",
+      "to": "SumatraPDF.exe"
+    }
   ],
   "extraMetadata": {
     "main": "electron/main.cjs",

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { Prep, Formula } from '../types';
-import { generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels, printA4Html } from '../lib/print';
+import { buildLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels, printA4Html } from '../lib/print';
 import { useFormulas } from '../hooks/useFormulas';
 import Modal from './ui/Modal';
 
@@ -11,6 +12,7 @@ interface PrepDetailsModalProps {
 
 export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsModalProps) {
   const { formulas } = useFormulas();
+  const [labelPreviewOpen, setLabelPreviewOpen] = useState(false);
 
   if (!isOpen || !prep) return null;
 
@@ -23,6 +25,10 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
   const batchSheetHtml = generateBatchSheetHtml(prep, formula);
 
   const handlePrintLabel = () => {
+    setLabelPreviewOpen(true);
+  };
+
+  const handleConfirmPrintLabel = () => {
     const patientHtml = generateLabelHtml(prep, formula);
     const bottleHtml = generateBottleLabelsHtml(prep, formula);
     const prepStickersHtml = generatePrepStickersHtml(prep, formula);
@@ -33,7 +39,13 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
     printA4Html(batchSheetHtml);
   };
 
+  const patientHtml = generateLabelHtml(prep, formula);
+  const bottleHtml = generateBottleLabelsHtml(prep, formula);
+  const prepStickersHtml = generatePrepStickersHtml(prep, formula);
+  const labelPrintDocument = buildLabelPrintDocument(patientHtml, bottleHtml, prepStickersHtml);
+
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={onClose}
@@ -76,5 +88,23 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
         dangerouslySetInnerHTML={{ __html: batchSheetHtml }}
       />
     </Modal>
+    <Modal
+      isOpen={labelPreviewOpen}
+      onClose={() => setLabelPreviewOpen(false)}
+      title="ตัวอย่างก่อนพิมพ์ฉลากยา (8.5 × 6 ซม.)"
+      width="760px"
+      footer={
+        <>
+          <button className="btn btn-outline" onClick={() => setLabelPreviewOpen(false)}>ปิด</button>
+          <button className="btn btn-primary" onClick={handleConfirmPrintLabel}>พิมพ์</button>
+        </>
+      }
+    >
+      <div className="label-print-preview">
+        <p>ตัวอย่างนี้ใช้ HTML และ CSS ชุดเดียวกับงานพิมพ์จริง แต่ทิศทางกระดาษสุดท้ายยังขึ้นกับ driver ของเครื่องพิมพ์</p>
+        <iframe title="ตัวอย่างฉลากก่อนพิมพ์" srcDoc={labelPrintDocument} />
+      </div>
+    </Modal>
+    </>
   );
 }

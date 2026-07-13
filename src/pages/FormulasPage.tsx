@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
+import { api } from '../lib/api';
 import Modal from '../components/ui/Modal';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
@@ -99,10 +100,14 @@ export default function FormulasPage() {
 
   const confirmAction = async () => {
     if (saving) return;
-    console.log('Confirming:', pendingAction, 'input:', password, 'user:', user);
-    if (!user || password.trim() !== user.password) {
+    if (!user) {
+      toast('ไม่พบข้อมูลผู้ใช้งาน', 'error');
+      return;
+    }
+
+    const verification = await api.login(user.pha_id, password.trim());
+    if (verification.error || !verification.data) {
       toast('รหัสผ่านไม่ถูกต้อง', 'error');
-      console.error('Password mismatch');
       return;
     }
 
