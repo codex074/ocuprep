@@ -17,9 +17,10 @@ interface EditPrepModalProps {
 }
 
 const STATION_OPTIONS = [
-  'ห้องจ่ายยาผู้ป่วยในศัลยกรรม',
-  'ห้องจ่ายยาผู้ป่วยนอก',
-  'ห้องเคมีบำบัด',
+  { value: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม', label: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม (ปิดใช้งาน)' },
+  { value: 'ห้องจ่ายยาผู้ป่วยใน', label: 'ห้องจ่ายยาผู้ป่วยใน (IPD Pharmacy)' },
+  { value: 'ห้องจ่ายยาผู้ป่วยนอก', label: 'ห้องจ่ายยาผู้ป่วยนอก' },
+  { value: 'ห้องเคมีบำบัด', label: 'ห้องเคมีบำบัด' },
 ];
 
 type HnStatus = 'idle' | 'loading' | 'found' | 'notfound' | 'offline';
@@ -238,7 +239,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
         >
           <option value="">เลือกห้องทำงาน</option>
           {STATION_OPTIONS.map((station) => (
-            <option key={station} value={station}>{station}</option>
+            <option key={station.value} value={station.value}>{station.label}</option>
           ))}
         </select>
       </div>

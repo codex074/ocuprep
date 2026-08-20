@@ -37,7 +37,7 @@ export default function StationSelectionPage() {
 
         {/* Station cards */}
         <div className="station-grid">
-          <button className="station-card blue" onClick={() => handleSelect('ห้องจ่ายยาผู้ป่วยในศัลยกรรม')}>
+          <button className="station-card blue" onClick={() => handleSelect('ห้องจ่ายยาผู้ป่วยใน')}>
             <div className="station-icon blue">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -45,8 +45,8 @@ export default function StationSelectionPage() {
               </svg>
             </div>
             <div className="station-info">
-              <h3>ห้องจ่ายยาผู้ป่วยในศัลยกรรม</h3>
-              <span>IPD Surgery Ward</span>
+              <h3>ห้องจ่ายยาผู้ป่วยใน</h3>
+              <span>IPD Pharmacy</span>
             </div>
             <div className="station-arrow">→</div>
           </button>

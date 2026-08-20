@@ -17,9 +17,9 @@ export default function Layout() {
 
   const stationOptions = [
     {
-      value: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม',
-      label: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม',
-      subtitle: 'IPD Surgery Ward',
+      value: 'ห้องจ่ายยาผู้ป่วยใน',
+      label: 'ห้องจ่ายยาผู้ป่วยใน',
+      subtitle: 'IPD Pharmacy',
       tone: 'blue',
     },
     {
@@ -49,7 +49,7 @@ export default function Layout() {
   };
 
   const getStationColor = (name: string) => {
-    if (name.includes('ศัลยกรรม'))  return { bg: 'var(--accent-blue-light)',  text: 'var(--accent-blue)' };
+    if (name.includes('ศัลยกรรม') || name === 'ห้องจ่ายยาผู้ป่วยใน')  return { bg: 'var(--accent-blue-light)',  text: 'var(--accent-blue)' };
     if (name.includes('ผู้ป่วยนอก')) return { bg: 'var(--accent-green-light)', text: 'var(--accent-green)' };
     if (name.includes('เคมีบำบัด')) return { bg: 'var(--accent-purple-light)', text: 'var(--accent-purple)' };
     return { bg: 'var(--accent-blue-light)', text: 'var(--accent-blue)' };

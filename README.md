@@ -141,6 +141,8 @@ Printing safeguards:
 
 - user must select a working station after login
 - station can be changed later from the header without logging out
+- active stations: `IPD Pharmacy` (ห้องจ่ายยาผู้ป่วยใน), `OPD` (ห้องจ่ายยาผู้ป่วยนอก), Chemotherapy Unit (ห้องเคมีบำบัด)
+- the former IPD Surgery station (ห้องจ่ายยาผู้ป่วยในศัลยกรรม) is retired and no longer selectable; its historical records remain visible and filterable in History and editable in the edit-prep modal
 
 ### Mobile / PWA
 

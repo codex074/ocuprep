@@ -327,10 +327,12 @@ export default function HistoryPage() {
                               ? 'green'
                               : p.location === 'ห้องเคมีบำบัด'
                                 ? 'purple'
-                                : 'teal'
+                                : p.location === 'ห้องจ่ายยาผู้ป่วยใน'
+                                  ? 'amber'
+                                  : 'teal'
                         }`}
                       >
-                        {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : (p.location === 'ห้องเคมีบำบัด' ? 'Chemo' : p.location))}
+                        {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : (p.location === 'ห้องเคมีบำบัด' ? 'Chemo' : (p.location === 'ห้องจ่ายยาผู้ป่วยใน' ? 'IPD Pharmacy' : p.location)))}
                       </span>
                     </div>
 
@@ -406,11 +408,13 @@ export default function HistoryPage() {
                                 ? 'green'
                                 : p.location === 'ห้องเคมีบำบัด'
                                   ? 'purple'
-                                  : 'teal'
+                                  : p.location === 'ห้องจ่ายยาผู้ป่วยใน'
+                                    ? 'amber'
+                                    : 'teal'
                           }`}
                           style={{ fontSize: '11px', padding: '2px 8px' }}
                         >
-                          {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : (p.location === 'ห้องเคมีบำบัด' ? 'Chemo' : p.location))}
+                          {p.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || p.location === 'ห้องยาในศัลยกรรม' ? 'IPD Surg' : (p.location === 'ห้องจ่ายยาผู้ป่วยนอก' ? 'OPD' : (p.location === 'ห้องเคมีบำบัด' ? 'Chemo' : (p.location === 'ห้องจ่ายยาผู้ป่วยใน' ? 'IPD Pharmacy' : p.location)))}
                         </span>
                       </td>
                       <td data-label="หมายเหตุ" style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '160px' }}>
@@ -502,6 +506,7 @@ export default function HistoryPage() {
                     <select className="form-select" value={draftRoom} onChange={e => setDraftRoom(e.target.value)}>
                       <option value="">ทุกห้องยา</option>
                       <option value="IPD">ห้องจ่ายยาผู้ป่วยในศัลยกรรม (IPD Surg)</option>
+                      <option value="ห้องจ่ายยาผู้ป่วยใน">ห้องจ่ายยาผู้ป่วยใน (IPD Pharmacy)</option>
                       <option value="OPD">ห้องจ่ายยาผู้ป่วยนอก (OPD)</option>
                       <option value="ห้องเคมีบำบัด">ห้องเคมีบำบัด (Chemotherapy)</option>
                     </select>
