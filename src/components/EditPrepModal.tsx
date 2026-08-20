@@ -86,7 +86,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
 
     const nextDestRoom = form.location === 'ห้องจ่ายยาผู้ป่วยนอก'
       ? 'คลินิกตา'
-      : form.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || form.location === 'ห้องยาในศัลยกรรม'
+      : form.location === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || form.location === 'ห้องยาในศัลยกรรม' || form.location === 'ห้องจ่ายยาผู้ป่วยใน'
         ? 'ห้องจ่ายยาอุบัติเหตุฉุกเฉิน'
         : '';
 

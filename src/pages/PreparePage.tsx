@@ -244,7 +244,7 @@ export default function PreparePage() {
   useEffect(() => {
     if (mode === 'stock') {
       if (curLoc === 'ห้องจ่ายยาผู้ป่วยนอก') setRoom('คลินิกตา');
-      else if (curLoc === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || curLoc === 'ห้องยาในศัลยกรรม') setRoom('ห้องจ่ายยาอุบัติเหตุฉุกเฉิน');
+      else if (curLoc === 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม' || curLoc === 'ห้องยาในศัลยกรรม' || curLoc === 'ห้องจ่ายยาผู้ป่วยใน') setRoom('ห้องจ่ายยาอุบัติเหตุฉุกเฉิน');
       else setRoom('');
     }
   }, [mode, curLoc]);

@@ -26,17 +26,21 @@ export const printA4Html = (html: string) => {
 export const generateLabelHtml = (prep: Prep, formula: Formula) => {
   const dateStr = fmtDate(prep.date);
   const expStr = fmtDate(prep.expiry_date);
-
-  // Extract Patient Name and HN from target if mode is patient
-  // Or use what's in prep object (patient_name, hn)
-  const pn = prep.mode === 'patient' ? (prep.patient_name || '-') : 'Stock';
-  const hnVal = prep.mode === 'patient' ? (prep.hn || '-') : '-';
+  const isPatient = prep.mode === 'patient';
 
   const preparer = prep.user_pha_id || prep.prepared_by;
   const pkgSize = formula.package_size ? ` (${formula.package_size})` : '';
   const fullName = `${prep.formula_name}${pkgSize} (${prep.qty} ขวด)`;
-  
-  return `<div class="lb"><div class="row"><span>ชื่อยา:</span><strong style="max-width:65%">${fullName}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration || '-'}</strong></div><div class="row"><span>ผู้ป่วย:</span><strong style="max-width:65%">${pn}${hnVal !== '-' ? ' (' + hnVal + ')' : ''}</strong></div><div class="row"><span>Lot No.:</span><span>${formatLotDisplay(prep.lot_no)}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:#000;font-weight:700"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>ใช้ยาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${preparer} | ${prep.location}</div>`;
+
+  const targetRow = isPatient
+    ? (() => {
+        const pn = prep.patient_name || '-';
+        const hnVal = prep.hn || '-';
+        return `<div class="row"><span>ผู้ป่วย:</span><strong style="max-width:65%">${pn}${hnVal !== '-' ? ' (' + hnVal + ')' : ''}</strong></div>`;
+      })()
+    : `<div class="row lb-stock-row"><span>Stock ไปที่:</span><strong class="lb-stock-room">${prep.dest_room || prep.target || '-'}</strong></div>`;
+
+  return `<div class="lb"><div class="row"><span>ชื่อยา:</span><strong style="max-width:65%">${fullName}</strong></div><div class="row"><span>ความเข้มข้น:</span><strong>${prep.concentration || '-'}</strong></div>${targetRow}<div class="row"><span>Lot No.:</span><span>${formatLotDisplay(prep.lot_no)}</span></div><div class="row"><span>วันที่เตรียม:</span><span>${dateStr}</span></div><div class="row" style="color:#000;font-weight:700"><span>วันหมดอายุ:</span><span>${expStr}</span></div><div class="row"><span>วิธีใช้:</span><span>ใช้ยาตามแพทย์สั่ง</span></div><div class="row"><span>การเก็บรักษา:</span><span>เก็บในตู้เย็น 2-8°C</span></div></div><div class="lf">ผู้เตรียม: ${preparer} | ${prep.location}</div>`;
 };
 
 const getIngredientsHtml = (str: string | null, qty: number = 1) => {
@@ -337,6 +341,9 @@ body>*:last-child{page-break-after:auto}
 .lb{line-height:1.2;font-size:10px;width:100%;}
 .lb .row{display:flex;justify-content:space-between;margin-bottom:2px;align-items:baseline}
 .lb span,.lb strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-stock-row{align-items:center;margin-top:1px;margin-bottom:3px}
+.lb-stock-row span{font-size:11px;font-weight:700}
+.lb-stock-room{font-size:16px;font-weight:800;max-width:68%}
 .lf{border-top:1px solid #000;margin-top:4px;padding-top:2px;font-size:8px;text-align:center;color:#000;width:100%;}
 /* Bottle label pages use the same pp page container as pages 1–3.
    Keeping one page structure prevents Chromium/printer drivers from assigning
