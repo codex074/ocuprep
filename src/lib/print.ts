@@ -343,8 +343,8 @@ body>*:last-child{page-break-after:auto}
    a different orientation to this final page. */
 .pp.bottle-page{padding:8mm 2mm 0 2mm}
 .bottle-label-stack{width:100%;display:flex;flex-direction:column;gap:0;justify-content:flex-start;align-items:center}
-/* .bl size: 7cm x 1.7cm */
-.bl{width:7cm;height:1.7cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:column;justify-content:space-between;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
+/* .bl size: 6.5cm x 1.7cm */
+.bl{width:6.5cm;height:1.7cm;box-sizing:border-box;border:0.5px solid #ccc;display:flex;flex-direction:column;justify-content:space-between;position:relative;padding:1mm 2mm;font-family:'Sarabun',sans-serif;background:#fff}
 .bl-name{font-weight:700;font-size:12px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8mm}
 .bl-count{font-size:8px;font-weight:700;line-height:1;position:absolute;top:1mm;right:2mm}
 .bl-half-row{display:grid;grid-template-columns:1fr 1fr;gap:2mm;font-size:10px;line-height:1.15}
