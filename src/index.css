@@ -1744,14 +1744,16 @@ table tbody tr:last-child td { border-bottom: none; }
   min-height: 0;
   width: 100%;
 }
-.label-print-preview .label-size-toggle {
+/* Every direct child except the iframe is preview "chrome" (toggle, page
+   checklist, hint text, disclaimer) — none of it should shrink away; only
+   the iframe (flex-grow) gives up space. */
+.label-print-preview > *:not(iframe) {
   flex-shrink: 0;
 }
 .label-print-preview > p {
   margin: 0 0 12px;
   color: var(--text-secondary);
   font-size: 12px;
-  flex-shrink: 0;
 }
 .label-print-preview iframe {
   display: block;
@@ -1761,6 +1763,43 @@ table tbody tr:last-child td { border-bottom: none; }
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: #e2e8f0;
+}
+
+/* Page-selection checklist — pick which pages to print; none checked = print
+   everything (see PreparePage/PrepDetailsModal doPrint). */
+.label-page-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.label-page-select-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #fff;
+  user-select: none;
+  transition: var(--tr);
+}
+.label-page-select-item:has(input:checked) {
+  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  font-weight: 700;
+}
+.label-page-select-item input {
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+.label-page-select-hint {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 /* ============================================================

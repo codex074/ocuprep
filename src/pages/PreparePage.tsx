@@ -6,7 +6,8 @@ import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
 import { api } from '../lib/api';
 import { today, addDays, fmtDate, fmtTime, multiplyAmount } from '../lib/utils';
-import { buildLabelPrintDocument, buildCompactLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateCompactLabelHtml, generateBottleLabelsHtml, generateCompactBottleLabelsHtml, generatePrepStickersHtml, generateCompactPrepStickersHtml, printAllLabels, printCompactLabel } from '../lib/print';
+import { buildLabelPrintDocumentFromPages, buildCompactLabelPrintDocumentFromPages, buildStandardLabelPages, buildCompactLabelPages, generateBatchSheetHtml, printLabelPages, printCompactLabelPages } from '../lib/print';
+import type { PrintPage } from '../lib/print';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
@@ -185,6 +186,8 @@ export default function PreparePage() {
   const [isExpired, setIsExpired] = useState(false);
   const [printMockPrep, setPrintMockPrep] = useState<Prep | null>(null);
   const [labelSize, setLabelSize] = useState<'standard' | 'compact'>('standard');
+  const [printPages, setPrintPages] = useState<PrintPage[]>([]);
+  const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
   const [lastSavedPrintPrep, setLastSavedPrintPrep] = useState<SavedPrintPrep | null>(null);
   const [hnStatus, setHnStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>('idle');
   const isRefreshing = formulasRefreshing || prepsRefreshing;
@@ -451,28 +454,42 @@ export default function PreparePage() {
   const getLabelPreviewTitle = (size: 'standard' | 'compact') =>
     `ตัวอย่างก่อนพิมพ์ฉลากยา (${size === 'compact' ? '75 × 35 มม.' : '8.5 × 6 ซม.'})`;
 
-  const buildLabelPreviewContent = (prep: Prep, formula: Formula, size: 'standard' | 'compact') =>
-    size === 'compact'
-      ? buildCompactLabelPrintDocument(generateCompactLabelHtml(prep, formula), generateCompactPrepStickersHtml(prep, formula), generateCompactBottleLabelsHtml(prep, formula))
-      : buildLabelPrintDocument(
-          generateLabelHtml(prep, formula),
-          generateBottleLabelsHtml(prep, formula),
-          generatePrepStickersHtml(prep, formula),
-        );
+  const getPagesForSize = (prep: Prep, formula: Formula, size: 'standard' | 'compact'): PrintPage[] =>
+    size === 'compact' ? buildCompactLabelPages(prep, formula) : buildStandardLabelPages(prep, formula);
+
+  const buildDocFromPages = (pages: PrintPage[], size: 'standard' | 'compact') =>
+    size === 'compact' ? buildCompactLabelPrintDocumentFromPages(pages) : buildLabelPrintDocumentFromPages(pages);
 
   const openLabelPreview = (prep: Prep) => {
     if (!selectedFormula) return;
     setPrintMockPrep(prep);
     setLabelSize('standard');
+    const pages = getPagesForSize(prep, selectedFormula, 'standard');
+    setPrintPages(pages);
+    setSelectedPageIds(new Set());
     setPrintTitle(getLabelPreviewTitle('standard'));
-    setPrintContent(buildLabelPreviewContent(prep, selectedFormula, 'standard'));
+    setPrintContent(buildDocFromPages(pages, 'standard'));
   };
 
   const handleLabelSizeChange = (size: 'standard' | 'compact') => {
     setLabelSize(size);
     if (!printMockPrep || !selectedFormula) return;
+    const pages = getPagesForSize(printMockPrep, selectedFormula, size);
+    setPrintPages(pages);
+    setSelectedPageIds(new Set());
     setPrintTitle(getLabelPreviewTitle(size));
-    setPrintContent(buildLabelPreviewContent(printMockPrep, selectedFormula, size));
+    setPrintContent(buildDocFromPages(pages, size));
+  };
+
+  // Selecting pages narrows both the preview (WYSIWYG with what will print)
+  // and the actual print job. An empty selection means "print everything" —
+  // see doPrint() below.
+  const handleTogglePrintPage = (id: string) => {
+    const next = new Set(selectedPageIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedPageIds(next);
+    const filtered = next.size === 0 ? printPages : printPages.filter((p) => next.has(p.id));
+    setPrintContent(buildDocFromPages(filtered, labelSize));
   };
 
   const handlePrintLabel = async () => {
@@ -505,13 +522,12 @@ export default function PreparePage() {
 
   const doPrint = () => {
     if (printTitle.includes('ฉลากยา') && printMockPrep && selectedFormula) {
+      const pages = getPagesForSize(printMockPrep, selectedFormula, labelSize);
+      const pagesToPrint = selectedPageIds.size === 0 ? pages : pages.filter((p) => selectedPageIds.has(p.id));
       if (labelSize === 'compact') {
-        printCompactLabel(generateCompactLabelHtml(printMockPrep, selectedFormula), generateCompactPrepStickersHtml(printMockPrep, selectedFormula), generateCompactBottleLabelsHtml(printMockPrep, selectedFormula));
+        printCompactLabelPages(pagesToPrint);
       } else {
-        const patientHtml = generateLabelHtml(printMockPrep, selectedFormula);
-        const bottleHtml = generateBottleLabelsHtml(printMockPrep, selectedFormula);
-        const prepStickersHtml = generatePrepStickersHtml(printMockPrep, selectedFormula);
-        printAllLabels(patientHtml, bottleHtml, prepStickersHtml);
+        printLabelPages(pagesToPrint);
       }
     } else {
       // Batch sheet — existing behavior
@@ -755,7 +771,9 @@ export default function PreparePage() {
         footer={
           <>
             <button className="btn btn-outline" onClick={() => setPrintModal(false)}>ปิด</button>
-            <button className="btn btn-primary" onClick={doPrint}>พิมพ์</button>
+            <button className="btn btn-primary" onClick={doPrint}>
+              {printTitle.includes('ฉลากยา') && selectedPageIds.size > 0 ? `พิมพ์ (${selectedPageIds.size} หน้า)` : 'พิมพ์'}
+            </button>
           </>
         }
         width={printTitle.includes('ตัวอย่างก่อนพิมพ์ฉลากยา') ? '760px' : '520px'}
@@ -770,6 +788,21 @@ export default function PreparePage() {
                 IPD ขนาดเล็ก (75 × 35 มม.)
               </div>
             </div>
+            <div className="label-page-select">
+              {printPages.map((page) => (
+                <label key={page.id} className="label-page-select-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedPageIds.has(page.id)}
+                    onChange={() => handleTogglePrintPage(page.id)}
+                  />
+                  <span>{page.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className="label-page-select-hint">
+              {selectedPageIds.size === 0 ? 'ไม่ได้เลือกหน้า — จะพิมพ์ทุกหน้าด้านล่าง' : `เลือกพิมพ์ ${selectedPageIds.size} จาก ${printPages.length} หน้า`}
+            </p>
             <p>ตัวอย่างนี้ใช้ HTML และ CSS ชุดเดียวกับงานพิมพ์จริง แต่ทิศทางกระดาษสุดท้ายยังขึ้นกับ driver ของเครื่องพิมพ์</p>
             <iframe title="ตัวอย่างฉลากก่อนพิมพ์" srcDoc={printContent} />
           </div>

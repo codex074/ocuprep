@@ -5,6 +5,39 @@ import type { Prep, Formula } from '../types';
 
 const formatLotDisplay = (lotNo: string | null | undefined) => String(lotNo ?? '').replace(/^LOT-/, '');
 
+/* A single selectable/printable page — used to let the label-preview modal
+   offer "select which pages to print" (empty selection = print everything). */
+export type PrintPage = { id: string; label: string; html: string };
+
+/* Shared print dispatch for both label doc builders — same dialog-only
+   discipline for both (see Audit.md P0): always through webContents.print
+   in Electron, window.print() dialog on the web/PWA build. Never silent. */
+const dispatchLabelPrint = (
+  doc: string,
+  electronPrint: ((html: string) => Promise<{ ok: boolean; message?: string }>) | undefined,
+  fallbackWindowFeatures: string,
+) => {
+  if (electronPrint) {
+    void electronPrint(doc).then((res) => {
+      if (!res.ok && res.message && !/cancel|ยกเลิก/i.test(res.message)) {
+        void Swal.fire({
+          icon: 'error',
+          title: 'พิมพ์ฉลากไม่สำเร็จ',
+          text: res.message,
+        });
+      }
+    });
+    return;
+  }
+
+  const w = window.open('', '_blank', fallbackWindowFeatures);
+  if (!w) return;
+  w.document.write(doc);
+  w.document.close();
+  w.onafterprint = () => w.close();
+  w.onload = () => w.print();
+};
+
 export const printHtml = (html: string) => {
   const w = window.open('', '_blank', 'width=400,height=500');
   if (!w) return;
@@ -46,9 +79,10 @@ export const generateLabelHtml = (prep: Prep, formula: Formula) => {
 
 /* ── Compact IPD label (75mm x 35mm) ──
    Separate content/document/print path from the standard 8.5×6cm label —
-   see buildCompactLabelPrintDocument and printCompactLabel below. Kept
-   fully isolated (own class names, own document builder) so nothing here
-   can affect the validated standard-label path. */
+   see buildCompactLabelPages, buildCompactLabelPrintDocumentFromPages and
+   printCompactLabelPages below. Kept fully isolated (own class names, own
+   document builder) so nothing here can affect the validated standard-label
+   path. */
 export const generateCompactLabelHtml = (prep: Prep, formula: Formula) => {
   const mfgStr = fmtDate(prep.date);
   const expStr = fmtDate(prep.expiry_date);
@@ -72,12 +106,12 @@ export const generateCompactLabelHtml = (prep: Prep, formula: Formula) => {
    exact dimensions (6.5cm x 1.7cm) unchanged, but paginated 1 label per page
    (instead of 3) since the compact page (7.5×3.5cm) is smaller than the
    standard 8.5×6cm page. CSS for .bl* is duplicated into
-   buildCompactLabelPrintDocument's own stylesheet below rather than shared,
+   wrapCompactLabelDocument's own stylesheet below rather than shared,
    to keep the compact document fully self-contained/isolated. */
-export const generateCompactBottleLabelsHtml = (
+export const generateCompactBottleLabelPages = (
   prep: Prep,
   formula: Formula,
-): string => {
+): PrintPage[] => {
   const mfgStr = fmtDate(prep.date);
   const expStr = fmtDate(prep.expiry_date);
   const baseName = formula.short_name?.trim() || prep.formula_name;
@@ -96,10 +130,13 @@ export const generateCompactBottleLabelsHtml = (
   const patientLine = isPatient
     ? `<div class="bl-patient"><span class="bl-label">HN:</span><span>${prep.hn || '-'}</span><span class="bl-patient-name">${prep.patient_name || '-'}</span></div>`
     : '';
-  const pages: string[] = [];
+  const pages: PrintPage[] = [];
 
   for (let idx = 0; idx < qty; idx++) {
-    pages.push(`<div class="cbp"><div class="bl${isPatient ? ' bl-patient-mode' : ''}">
+    pages.push({
+      id: `bottle-${idx}`,
+      label: `ฉลากติดขวด (ขวดที่ ${idx + 1}/${qty})`,
+      html: `<div class="cbp"><div class="bl${isPatient ? ' bl-patient-mode' : ''}">
       <div class="bl-count">${idx + 1}/${qty}</div>
       ${patientLine}
       <div class="bl-name">${drugName}</div>
@@ -111,22 +148,26 @@ export const generateCompactBottleLabelsHtml = (
         <div class="bl-inline-item"><span class="bl-label">By:</span><span>${preparer}</span></div>
         <div class="bl-inline-item"><span class="bl-label">Lot:</span><span>${formatLotDisplay(prep.lot_no)}</span></div>
       </div>
-    </div></div>`);
+    </div></div>`,
+    });
   }
-  return pages.join('');
+  return pages;
 };
 
 /* Short-prep-method and ingredients pages for the compact IPD doc — same
-   content/structure as generatePrepStickersHtml, resized onto the 7.5×3.5cm
+   content/structure as generatePrepStickerPages, resized onto the 7.5×3.5cm
    compact page. Long content still simply clips (overflow:hidden), matching
    the existing standard-page behavior for oversized short_prep/ingredient
    lists — not a new limitation introduced here. */
-export const generateCompactPrepStickersHtml = (prep: Prep, formula: Formula): string => {
+export const generateCompactPrepStickerPages = (prep: Prep, formula: Formula): PrintPage[] => {
   const ingredients = formula.ingredients ? JSON.parse(formula.ingredients) : [];
+  const pages: PrintPage[] = [];
 
-  let shortPrepHtml = '';
   if (formula.short_prep) {
-    shortPrepHtml = `
+    pages.push({
+      id: 'short-prep',
+      label: 'วิธีเตรียมอย่างย่อ',
+      html: `
       <div class="cpp">
         <div class="cl" style="height:100%;display:flex;flex-direction:column;">
             <div style="text-align:center;font-weight:bold;margin-bottom:2px;font-size:10px;">วิธีการเตรียมอย่างย่อ</div>
@@ -135,12 +176,15 @@ export const generateCompactPrepStickersHtml = (prep: Prep, formula: Formula): s
              <div class="cl-footer" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
-    `;
+    `,
+    });
   }
 
-  let ingredientsHtml = '';
   if (Array.isArray(ingredients) && ingredients.length > 0) {
-    ingredientsHtml = `
+    pages.push({
+      id: 'ingredients',
+      label: 'รายการส่วนประกอบ',
+      html: `
       <div class="cpp">
         <div class="cl" style="height:100%;display:flex;flex-direction:column;">
             <div style="text-align:center;font-weight:bold;margin-bottom:2px;font-size:10px;">รายการส่วนประกอบ</div>
@@ -164,16 +208,24 @@ export const generateCompactPrepStickersHtml = (prep: Prep, formula: Formula): s
              <div class="cl-footer" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
-    `;
+    `,
+    });
   }
 
-  return shortPrepHtml + ingredientsHtml;
+  return pages;
 };
 
-export const buildCompactLabelPrintDocument = (
-  labelHtml: string,
-  prepStickersHtml: string = '',
-  bottleHtml: string = '',
+/* Full compact (75×35mm) print job: main label + short-prep/ingredients +
+   bottle labels, in print order. Each entry is independently selectable in
+   the label-preview modal's page checklist. */
+export const buildCompactLabelPages = (prep: Prep, formula: Formula): PrintPage[] => [
+  { id: 'label', label: 'ฉลากยา', html: `<div class="cpp">${generateCompactLabelHtml(prep, formula)}</div>` },
+  ...generateCompactPrepStickerPages(prep, formula),
+  ...generateCompactBottleLabelPages(prep, formula),
+];
+
+const wrapCompactLabelDocument = (
+  bodyHtml: string,
   options: { title?: string } = {},
 ) => `<html><head><title>${options.title ?? 'พิมพ์ฉลาก'}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
 @page{size:7.5cm 3.5cm;margin:0}
@@ -209,34 +261,22 @@ body>*:last-child{page-break-after:auto}
   body{width:7.5cm;margin:16px auto;background:transparent}
   .cpp,.cbp{margin:0 0 16px;box-shadow:0 2px 10px rgba(15,23,42,.2);background:#fff}
 }
-</style></head><body><div class="cpp">${labelHtml}</div>${prepStickersHtml}${bottleHtml}</body></html>`;
+</style></head><body>${bodyHtml}</body></html>`;
 
-export const printCompactLabel = (labelHtml: string, prepStickersHtml: string = '', bottleHtml: string = '') => {
-  const doc = buildCompactLabelPrintDocument(labelHtml, prepStickersHtml, bottleHtml);
+export const buildCompactLabelPrintDocumentFromPages = (
+  pages: PrintPage[],
+  options: { title?: string } = {},
+) => wrapCompactLabelDocument(pages.map((p) => p.html).join(''), options);
 
-  // Same dialog-only printing discipline as printAllLabels — see Audit.md P0.
+/* Prints the given compact-doc pages — pass a subset to print only selected
+   pages from the preview's checklist, or the full buildCompactLabelPages()
+   result to print everything (the default when nothing is selected). */
+export const printCompactLabelPages = (pages: PrintPage[]) => {
+  const doc = buildCompactLabelPrintDocumentFromPages(pages);
   // The pageSize/landscape pairing this sends through window.electronAPI is
   // derived by the same convention as the validated 8.5×6cm case but has NOT
-  // been physically validated on a real printer yet.
-  if (window.electronAPI?.printCompactLabel) {
-    void window.electronAPI.printCompactLabel(doc).then((res) => {
-      if (!res.ok && res.message && !/cancel|ยกเลิก/i.test(res.message)) {
-        void Swal.fire({
-          icon: 'error',
-          title: 'พิมพ์ฉลากไม่สำเร็จ',
-          text: res.message,
-        });
-      }
-    });
-    return;
-  }
-
-  const w = window.open('', '_blank', 'width=500,height=350');
-  if (!w) return;
-  w.document.write(doc);
-  w.document.close();
-  w.onafterprint = () => w.close();
-  w.onload = () => w.print();
+  // been physically validated on a real printer yet — see Audit.md PRN-6.
+  dispatchLabelPrint(doc, window.electronAPI?.printCompactLabel, 'width=500,height=350');
 };
 
 const getIngredientsHtml = (str: string | null, qty: number = 1) => {
@@ -355,10 +395,10 @@ export const generateBatchSheetHtml = (prep: Prep, formula: Formula) => {
 
 /* ── Bottle Labels (ฉลากติดขวดยา) — 3 per 6×8.5cm page ── */
 
-export const generateBottleLabelsHtml = (
+export const generateBottleLabelPages = (
   prep: Prep,
   formula: Formula,
-): string => {
+): PrintPage[] => {
   const mfgStr = fmtDate(prep.date);
   const expStr = fmtDate(prep.expiry_date);
   const baseName = formula.short_name?.trim() || prep.formula_name;
@@ -373,7 +413,7 @@ export const generateBottleLabelsHtml = (
         : baseName;
   const qty = prep.qty;
   const totalPages = Math.ceil(qty / 3);
-  const pages: string[] = [];
+  const pages: PrintPage[] = [];
 
   for (let page = 0; page < totalPages; page++) {
     let labelsHtml = '';
@@ -381,7 +421,7 @@ export const generateBottleLabelsHtml = (
       const idx = page * 3 + i;
       if (idx >= qty) break;
       const preparer = prep.user_pha_id || prep.prepared_by;
-      
+
       const isPatient = prep.mode === 'patient';
       const patientLine = isPatient
         ? `<div class="bl-patient"><span class="bl-label">HN:</span><span>${prep.hn || '-'}</span><span class="bl-patient-name">${prep.patient_name || '-'}</span></div>`
@@ -400,9 +440,16 @@ export const generateBottleLabelsHtml = (
         </div>
       </div>`;
     }
-    pages.push(`<div class="pp bottle-page"><div class="bottle-label-stack">${labelsHtml}</div></div>`);
+    const startIdx = page * 3 + 1;
+    const endIdx = Math.min((page + 1) * 3, qty);
+    const rangeLabel = startIdx === endIdx ? `ขวดที่ ${startIdx}` : `ขวดที่ ${startIdx}-${endIdx}`;
+    pages.push({
+      id: `bottle-${page}`,
+      label: `ฉลากติดขวด (${rangeLabel} จาก ${qty})`,
+      html: `<div class="pp bottle-page"><div class="bottle-label-stack">${labelsHtml}</div></div>`,
+    });
   }
-  return pages.join('');
+  return pages;
 };
 
 
@@ -473,12 +520,15 @@ export const generatePrepDetailsHtml = (prep: Prep, formula: Formula): string =>
   return ingredientsHtml + methodHtml + shortPrepHtml;
 };
 
-export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string => {
+export const generatePrepStickerPages = (prep: Prep, formula: Formula): PrintPage[] => {
   const ingredients = formula.ingredients ? JSON.parse(formula.ingredients) : [];
-  
-  let shortPrepHtml = '';
+  const pages: PrintPage[] = [];
+
   if (formula.short_prep) {
-     shortPrepHtml = `
+    pages.push({
+      id: 'short-prep',
+      label: 'วิธีเตรียมอย่างย่อ',
+      html: `
       <div class="pp">
         <div class="lb" style="height:100%;display:flex;flex-direction:column;">
             <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">วิธีการเตรียมอย่างย่อ</div>
@@ -487,12 +537,15 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
              <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
-    `;
+    `,
+    });
   }
 
-  let ingredientsHtml = '';
   if (Array.isArray(ingredients) && ingredients.length > 0) {
-    ingredientsHtml = `
+    pages.push({
+      id: 'ingredients',
+      label: 'รายการส่วนประกอบ',
+      html: `
       <div class="pp">
         <div class="lb" style="height:100%;display:flex;flex-direction:column;">
             <div style="text-align:center;font-weight:bold;margin-bottom:5px;font-size:12px;">รายการส่วนประกอบ</div>
@@ -516,17 +569,25 @@ export const generatePrepStickersHtml = (prep: Prep, formula: Formula): string =
              <div class="lf" style="margin-top:auto;">Lot: ${formatLotDisplay(prep.lot_no)}</div>
         </div>
       </div>
-    `;
+    `,
+    });
   }
 
-  return shortPrepHtml + ingredientsHtml;
+  return pages;
 };
 
-export const buildLabelPrintDocument = (
-  patientHtml: string,
-  bottleHtml: string,
-  prepStickersHtml: string = '',
-  options: { includePatientPage?: boolean; title?: string } = {},
+/* Full standard (8.5×6cm) print job: main label + short-prep/ingredients +
+   bottle labels, in print order. Each entry is independently selectable in
+   the label-preview modal's page checklist. */
+export const buildStandardLabelPages = (prep: Prep, formula: Formula): PrintPage[] => [
+  { id: 'label', label: 'ฉลากยา', html: `<div class="pp"><div class="lb">${generateLabelHtml(prep, formula)}</div></div>` },
+  ...generatePrepStickerPages(prep, formula),
+  ...generateBottleLabelPages(prep, formula),
+];
+
+const wrapLabelDocument = (
+  bodyHtml: string,
+  options: { title?: string } = {},
 ) => `<html><head><title>${options.title ?? 'พิมพ์ฉลาก'}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>
 @page{size:8.5cm 6cm;margin:0}
 body{font-family:'Sarabun',sans-serif;margin:0;padding:0}
@@ -567,35 +628,24 @@ body>*:last-child{page-break-after:auto}
   body{width:8.5cm;margin:16px auto;background:transparent}
   .pp{margin:0 0 16px;box-shadow:0 2px 10px rgba(15,23,42,.2);background:#fff}
 }
-</style></head><body>${options.includePatientPage === false ? '' : `<div class="pp"><div class="lb">${patientHtml}</div></div>`}${prepStickersHtml}${bottleHtml}</body></html>`;
+</style></head><body>${bodyHtml}</body></html>`;
 
-export const printAllLabels = (patientHtml: string, bottleHtml: string, prepStickersHtml: string = '') => {
-  const doc = buildLabelPrintDocument(patientHtml, bottleHtml, prepStickersHtml);
+export const buildLabelPrintDocumentFromPages = (
+  pages: PrintPage[],
+  options: { title?: string } = {},
+) => wrapLabelDocument(pages.map((p) => p.html).join(''), options);
 
-  // In the Electron desktop app, print with a page size locked from the program
-  // (8.5×6cm) so the output no longer depends on each machine's printer default —
-  // this stops both the "skipping several blank stickers" problem and the
-  // 90°-rotated output on strict driver builds (see Audit.md P0). The job always
-  // goes through the print dialog — silent printing was removed on 2026-07-13
-  // because it rotated every label on the ZD230 fleet.
-  // On the web/PWA build (no electronAPI), fall back to the browser print window.
-  if (window.electronAPI?.printLabels) {
-    void window.electronAPI.printLabels(doc).then((res) => {
-      if (!res.ok && res.message && !/cancel|ยกเลิก/i.test(res.message)) {
-        void Swal.fire({
-          icon: 'error',
-          title: 'พิมพ์ฉลากไม่สำเร็จ',
-          text: res.message,
-        });
-      }
-    });
-    return;
-  }
-
-  const w = window.open('', '_blank', 'width=600,height=400');
-  if (!w) return;
-  w.document.write(doc);
-  w.document.close();
-  w.onafterprint = () => w.close();
-  w.onload = () => w.print();
+/* Prints the given standard-doc pages — pass a subset to print only selected
+   pages from the preview's checklist, or the full buildStandardLabelPages()
+   result to print everything (the default when nothing is selected).
+   In the Electron desktop app, prints with a page size locked from the
+   program (8.5×6cm) so the output no longer depends on each machine's
+   printer default — this stops both the "skipping several blank stickers"
+   problem and the 90°-rotated output on strict driver builds (see Audit.md
+   P0). Always goes through the print dialog — silent printing was removed
+   on 2026-07-13 because it rotated every label on the ZD230 fleet. Falls
+   back to the browser print window on the web/PWA build (no electronAPI). */
+export const printLabelPages = (pages: PrintPage[]) => {
+  const doc = buildLabelPrintDocumentFromPages(pages);
+  dispatchLabelPrint(doc, window.electronAPI?.printLabels, 'width=600,height=400');
 };
