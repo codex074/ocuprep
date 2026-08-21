@@ -18,7 +18,7 @@ interface EditPrepModalProps {
 
 const STATION_OPTIONS = [
   { value: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม', label: 'ห้องจ่ายยาผู้ป่วยในศัลยกรรม (ปิดใช้งาน)' },
-  { value: 'ห้องจ่ายยาผู้ป่วยใน', label: 'ห้องจ่ายยาผู้ป่วยใน (IPD Pharmacy)' },
+  { value: 'ห้องจ่ายยาผู้ป่วยใน', label: 'ห้องจ่ายยาผู้ป่วยใน (Inpatient Pharmacy)' },
   { value: 'ห้องจ่ายยาผู้ป่วยนอก', label: 'ห้องจ่ายยาผู้ป่วยนอก' },
   { value: 'ห้องเคมีบำบัด', label: 'ห้องเคมีบำบัด' },
 ];

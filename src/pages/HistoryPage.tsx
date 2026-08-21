@@ -506,7 +506,7 @@ export default function HistoryPage() {
                     <select className="form-select" value={draftRoom} onChange={e => setDraftRoom(e.target.value)}>
                       <option value="">ทุกห้องยา</option>
                       <option value="IPD">ห้องจ่ายยาผู้ป่วยในศัลยกรรม (IPD Surg)</option>
-                      <option value="ห้องจ่ายยาผู้ป่วยใน">ห้องจ่ายยาผู้ป่วยใน (IPD Pharmacy)</option>
+                      <option value="ห้องจ่ายยาผู้ป่วยใน">ห้องจ่ายยาผู้ป่วยใน (Inpatient Pharmacy)</option>
                       <option value="OPD">ห้องจ่ายยาผู้ป่วยนอก (OPD)</option>
                       <option value="ห้องเคมีบำบัด">ห้องเคมีบำบัด (Chemotherapy)</option>
                     </select>

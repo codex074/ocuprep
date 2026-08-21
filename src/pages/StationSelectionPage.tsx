@@ -46,7 +46,7 @@ export default function StationSelectionPage() {
             </div>
             <div className="station-info">
               <h3>ห้องจ่ายยาผู้ป่วยใน</h3>
-              <span>IPD Pharmacy</span>
+              <span>Inpatient Pharmacy</span>
             </div>
             <div className="station-arrow">→</div>
           </button>

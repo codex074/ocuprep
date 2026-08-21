@@ -19,7 +19,7 @@ export default function Layout() {
     {
       value: 'ห้องจ่ายยาผู้ป่วยใน',
       label: 'ห้องจ่ายยาผู้ป่วยใน',
-      subtitle: 'IPD Pharmacy',
+      subtitle: 'Inpatient Pharmacy',
       tone: 'blue',
     },
     {
