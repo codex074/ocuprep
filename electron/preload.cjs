@@ -9,6 +9,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAppInfo:      ()   => ipcRenderer.invoke('get-app-info'),
   checkForUpdates: ()   => ipcRenderer.invoke('check-for-updates'),
   printLabels:     (html) => ipcRenderer.invoke('print-labels', html),
-  getLabelPrinterSettings: () => ipcRenderer.invoke('get-label-printer-settings'),
-  saveLabelPrinter: (name) => ipcRenderer.invoke('save-label-printer', name),
+  printCompactLabel: (html) => ipcRenderer.invoke('print-compact-label', html),
 });

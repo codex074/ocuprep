@@ -6,14 +6,14 @@ import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
 import { api } from '../lib/api';
 import { today, addDays, fmtDate, fmtTime, multiplyAmount } from '../lib/utils';
-import { buildLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels } from '../lib/print';
+import { buildLabelPrintDocument, buildCompactLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateCompactLabelHtml, generateBottleLabelsHtml, generateCompactBottleLabelsHtml, generatePrepStickersHtml, generateCompactPrepStickersHtml, printAllLabels, printCompactLabel } from '../lib/print';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import Modal from '../components/ui/Modal';
 import Combobox from '../components/ui/Combobox';
 import LoadingState from '../components/ui/LoadingState';
 import RefreshButton from '../components/ui/RefreshButton';
 import { chemicalItemsFromIngredients, cleanChemicalItems } from '../lib/chemicalItems';
-import type { ChemicalItem, Prep } from '../types';
+import type { ChemicalItem, Formula, Prep } from '../types';
 
 type PrepPayload = Omit<Prep, 'id' | 'created_at'>;
 type PrepPayloadToSave = PrepPayload & { duplicate_check_passed?: boolean };
@@ -184,6 +184,7 @@ export default function PreparePage() {
   const [chemicalItems, setChemicalItems] = useState<ChemicalItem[]>([{ name: '', lot_no: '', expiry_date: '' }]);
   const [isExpired, setIsExpired] = useState(false);
   const [printMockPrep, setPrintMockPrep] = useState<Prep | null>(null);
+  const [labelSize, setLabelSize] = useState<'standard' | 'compact'>('standard');
   const [lastSavedPrintPrep, setLastSavedPrintPrep] = useState<SavedPrintPrep | null>(null);
   const [hnStatus, setHnStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>('idle');
   const isRefreshing = formulasRefreshing || prepsRefreshing;
@@ -447,15 +448,31 @@ export default function PreparePage() {
     return doSave(false);
   };
 
+  const getLabelPreviewTitle = (size: 'standard' | 'compact') =>
+    `ตัวอย่างก่อนพิมพ์ฉลากยา (${size === 'compact' ? '75 × 35 มม.' : '8.5 × 6 ซม.'})`;
+
+  const buildLabelPreviewContent = (prep: Prep, formula: Formula, size: 'standard' | 'compact') =>
+    size === 'compact'
+      ? buildCompactLabelPrintDocument(generateCompactLabelHtml(prep, formula), generateCompactPrepStickersHtml(prep, formula), generateCompactBottleLabelsHtml(prep, formula))
+      : buildLabelPrintDocument(
+          generateLabelHtml(prep, formula),
+          generateBottleLabelsHtml(prep, formula),
+          generatePrepStickersHtml(prep, formula),
+        );
+
   const openLabelPreview = (prep: Prep) => {
     if (!selectedFormula) return;
     setPrintMockPrep(prep);
-    setPrintTitle('ตัวอย่างก่อนพิมพ์ฉลากยา (8.5 × 6 ซม.)');
-    setPrintContent(buildLabelPrintDocument(
-      generateLabelHtml(prep, selectedFormula),
-      generateBottleLabelsHtml(prep, selectedFormula),
-      generatePrepStickersHtml(prep, selectedFormula),
-    ));
+    setLabelSize('standard');
+    setPrintTitle(getLabelPreviewTitle('standard'));
+    setPrintContent(buildLabelPreviewContent(prep, selectedFormula, 'standard'));
+  };
+
+  const handleLabelSizeChange = (size: 'standard' | 'compact') => {
+    setLabelSize(size);
+    if (!printMockPrep || !selectedFormula) return;
+    setPrintTitle(getLabelPreviewTitle(size));
+    setPrintContent(buildLabelPreviewContent(printMockPrep, selectedFormula, size));
   };
 
   const handlePrintLabel = async () => {
@@ -488,10 +505,14 @@ export default function PreparePage() {
 
   const doPrint = () => {
     if (printTitle.includes('ฉลากยา') && printMockPrep && selectedFormula) {
-      const patientHtml = generateLabelHtml(printMockPrep, selectedFormula);
-      const bottleHtml = generateBottleLabelsHtml(printMockPrep, selectedFormula);
-      const prepStickersHtml = generatePrepStickersHtml(printMockPrep, selectedFormula);
-      printAllLabels(patientHtml, bottleHtml, prepStickersHtml);
+      if (labelSize === 'compact') {
+        printCompactLabel(generateCompactLabelHtml(printMockPrep, selectedFormula), generateCompactPrepStickersHtml(printMockPrep, selectedFormula), generateCompactBottleLabelsHtml(printMockPrep, selectedFormula));
+      } else {
+        const patientHtml = generateLabelHtml(printMockPrep, selectedFormula);
+        const bottleHtml = generateBottleLabelsHtml(printMockPrep, selectedFormula);
+        const prepStickersHtml = generatePrepStickersHtml(printMockPrep, selectedFormula);
+        printAllLabels(patientHtml, bottleHtml, prepStickersHtml);
+      }
     } else {
       // Batch sheet — existing behavior
       const w = window.open('', '_blank', 'width=600,height=800');
@@ -741,6 +762,14 @@ export default function PreparePage() {
       >
         {printTitle.includes('ตัวอย่างก่อนพิมพ์ฉลากยา') ? (
           <div className="label-print-preview">
+            <div className="toggle-group label-size-toggle">
+              <div className={`toggle-option standard${labelSize === 'standard' ? ' active' : ''}`} onClick={() => handleLabelSizeChange('standard')}>
+                มาตรฐาน (8.5 × 6 ซม.)
+              </div>
+              <div className={`toggle-option compact${labelSize === 'compact' ? ' active' : ''}`} onClick={() => handleLabelSizeChange('compact')}>
+                IPD ขนาดเล็ก (75 × 35 มม.)
+              </div>
+            </div>
             <p>ตัวอย่างนี้ใช้ HTML และ CSS ชุดเดียวกับงานพิมพ์จริง แต่ทิศทางกระดาษสุดท้ายยังขึ้นกับ driver ของเครื่องพิมพ์</p>
             <iframe title="ตัวอย่างฉลากก่อนพิมพ์" srcDoc={printContent} />
           </div>

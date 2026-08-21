@@ -26,11 +26,6 @@ const EMBEDDED_HOSXP_TOKEN_HIS = embeddedSecrets.hosxpTokenHis || '';
 const DEFAULT_SETTINGS = {
   hosxpApiUrl: 'http://172.17.1.70:3000',
   updateManifestUrl: '',
-  // Saved label-printer name. When set (and the printer exists), labels are
-  // rendered to an exact 8.5×6cm PDF and spooled silently via bundled SumatraPDF.
-  // The driver default stock must still be USER 85×60 mm (one-time setup).
-  // '' = ask via the print dialog.
-  labelPrinter: '',
 };
 
 function loadSettings() {
@@ -59,7 +54,6 @@ let settings = loadSettings();
 // Network/shared printers can leave Electron waiting indefinitely while the
 // Windows print spooler tries to contact the host PC. Keep those waits bounded
 // so a disconnected host never makes the rest of YATA unusable.
-const PRINTER_LIST_TIMEOUT_MS = 8000;
 const PRINT_JOB_TIMEOUT_MS = 30000;
 const PRINT_FONT_TIMEOUT_MS = 5000;
 
@@ -437,71 +431,25 @@ ipcMain.handle('get-app-info', () => ({
 }));
 ipcMain.handle('check-for-updates', () => checkForUpdates({ interactive: true }));
 
-// --- Label printing (8.5×6cm) — two delivery paths, see Audit.md P0 ---
-// The renderer sends the full label HTML; we render it in a hidden window, then:
+// --- Label printing (8.5×6cm) — ONE delivery path, see Audit.md P0 ---
+// The renderer sends the full label HTML; we render it in a hidden window and
+// print it with webContents.print() using the canonical Windows DEVMODE encoding:
+// portrait-normalized paper (width ≤ length) plus the orientation flag —
+// { width: 60000, height: 85000 }, landscape: true. Validated fleet-wide in
+// v1.0.13. Do NOT change to { width: 85000, height: 60000 }, landscape: false —
+// that combination is the original 90°-rotation P0 bug.
 //
-// • SILENT path (a label printer is saved in settings): render an exact 8.5×6cm
-//   PDF via printToPDF({ preferCSSPageSize: true }) — this pipeline honors
-//   @page { size: 8.5cm 6cm } deterministically — and hand the file to the
-//   bundled SumatraPDF to spool to the saved printer at 100% scale.
-//   webContents.print({ silent: true }) is NOT used here: on Electron 30/Windows
-//   it drops the custom pageSize from the job while still applying the landscape
-//   flag, which rotated every label 90° on the field fleet (Zebra ZD230,
-//   2026-07-10 — rotated with landscape:true AND landscape:false, even with a
-//   correct 85×60 driver default stock). Paper size still comes from the driver
-//   default stock, so each machine keeps the one-time USER 85×60 driver setup
-//   (Printing Preferences AND Printer Properties → Advanced → Printing Defaults).
-//
-// • DIALOG path (no saved printer): webContents.print() with the canonical
-//   Windows DEVMODE encoding — portrait-normalized paper (width ≤ length) plus
-//   the orientation flag: { width: 60000, height: 85000 }, landscape: true.
-//   Validated fleet-wide in v1.0.13. Do NOT change to
-//   { width: 85000, height: 60000 }, landscape: false — that combination is the
-//   original 90°-rotation P0 bug.
+// 🔴 There is deliberately NO silent-print path (removed 2026-07-13).
+// v1.0.17 added one — printToPDF + a bundled SumatraPDF spooling to a printer saved
+// in the profile — to escape the rotation bug. It became the rotation bug: on the
+// Zebra ZD230 fleet the silent path printed every label rotated 90°, while this
+// dialog path printed correctly on the same machine. Not one station ever had it
+// working. Each attempt to add a shortcut around the print dialog has produced a new
+// way to rotate labels (see the ledger in Audit.md), so the shortcut is gone: every
+// print goes through the dialog. The cost is one extra click per job.
+// Do not reintroduce silent printing without a machine that reproduces both paths.
 let printSeq = 0;
 
-// Bundled SumatraPDF (electron/vendor/SumatraPDF.exe in dev; extraResources in
-// the packaged app). Returns '' when the binary is missing so callers can fall
-// back to the print dialog.
-function getSumatraPath() {
-  const p = app.isPackaged
-    ? path.join(process.resourcesPath, 'SumatraPDF.exe')
-    : path.join(__dirname, 'vendor', 'SumatraPDF.exe');
-  try {
-    return fs.existsSync(p) ? p : '';
-  } catch {
-    return '';
-  }
-}
-
-function printPdfViaSumatra(sumatraPath, pdfPath, printerName) {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (success, reason) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve({ success, reason });
-    };
-    const timer = setTimeout(() => {
-      try {
-        child.kill();
-      } catch {}
-      finish(false, 'เครื่องพิมพ์ไม่ตอบสนองภายใน 30 วินาที กรุณาตรวจสอบเครื่องแม่ข่ายหรือ Print Spooler');
-    }, PRINT_JOB_TIMEOUT_MS);
-    const child = spawn(
-      sumatraPath,
-      // noscale = print the 8.5×6cm PDF at 100% onto the driver's default stock.
-      ['-print-to', printerName, '-print-settings', 'noscale', '-silent', pdfPath],
-      { windowsHide: true },
-    );
-    child.on('error', (e) => finish(false, `เรียกตัวส่งงานพิมพ์ไม่สำเร็จ: ${e.message}`));
-    child.on('exit', (code) => {
-      if (code === 0) finish(true, '');
-      else finish(false, `ส่งงานพิมพ์ไม่สำเร็จ (รหัส ${code}) กรุณาตรวจสอบชื่อเครื่องพิมพ์ในหน้าโปรไฟล์`);
-    });
-  });
-}
 ipcMain.handle('print-labels', async (_event, html) => {
   if (typeof html !== 'string' || !html) {
     return { ok: false, message: 'ไม่มีเนื้อหาให้พิมพ์' };
@@ -528,38 +476,6 @@ ipcMain.handle('print-labels', async (_event, html) => {
         'โหลดฟอนต์สำหรับพิมพ์ไม่สำเร็จภายใน 5 วินาที',
       );
     } catch {}
-
-    // Do not enumerate printers before every print. On a client that uses a
-    // printer shared by another PC, getPrintersAsync() can wait on the remote
-    // spooler and previously left the whole print request hanging. Send directly
-    // to the saved device name and report a missing/offline printer through the
-    // job result instead.
-    const deviceName = settings.labelPrinter || '';
-    const sumatraPath = deviceName ? getSumatraPath() : '';
-    if (deviceName && !sumatraPath) {
-      // Old/broken package without the bundled binary — fall through to the
-      // dialog path rather than the known-rotated Electron silent path.
-      console.error('[print-labels] SumatraPDF binary not found; falling back to print dialog');
-    }
-
-    if (deviceName && sumatraPath) {
-      const pdfPath = `${tmpFile}.pdf`;
-      try {
-        const pdfData = await withTimeout(
-          printWin.webContents.printToPDF({ printBackground: true, preferCSSPageSize: true }),
-          PRINT_JOB_TIMEOUT_MS,
-          'สร้างไฟล์ฉลากไม่สำเร็จภายใน 30 วินาที',
-        );
-        fs.writeFileSync(pdfPath, pdfData);
-        const result = await printPdfViaSumatra(sumatraPath, pdfPath, deviceName);
-        if (!result.success) {
-          return { ok: false, message: result.reason || 'ส่งงานพิมพ์ไม่สำเร็จ', silentPrinter: deviceName };
-        }
-        return { ok: true, silentPrinter: deviceName };
-      } finally {
-        fs.rm(pdfPath, { force: true }, () => {});
-      }
-    }
 
     const result = await new Promise((resolve, reject) => {
       let settled = false;
@@ -608,34 +524,90 @@ ipcMain.handle('print-labels', async (_event, html) => {
   }
 });
 
-// --- Label printer selection (for silent printing) ---
-ipcMain.handle('get-label-printer-settings', async () => {
-  let printers = [];
-  let warning = '';
-  try {
-    if (win && !win.isDestroyed()) {
-      printers = await withTimeout(
-        win.webContents.getPrintersAsync(),
-        PRINTER_LIST_TIMEOUT_MS,
-        'โหลดรายชื่อเครื่องพิมพ์ไม่สำเร็จภายใน 8 วินาที',
-      );
-    }
-  } catch (e) {
-    console.error('[get-label-printer-settings]', e.message);
-    warning = `${e.message} กรุณาตรวจสอบเครื่องแม่ข่ายหรือ Print Spooler แล้วลองใหม่`;
+// --- Compact IPD label printing (7.5×3.5cm) ---
+// New, separate print path added for the small IPD label stock. Mirrors the
+// print-labels handler above exactly (same dialog-only discipline, same
+// font-wait/timeout behavior). The pageSize/landscape pairing below is
+// derived from the SAME portrait-normalize + landscape convention validated
+// for the 8.5×6cm case (width ≤ height, landscape:true) — content is
+// authored 75mm wide × 35mm tall, so the portrait-normalized DEVMODE is
+// { width: 35000, height: 75000 }. This has NOT been physically validated
+// on a real printer yet — test on actual IPD label stock before trusting
+// this for production. Do not touch the print-labels handler above while
+// adding this; keep the two paths fully independent (see Audit.md P0).
+ipcMain.handle('print-compact-label', async (_event, html) => {
+  if (typeof html !== 'string' || !html) {
+    return { ok: false, message: 'ไม่มีเนื้อหาให้พิมพ์' };
   }
-  return {
-    printers: printers.map((p) => ({ name: p.name, isDefault: Boolean(p.isDefault) })),
-    labelPrinter: settings.labelPrinter || '',
-    warning,
-  };
+  const tmpFile = path.join(app.getPath('temp'), `yata-compact-label-${process.pid}-${printSeq++}.html`);
+  let printWin = null;
+  try {
+    fs.writeFileSync(tmpFile, html, 'utf8');
+    printWin = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: false, contextIsolation: true },
+    });
+    await printWin.loadFile(tmpFile);
+
+    try {
+      await withTimeout(
+        printWin.webContents.executeJavaScript(
+          'document.fonts && document.fonts.ready ? document.fonts.ready.then(() => true) : true',
+        ),
+        PRINT_FONT_TIMEOUT_MS,
+        'โหลดฟอนต์สำหรับพิมพ์ไม่สำเร็จภายใน 5 วินาที',
+      );
+    } catch {}
+
+    const result = await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      };
+      const timer = setTimeout(() => {
+        finish({
+          success: false,
+          reason: 'เครื่องพิมพ์ไม่ตอบสนองภายใน 30 วินาที กรุณาตรวจสอบเครื่องแม่ข่ายหรือ Print Spooler',
+        });
+      }, PRINT_JOB_TIMEOUT_MS);
+
+      try {
+        printWin.webContents.print(
+          {
+            silent: false,
+            printBackground: true,
+            margins: { marginType: 'none' },
+            // Derived-by-convention DEVMODE for 75×35mm content — see comment
+            // above the handler. NOT physically validated yet.
+            pageSize: { width: 35000, height: 75000 },
+            landscape: true,
+          },
+          (success, reason) => finish({ success, reason }),
+        );
+      } catch (error) {
+        clearTimeout(timer);
+        reject(error);
+      }
+    });
+
+    if (!result.success) {
+      return { ok: false, message: result.reason || 'ยกเลิกการพิมพ์' };
+    }
+    return { ok: true };
+  } catch (e) {
+    console.error('[print-compact-label]', e.message);
+    return { ok: false, message: e.message };
+  } finally {
+    if (printWin && !printWin.isDestroyed()) printWin.close();
+    fs.rm(tmpFile, { force: true }, () => {});
+  }
 });
 
-ipcMain.handle('save-label-printer', (_event, name) => {
-  settings.labelPrinter = typeof name === 'string' ? name : '';
-  saveSettings(settings);
-  return { ok: true };
-});
+// Label-printer selection (get-label-printer-settings / save-label-printer) was
+// removed with the silent-print path on 2026-07-13 — see the print handler above.
 
 // --- Window ---
 let win;

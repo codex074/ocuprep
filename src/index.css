@@ -1049,6 +1049,21 @@ body {
   background: linear-gradient(180deg, #ffffff, #f1f5f9);
   transform: translateY(-1px);
 }
+.toggle-option.standard.active {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.2);
+}
+.toggle-option.compact.active {
+  border-color: rgba(13, 148, 136, 0.24);
+  background: linear-gradient(135deg, #34d399 0%, #0d9488 100%);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(13, 148, 136, 0.2);
+}
+.label-size-toggle {
+  margin-bottom: 12px;
+}
 
 /* Switch toggle */
 .switch-label {
@@ -1706,15 +1721,43 @@ table tbody tr:last-child td { border-bottom: none; }
 .label-preview .lb { line-height: 1.8; }
 .label-preview .lb .row { display: flex; justify-content: space-between; }
 .label-preview .lf { border-top: 1px solid #333; margin-top: 10px; padding-top: 8px; font-size: 11px; text-align: center; color: #666; }
+/* Let the iframe be the ONLY scroll container (its own document scrolls
+   internally) — without this, a tall preview (e.g. the compact doc's several
+   pages) forces .modal-body to scroll too, producing two nested scrollbars.
+   Percentage heights don't reliably propagate through a non-flex .modal-body,
+   so make .modal-body a flex column here too and use flex-grow all the way
+   down instead — scoped with :has() so other modals are unaffected. */
+.modal:has(.label-print-preview) {
+  /* max-height alone only caps the modal — it won't claim vertical space to
+     grow into, so the flex-grow iframe below it would just collapse to its
+     min-height floor. An explicit height gives it real room. */
+  height: 90vh;
+}
+.modal-body:has(> .label-print-preview) {
+  display: flex;
+  flex-direction: column;
+}
+.label-print-preview {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+.label-print-preview .label-size-toggle {
+  flex-shrink: 0;
+}
 .label-print-preview > p {
   margin: 0 0 12px;
   color: var(--text-secondary);
   font-size: 12px;
+  flex-shrink: 0;
 }
 .label-print-preview iframe {
   display: block;
   width: 100%;
-  height: min(68vh, 680px);
+  flex: 1 1 auto;
+  min-height: 160px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: #e2e8f0;

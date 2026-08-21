@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Prep, Formula } from '../types';
-import { buildLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateBottleLabelsHtml, generatePrepStickersHtml, printAllLabels, printA4Html } from '../lib/print';
+import { buildLabelPrintDocument, buildCompactLabelPrintDocument, generateBatchSheetHtml, generateLabelHtml, generateCompactLabelHtml, generateBottleLabelsHtml, generateCompactBottleLabelsHtml, generatePrepStickersHtml, generateCompactPrepStickersHtml, printAllLabels, printCompactLabel, printA4Html } from '../lib/print';
 import { useFormulas } from '../hooks/useFormulas';
 import Modal from './ui/Modal';
 
@@ -13,22 +13,28 @@ interface PrepDetailsModalProps {
 export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsModalProps) {
   const { formulas } = useFormulas();
   const [labelPreviewOpen, setLabelPreviewOpen] = useState(false);
+  const [labelSize, setLabelSize] = useState<'standard' | 'compact'>('standard');
 
   if (!isOpen || !prep) return null;
 
-  const formula = formulas.find(f => f.id === prep.formula_id) || ({ 
-    name: prep.formula_name, 
-    concentration: prep.concentration || '', 
-    package_size: '' 
+  const formula = formulas.find(f => f.id === prep.formula_id) || ({
+    name: prep.formula_name,
+    concentration: prep.concentration || '',
+    package_size: ''
   } as Formula);
 
   const batchSheetHtml = generateBatchSheetHtml(prep, formula);
 
   const handlePrintLabel = () => {
+    setLabelSize('standard');
     setLabelPreviewOpen(true);
   };
 
   const handleConfirmPrintLabel = () => {
+    if (labelSize === 'compact') {
+      printCompactLabel(generateCompactLabelHtml(prep, formula), generateCompactPrepStickersHtml(prep, formula), generateCompactBottleLabelsHtml(prep, formula));
+      return;
+    }
     const patientHtml = generateLabelHtml(prep, formula);
     const bottleHtml = generateBottleLabelsHtml(prep, formula);
     const prepStickersHtml = generatePrepStickersHtml(prep, formula);
@@ -39,10 +45,14 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
     printA4Html(batchSheetHtml);
   };
 
-  const patientHtml = generateLabelHtml(prep, formula);
-  const bottleHtml = generateBottleLabelsHtml(prep, formula);
-  const prepStickersHtml = generatePrepStickersHtml(prep, formula);
-  const labelPrintDocument = buildLabelPrintDocument(patientHtml, bottleHtml, prepStickersHtml);
+  const labelPrintDocument = labelSize === 'compact'
+    ? buildCompactLabelPrintDocument(generateCompactLabelHtml(prep, formula), generateCompactPrepStickersHtml(prep, formula), generateCompactBottleLabelsHtml(prep, formula))
+    : buildLabelPrintDocument(
+        generateLabelHtml(prep, formula),
+        generateBottleLabelsHtml(prep, formula),
+        generatePrepStickersHtml(prep, formula),
+      );
+  const labelPreviewTitle = `ตัวอย่างก่อนพิมพ์ฉลากยา (${labelSize === 'compact' ? '75 × 35 มม.' : '8.5 × 6 ซม.'})`;
 
   return (
     <>
@@ -91,7 +101,7 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
     <Modal
       isOpen={labelPreviewOpen}
       onClose={() => setLabelPreviewOpen(false)}
-      title="ตัวอย่างก่อนพิมพ์ฉลากยา (8.5 × 6 ซม.)"
+      title={labelPreviewTitle}
       width="760px"
       footer={
         <>
@@ -101,6 +111,14 @@ export default function PrepDetailsModal({ isOpen, onClose, prep }: PrepDetailsM
       }
     >
       <div className="label-print-preview">
+        <div className="toggle-group label-size-toggle">
+          <div className={`toggle-option standard${labelSize === 'standard' ? ' active' : ''}`} onClick={() => setLabelSize('standard')}>
+            มาตรฐาน (8.5 × 6 ซม.)
+          </div>
+          <div className={`toggle-option compact${labelSize === 'compact' ? ' active' : ''}`} onClick={() => setLabelSize('compact')}>
+            IPD ขนาดเล็ก (75 × 35 มม.)
+          </div>
+        </div>
         <p>ตัวอย่างนี้ใช้ HTML และ CSS ชุดเดียวกับงานพิมพ์จริง แต่ทิศทางกระดาษสุดท้ายยังขึ้นกับ driver ของเครื่องพิมพ์</p>
         <iframe title="ตัวอย่างฉลากก่อนพิมพ์" srcDoc={labelPrintDocument} />
       </div>

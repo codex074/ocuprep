@@ -127,6 +127,92 @@ landscape: true,
 - ❌ Do NOT change the CSS to `size: 6cm 8.5cm` or pre-rotate content with CSS transforms —
   the physical stock feeds 85 mm across the head × 60 mm long; content must be authored 85 wide.
 
+### 2026-07-13 (v1.0.18) — right edge clipped after a driver update (NOT rotation)
+
+Rotation is gone. New, separate symptom: content prints at the correct orientation and the
+correct height, but **the right edge is cut off** (`Exp: 12 ส.ค. 25`, `Lot: 202607-1`).
+
+Evidence that pinned it — do not re-derive:
+- **Only the horizontal axis overflows.** A scaling fault would overflow both axes. So the
+  page size was right; only the horizontal origin was off.
+- **The print dialog reported 85×60** on the affected machine — so this is *not* the
+  wrong-default-stock problem above. Setting the driver stock did not help.
+- **Machines still on the OLD driver print the same exe correctly.** The app is not at
+  fault: the newer driver reserves a wider unprintable margin, and `noscale` (100%) then
+  starts the 85 mm-wide page at the printable origin and runs off the right.
+
+**Field test ledger (2026-07-13, the affected new-driver machine).** `-print-settings` is
+overridable at runtime via `YATA_PRINT_SETTINGS` (added v1.0.18) so a machine can be probed
+without a rebuild. Results:
+
+| Build / setting | Path | Orientation | Size |
+|---|---|---|---|
+| 1.0.17, **no** printer saved | dialog (`webContents.print`) | ✅ correct | ❌ right edge clipped |
+| 1.0.17, printer saved | silent (Sumatra `noscale`) | ❌ **rotated 90°** | ❌ oversized |
+| 1.0.18 `paper=85mm x 60mm,fit` | silent | ❌ **rotated 90°** | ✅ fits |
+| 1.0.18 `fit` | silent | — | ❌ still oversized |
+
+🔴 **This machine has TWO independent faults, not one:**
+1. **Rotation happens only on the Sumatra path.** The dialog path never rotates here. So the
+   v1.0.17 architecture change did not "fix rotation" universally — on this driver the
+   Sumatra path rotates, i.e. the driver's default stock is being interpreted as portrait
+   60×85 and Sumatra turns the landscape-shaped page to fit it.
+2. **Clipping happens on BOTH paths** → it is a driver-level geometry fault (horizontal
+   offset / unprintable margin), not something the app chose.
+
+**Scaling knobs cannot fix fault 2.** `fit` did not shrink anything, which proves the driver
+does not consider the page oversized — the content is being *offset*, not enlarged. Do not
+burn more time on `fit`/`shrink`/`noscale`; they are all scale knobs and the fault is
+positional. (`paper=85mm x 60mm` did change the size, but only by redefining the stock, which
+is what triggered the rotation — do not use it.)
+
+❌ **Do NOT ship `paper=85mm x 60mm`** — it reintroduces the P0 rotation.
+
+**Both faults are driver-version-specific: machines still on the OLD driver print correctly
+with the same exe.** The driver was updated to chase the rotation bug, which the app already
+fixed in 1.0.17 — so the update was not needed.
+
+### Printer is a **Zebra ZD230** (203 dpi). Fix on the machine, not in the app:
+
+1. **Left Position → 0.** Printer properties → Preferences → **Advanced Setup** → *Left
+   Position*. Zebra's own guidance for "prints too far right / truncated on the right" is to
+   clear any left-position adjustment (default `0`; a negative value such as `-50` dots pulls
+   the content back left). This is the offset fault, and it is exactly what a driver reinstall
+   resets. → https://supportcommunity.zebra.com/s/article/Adjusting-Left-Position-and-Top-Position-on-Zebra-Barcode-Printers
+2. **Confirm the label width in the driver matches the 85 mm media**, and tighten the physical
+   media guides — a width mismatch makes the printer clip and shift sideways.
+3. **Roll the driver back to ZDesigner v5** if 1–2 don't take. Zebra documents this for the
+   ZD230 specifically: install the v10 driver, and *if you cannot print successfully, uninstall
+   it and install the v5 driver*. The machines that still print correctly are on the older
+   driver. → https://supportcommunity.zebra.com/s/article/000027608
+
+Note for the rotation fault: with ZDesigner, **application settings override driver settings**,
+which is why the Sumatra path (whose job carries its own page geometry) rotates on this driver
+while the dialog path does not.
+
+### ✅ RESOLVED (v1.0.18): silent printing removed
+
+Rolling the driver back cleared the clipping and the dialog path went back to printing
+correctly. **But the silent path still rotated 90° even on the good driver** — so the silent
+path itself was the remaining fault, not the driver.
+
+**Silent printing is gone as of v1.0.18.** Removed: the saved label-printer setting, the
+"เครื่องพิมพ์ฉลาก" card on the profile page, the `get-label-printer-settings` /
+`save-label-printer` IPC handlers, the `printToPDF` + SumatraPDF spooler, and the bundled
+`SumatraPDF.exe` (`extraResources` dropped — the installer is ~15 MB smaller). Every print now
+goes through the dialog path with the validated v1.0.13 DEVMODE encoding.
+
+Why removal rather than another fix attempt:
+- **No station ever had silent printing working** — the feature had no users to lose.
+- The silent path was itself introduced (v1.0.17) *to escape* the rotation bug, and became the
+  rotation bug. Every shortcut added around the print dialog has produced a new way to rotate
+  labels; the dialog path is the only one with a fleet-wide validation record.
+- The whole class of bug dies with it. The cost is one extra click per print job.
+
+🔴 **Do not reintroduce silent printing** (`webContents.print({silent:true})`, printToPDF +
+external spooler, or raw ZPL) without a machine that reproduces both paths side by side. This
+bug family cost 7 broken releases (1.0.6–1.0.12) plus the 2026-07-13 session.
+
 ### Ship checklist (v1.0.13)
 1. Verify `electron/main.cjs` `print-labels` handler has `pageSize: { width: 60000, height: 85000 }, landscape: true`
    and `package.json` version is `1.0.13`. **Confirm the values in the built exe, not just the tree —
@@ -237,6 +323,43 @@ Severity: 🔴 high · 🟠 medium · 🟡 low. Line refs are as of this audit d
   the sticker printer prints an A4 document across the label roll.
 - **Action (optional):** add a `print-a4` IPC handler mirroring `print-labels` with `pageSize: 'A4'`.
 
+### 🟠 PRN-6 — Compact IPD label (75×35mm) pageSize/landscape pairing not physically validated
+- Added 2026-08-21: a size toggle on the label preview (`PreparePage.tsx` and
+  `PrepDetailsModal.tsx` — both build their own copy of this preview) lets IPD staff
+  print a 75mm × 35mm label instead of the standard 8.5×6cm one. New, fully separate code
+  path: `generateCompactLabelHtml` / `buildCompactLabelPrintDocument` / `printCompactLabel`
+  (`src/lib/print.ts`), IPC `print-compact-label` (`electron/main.cjs`), exposed as
+  `electronAPI.printCompactLabel` (`electron/preload.cjs`, `src/electron.d.ts`).
+- Bottle-wrap labels for this size (`generateCompactBottleLabelsHtml`) reuse the standard
+  `.bl` label box **unchanged** (6.5cm × 1.7cm) — content and dimensions are identical to
+  the standard bottle label — but paginate **1 label per page** instead of 3, so every page
+  in the compact print job stays the same 7.5×3.5cm size. This was a deliberate choice: mixing
+  two different `@page` sizes in one Electron print job is not reliable (the driver-level
+  `pageSize` argument to `webContents.print` locks ONE physical size for the whole job), so
+  rather than give bottle pages their own 8.5×6cm size, they're paginated onto the compact
+  page size instead.
+- The short-prep-method and ingredients pages (`generateCompactPrepStickersHtml`) are the
+  same content as `generatePrepStickersHtml`, resized onto the same 7.5×3.5cm compact page.
+  Long `short_prep` text or long ingredient lists simply clip (`overflow:hidden`) — this is
+  the same tradeoff the standard 8.5×6cm version already makes, not a new limitation.
+  `buildCompactLabelPrintDocument(labelHtml, prepStickersHtml, bottleHtml, options)` and
+  `printCompactLabel(labelHtml, prepStickersHtml, bottleHtml)` compose the full compact
+  print job in that page order: main label → short-prep/ingredients → bottle labels.
+- The Electron `pageSize: { width: 35000, height: 75000 }, landscape: true` encoding was
+  **derived by the same portrait-normalize + landscape convention** validated for the
+  8.5×6cm case (P0 above) — width ≤ height, `landscape:true` — but has **not** been
+  physically printed on a real IPD label printer. The P0 rotation bug above shows this
+  exact class of value is driver-sensitive and easy to get subtly wrong.
+- **Action:** before relying on this for real IPD label stock, physically test
+  `electronAPI.printCompactLabel` end-to-end on the actual printer/driver combination IPD
+  uses, and confirm the printed label is right-side-up at the correct 75×35mm size (not
+  rotated, not scaled to a different paper size). Until validated, prefer the web/PWA
+  fallback (browser print dialog) for the compact size, or double-check each print visually.
+- The two print paths (`print-labels` / `print-compact-label`) are deliberately kept fully
+  independent in `electron/main.cjs` — do not merge them into a single parameterized
+  handler without re-reading the P0 history above; the existing standard-label path must
+  stay untouched regardless of what happens with the compact one.
+
 ### 🟠 OPS-1 — Fleet version skew
 - Auto-update only runs when `updateManifestUrl` is configured (default `''` —
   `electron/main.cjs`); exes are otherwise copied by hand → machines drift
@@ -273,8 +396,11 @@ Severity: 🔴 high · 🟠 medium · 🟡 low. Line refs are as of this audit d
 | `printAllLabels()` → `window.open` fallback | Sticker labels (web/PWA) | CSS `@page` + user's print-dialog settings |
 | `printA4Html()` → `window.open` | Batch sheet (PrepDetailsModal) | CSS `@page A4` + dialog |
 | PreparePage in-page print modal (`setPrintContent` + `buildLabelPrintDocument`) | Label preview/print (PreparePage) | in-app modal + browser print |
+| `printCompactLabel()` → `electronAPI.printCompactLabel` → IPC `print-compact-label` → hidden BrowserWindow → `webContents.print` | Compact IPD label (Electron exe) — see PRN-6, **not physically validated** | `pageSize`+`landscape` in `electron/main.cjs` **and** CSS `@page 7.5cm 3.5cm` |
+| `printCompactLabel()` → `window.open` fallback | Compact IPD label (web/PWA) | CSS `@page` + user's print-dialog settings |
 
-`buildLabelPrintDocument()` (`src/lib/print.ts`) builds the shared label HTML for both paths.
+`buildLabelPrintDocument()` (`src/lib/print.ts`) builds the shared label HTML for the standard-size path;
+`buildCompactLabelPrintDocument()` builds a fully separate document for the compact 75×35mm path (PRN-6).
 
 ---
 
