@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -8,6 +8,8 @@ const https = require('https');
 const urlLib = require('url');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
+const os = require('os');
+const { DEFAULT_EMR_LOOKUP_URL, lookupPatientViaEmr, yataUserHeader } = require('./emrLookup.cjs');
 
 // Fixed port so localStorage persists across launches
 const APP_PORT = 37200;
@@ -18,13 +20,13 @@ let embeddedSecrets = {};
 try {
   embeddedSecrets = require('./secrets.cjs');
 } catch {
-  console.warn('[HOSxP] electron/secrets.cjs is not present');
+  console.warn('[HN] electron/secrets.cjs is not present');
 }
-const EMBEDDED_HOSXP_TOKEN = embeddedSecrets.hosxpToken || '';
-const EMBEDDED_HOSXP_TOKEN_HIS = embeddedSecrets.hosxpTokenHis || '';
+// Patient names come from EMR Viewer (HIS-connect). The old direct HOSxP API (172.17.1.70:3000) is gone.
+const EMR_LOOKUP_TOKEN = embeddedSecrets.emrLookupToken || '';
+const EMR_LOOKUP_URL = embeddedSecrets.emrLookupUrl || DEFAULT_EMR_LOOKUP_URL;
 
 const DEFAULT_SETTINGS = {
-  hosxpApiUrl: 'http://172.17.1.70:3000',
   updateManifestUrl: '',
 };
 
@@ -34,6 +36,7 @@ function loadSettings() {
       const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
       delete saved.hosxpToken;
       delete saved.hosxpTokenHis;
+      delete saved.hosxpApiUrl;
       return { ...DEFAULT_SETTINGS, ...saved };
     }
   } catch {}
@@ -125,132 +128,35 @@ function serveStatic(distPath, port) {
   });
 }
 
-// --- HOSxP API caller (GET with JSON body using raw http/https) ---
-function callHosxpApi(apiUrl, apiPath, token, hn) {
-  return new Promise((resolve, reject) => {
-    const body = JSON.stringify({ HN: hn });
-    const parsed = new urlLib.URL(apiPath, apiUrl);
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      reject(new Error('HOSxP API URL ต้องเป็น http หรือ https'));
-      return;
-    }
-    const mod = parsed.protocol === 'https:' ? https : http;
-
-    const options = {
-      hostname: parsed.hostname,
-      port: parseInt(parsed.port) || (parsed.protocol === 'https:' ? 443 : 80),
-      path: parsed.pathname,
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body),
-      },
-    };
-
-    const req = mod.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try { resolve({ statusCode: res.statusCode, body: JSON.parse(data) }); }
-        catch { resolve({ statusCode: res.statusCode, body: {} }); }
-      });
-    });
-
-    req.setTimeout(8000, () => { req.destroy(); reject(new Error('timeout')); });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
-}
-
-function normalizePatient(raw, source) {
-  const givenName = [raw.pname, raw.fname].filter(Boolean).join('');
-  return {
-    source,
-    hn:       raw.hn       || '',
-    vn:       raw.vn       || '',
-    qn:       raw.oqueue   || '',
-    pname:    raw.pname    || '',
-    fname:    raw.fname    || '',
-    lname:    raw.lname    || '',
-    fullName: [givenName, raw.lname].filter(Boolean).join(' '),
-  };
-}
-
-// Distinguishes "asked HOSxP and it genuinely has no such patient" (patient: null,
-// failure: false) from "couldn't get a real answer" — non-200 (e.g. 401 from an
-// expired embedded token) or a network error (failure: true). Both endpoints used
-// to fall through to the same "not found" result on a non-200 response, which
-// silently hid auth/connectivity problems behind a misleading "HN not found" UI.
-async function lookupPatient(hn) {
-  const { hosxpApiUrl } = settings;
-  if (!EMBEDDED_HOSXP_TOKEN && !EMBEDDED_HOSXP_TOKEN_HIS) {
-    throw new Error('แอปชุดนี้ไม่ได้ฝัง Token สำหรับเชื่อมต่อ HOSxP');
-  }
-
-  let failure = false;
-
-  if (EMBEDDED_HOSXP_TOKEN) try {
-    const r = await callHosxpApi(hosxpApiUrl, '/api/hosxp/patient', EMBEDDED_HOSXP_TOKEN, hn);
-    if (r.statusCode === 200 && r.body?.data?.[0]) {
-      return { patient: normalizePatient(r.body.data[0], 'hosxp/patient'), failure: false };
-    }
-    if (r.statusCode !== 200) {
-      console.error('[HN] primary non-200:', r.statusCode, JSON.stringify(r.body).slice(0, 300));
-      failure = true;
-    }
-  } catch (e) { console.error('[HN] primary:', e.message); failure = true; }
-
-  if (EMBEDDED_HOSXP_TOKEN_HIS) try {
-    const r = await callHosxpApi(hosxpApiUrl, '/api/hosxp/HIS', EMBEDDED_HOSXP_TOKEN_HIS, hn);
-    if (r.statusCode === 200 && r.body?.data?.[0]) {
-      return { patient: normalizePatient(r.body.data[0], 'hosxp/HIS'), failure: false };
-    }
-    if (r.statusCode !== 200) {
-      console.error('[HN] HIS non-200:', r.statusCode, JSON.stringify(r.body).slice(0, 300));
-      failure = true;
-    }
-  } catch (e) { console.error('[HN] HIS fallback:', e.message); failure = true; }
-
-  return { patient: null, failure };
-}
-
 // --- IPC Handlers ---
-ipcMain.handle('lookup-hn', async (_event, hn) => {
+// `user` is the signed-in pha_id; EMR Viewer audits and rate-limits the lookup by it.
+ipcMain.handle('lookup-hn', async (_event, hn, user) => {
   const digits = String(hn).replace(/\D/g, '');
   if (digits.length < 7 || digits.length > 9) {
     return { ok: false, message: 'HN ต้องมี 7–9 หลัก' };
   }
-  const normalizedHN = digits.padStart(9, '0');
   try {
-    const { patient, failure } = await lookupPatient(normalizedHN);
-    if (patient) return { ok: true, patient };
-    if (failure) {
-      return {
-        ok: false,
-        failure: true,
-        message: 'เชื่อมต่อ HOSxP ไม่สำเร็จ (token อาจหมดอายุ หรือเครือข่ายขัดข้อง) กรุณาติดต่อผู้ดูแลระบบ',
-      };
-    }
-    return { ok: false, message: `ไม่พบข้อมูลผู้ป่วย (HN: ${normalizedHN})` };
+    return await lookupPatientViaEmr({
+      // net.fetch goes through Chromium's network stack, so it follows the PC's proxy settings.
+      fetchImpl: (url, init) => net.fetch(url, init),
+      baseUrl: EMR_LOOKUP_URL,
+      token: EMR_LOOKUP_TOKEN,
+      hn: digits.padStart(9, '0'),
+      user: yataUserHeader(user, `desktop:${os.hostname()}`),
+    });
   } catch (e) {
     return { ok: false, failure: true, message: String(e.message) };
   }
 });
 
 ipcMain.handle('get-hn-settings', () => ({
-  hosxpApiUrl: settings.hosxpApiUrl,
-  hasToken: Boolean(EMBEDDED_HOSXP_TOKEN),
-  hasTokenHis: Boolean(EMBEDDED_HOSXP_TOKEN_HIS),
+  lookupUrl: EMR_LOOKUP_URL,
+  // A v2.0.3 renderer still cached by the service worker reads this field on the profile page.
+  hosxpApiUrl: EMR_LOOKUP_URL,
+  hasToken: Boolean(EMR_LOOKUP_TOKEN),
 }));
 
 ipcMain.handle('save-hn-settings', (_event, s) => {
-  if (typeof s?.hosxpApiUrl === 'string' && s.hosxpApiUrl.trim()) {
-    const parsed = new urlLib.URL(s.hosxpApiUrl.trim());
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('URL ไม่ถูกต้อง');
-    settings.hosxpApiUrl = parsed.toString().replace(/\/$/, '');
-  }
   if (typeof s?.updateManifestUrl === 'string') {
     const value = s.updateManifestUrl.trim();
     if (value) {

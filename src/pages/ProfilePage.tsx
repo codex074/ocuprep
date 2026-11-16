@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ProfileCard from '../components/ProfileCard';
 
 function HnSettingsCard() {
-  const [apiUrl, setApiUrl] = useState('');
+  const [lookup, setLookup] = useState<{ lookupUrl: string; hasToken: boolean } | null>(null);
   const [version, setVersion] = useState('');
   const [updateManifestUrl, setUpdateManifestUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -12,7 +12,7 @@ function HnSettingsCard() {
 
   useEffect(() => {
     void window.electronAPI!.getHnSettings().then((s) => {
-      setApiUrl(s.hosxpApiUrl);
+      setLookup(s);
     });
     void window.electronAPI!.getAppInfo().then((info) => {
       setVersion(info.version);
@@ -21,11 +21,9 @@ function HnSettingsCard() {
   }, []);
 
   const handleSave = async () => {
-    if (!apiUrl.trim()) return;
     setSaving(true);
     try {
       await window.electronAPI!.saveHnSettings({
-        hosxpApiUrl: apiUrl.trim(),
         updateManifestUrl: updateManifestUrl.trim(),
       });
       setSaved(true);
@@ -47,34 +45,21 @@ function HnSettingsCard() {
   return (
     <div className="card" style={{ maxWidth: '480px', marginTop: '16px' }}>
       <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <h3>HOSxP API</h3>
-        <span style={{
-          fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px',
-          background: '#f0fdf4',
-          color: '#15803d',
-          border: '1px solid #86efac',
-        }}>
-          พร้อมใช้งานภายในองค์กร
-        </span>
+        <h3>ค้นชื่อผู้ป่วยจาก HN</h3>
+        {lookup && (
+          <span style={{
+            fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px',
+            background: lookup.hasToken ? '#f0fdf4' : '#fef2f2',
+            color: lookup.hasToken ? '#15803d' : '#b91c1c',
+            border: `1px solid ${lookup.hasToken ? '#86efac' : '#fecaca'}`,
+          }}>
+            {lookup.hasToken ? 'พร้อมใช้งาน' : 'แอปชุดนี้ไม่ได้ฝัง Token'}
+          </span>
+        )}
       </div>
       <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label>HOSxP API URL</label>
-          <input
-            className="form-input"
-            value={apiUrl}
-            onChange={(e) => setApiUrl(e.target.value)}
-            placeholder="http://172.17.1.70:3000"
-          />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
-          {saved && <span style={{ fontSize: '13px', color: '#16a34a' }}>บันทึกแล้ว</span>}
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving || !apiUrl.trim()}>
-            {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึก'}
-          </button>
-        </div>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          Token สำหรับเชื่อมต่อถูกกำหนดไว้ในแอปแล้ว ผู้ใช้ไม่ต้องตั้งค่าเพิ่มเติม
+          ค้นผ่าน EMR Viewer ({lookup?.lookupUrl ?? '—'}) ต้องต่ออินเทอร์เน็ตได้ ผู้ใช้ไม่ต้องตั้งค่าเพิ่มเติม
         </p>
         <hr style={{ width: '100%', border: 0, borderTop: '1px solid var(--border)' }} />
         <div className="form-group" style={{ marginBottom: 0 }}>
@@ -87,6 +72,13 @@ function HnSettingsCard() {
             placeholder="https://your-project.vercel.app/updates/latest.json"
           />
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+          {saved && <span style={{ fontSize: '13px', color: '#16a34a' }}>บันทึกแล้ว</span>}
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? <><span className="btn-spinner" /> กำลังบันทึก...</> : 'บันทึก'}
+          </button>
+        </div>
+        <hr style={{ width: '100%', border: 0, borderTop: '1px solid var(--border)' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>YATA v{version || '—'}</span>
           <button

@@ -10,21 +10,20 @@ interface HnPatient {
 }
 
 interface ElectronAPI {
-  lookupHN: (hn: string) => Promise<{
+  /** `user` is the signed-in pha_id — EMR Viewer audits the lookup under it. */
+  lookupHN: (hn: string, user?: string) => Promise<{
     ok: boolean;
     patient?: HnPatient;
     message?: string;
-    /** true when HOSxP could not be reached or answered with a non-200 status
-     *  (e.g. an expired embedded token) — distinct from a genuine "not found". */
+    /** true when the lookup service could not be reached or refused the request
+     *  (e.g. a wrong embedded token) — distinct from a genuine "not found". */
     failure?: boolean;
   }>;
   getHnSettings: () => Promise<{
-    hosxpApiUrl: string;
+    lookupUrl: string;
     hasToken: boolean;
-    hasTokenHis: boolean;
   }>;
   saveHnSettings: (settings: {
-    hosxpApiUrl: string;
     updateManifestUrl?: string;
   }) => Promise<{ ok: true }>;
   getAppInfo: () => Promise<{

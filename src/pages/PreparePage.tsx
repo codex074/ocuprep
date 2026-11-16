@@ -203,8 +203,8 @@ export default function PreparePage() {
       let failure = false;
 
       if (window.electronAPI?.lookupHN) {
-        // Electron: IPC → main process calls HOSxP directly
-        const result = await window.electronAPI.lookupHN(digits);
+        // Electron: IPC → main process asks EMR Viewer (HIS-connect)
+        const result = await window.electronAPI.lookupHN(digits, user?.pha_id);
         ok = result.ok;
         fullName = result.patient?.fullName ?? '';
         failure = Boolean(result.failure);

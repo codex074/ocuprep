@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Modal from './ui/Modal';
 import Combobox from './ui/Combobox';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import { addDays } from '../lib/utils';
 import { cleanChemicalItems, normalizeChemicalItems } from '../lib/chemicalItems';
@@ -33,6 +34,7 @@ const normalizeHn = (raw: string): string => {
 
 export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdate }: EditPrepModalProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [hnStatus, setHnStatus] = useState<HnStatus>('idle');
   const [form, setForm] = useState({
@@ -116,7 +118,7 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
       let failure = false;
 
       if (window.electronAPI?.lookupHN) {
-        const result = await window.electronAPI.lookupHN(digits);
+        const result = await window.electronAPI.lookupHN(digits, user?.pha_id);
         ok = result.ok;
         fullName = result.patient?.fullName ?? '';
         failure = Boolean(result.failure);

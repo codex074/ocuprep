@@ -30,7 +30,7 @@
 5. ในแอปหน้าโปรไฟล์ ตั้ง Manifest URL เช่น
    `https://your-project.vercel.app/updates/latest.json`
 
-Token HOSxP ถูกฝังเฉพาะใน portable executable ที่ build ภายในองค์กรและไม่ถูกส่งไป Vercel
+Token ค้นชื่อผู้ป่วย (EMR Viewer) ถูกฝังเฉพาะใน portable executable ที่ build ภายในองค์กรและไม่ถูกส่งไป Vercel
 
 ## Token สำหรับ build ภายในองค์กร
 
