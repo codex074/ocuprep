@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useAuth } from '../contexts/AuthContext';
+import { lookupPatientName } from '../lib/patientLookup';
 import { useToast } from '../contexts/ToastContext';
 import { useFormulas } from '../hooks/useFormulas';
 import { usePreps } from '../hooks/usePreps';
@@ -189,49 +190,16 @@ export default function PreparePage() {
   const [printPages, setPrintPages] = useState<PrintPage[]>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
   const [lastSavedPrintPrep, setLastSavedPrintPrep] = useState<SavedPrintPrep | null>(null);
-  const [hnStatus, setHnStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>('idle');
+  const [hnStatus, setHnStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline' | 'relogin'>('idle');
   const isRefreshing = formulasRefreshing || prepsRefreshing;
 
   const lookupPatientByHN = async (rawHn: string) => {
     const digits = rawHn.replace(/\D/g, '');
     if (digits.length < 7) return;
     setHnStatus('loading');
-    try {
-      let ok = false;
-      let fullName = '';
-
-      let failure = false;
-
-      if (window.electronAPI?.lookupHN) {
-        // Electron: IPC → main process asks EMR Viewer (HIS-connect)
-        const result = await window.electronAPI.lookupHN(digits, user?.pha_id);
-        ok = result.ok;
-        fullName = result.patient?.fullName ?? '';
-        failure = Boolean(result.failure);
-      } else {
-        // Browser: call standalone proxy at localhost:3100
-        const res = await fetch(
-          `http://127.0.0.1:3100/api/patient?q=${encodeURIComponent(digits)}`,
-          { signal: AbortSignal.timeout(5000) },
-        );
-        const data = await res.json() as { ok: boolean; patient?: { fullName: string } };
-        ok = data.ok;
-        fullName = data.patient?.fullName ?? '';
-      }
-
-      if (ok && fullName) {
-        setPatientName(fullName);
-        setHnStatus('found');
-      } else if (failure) {
-        // Could not get a real answer from HOSxP (non-200/expired token/network) —
-        // don't tell the user "HN not found" when we never actually checked.
-        setHnStatus('offline');
-      } else {
-        setHnStatus('notfound');
-      }
-    } catch {
-      setHnStatus('offline');
-    }
+    const result = await lookupPatientName(digits);
+    if (result.status === 'found') setPatientName(result.fullName);
+    setHnStatus(result.status);
   };
 
   const getNextLotNo = () => {
@@ -612,14 +580,8 @@ export default function PreparePage() {
                 </div>
                 {hnStatus === 'found' && <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px' }}>พบข้อมูลผู้ป่วย — กรอกชื่อโดยอัตโนมัติแล้ว</p>}
                 {hnStatus === 'notfound' && <p style={{ fontSize: '12px', color: '#f59e0b', marginTop: '4px' }}>ไม่พบ HN นี้ในระบบ — กรอกชื่อด้วยตนเอง</p>}
-                {hnStatus === 'offline' && (
-                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-                    {window.electronAPI
-                      ? 'ไม่สามารถเชื่อมต่อ HOSxP — ตรวจสอบเครือข่ายภายในหรือติดต่อผู้ดูแลระบบ'
-                      : 'ไม่สามารถเชื่อมต่อ HN Lookup — กรุณาเปิดแอป HN Lookup ก่อน'
-                    }
-                  </p>
-                )}
+                {hnStatus === 'offline' && <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>ค้นชื่อจาก HOSxP ไม่ได้ในขณะนี้ — ตรวจสอบอินเทอร์เน็ต หรือกรอกชื่อด้วยตนเอง</p>}
+                {hnStatus === 'relogin' && <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>ออกจากระบบแล้วเข้าใหม่เพื่อใช้การค้นชื่อจาก HN — หรือกรอกชื่อด้วยตนเอง</p>}
               </div>
               <div className="form-group">
                 <label>ชื่อ-นามสกุล <span className="req">*</span></label>

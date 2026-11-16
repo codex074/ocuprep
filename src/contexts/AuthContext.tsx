@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { api } from '../lib/api';
+import { clearLookupSession, startLookupSession } from '../lib/patientLookup';
 import type { User } from '../types';
 
 interface AuthState {
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (timestamp && Date.now() - timestamp > SESSION_TIMEOUT) {
           localStorage.removeItem(SESSION_STORAGE_KEY);
+          clearLookupSession();
           setLoading(false);
           return;
         }
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (loc) setLocation(loc);
       } catch {
         localStorage.removeItem(SESSION_STORAGE_KEY);
+clearLookupSession();
       }
     }
     setLoading(false);
@@ -101,6 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
     setSessionRemainingMs(SESSION_TIMEOUT);
     writeSession(u, '');
+    // Patient-name lookup needs its own server-side session; login does not wait for it or depend on it.
+    void startLookupSession(phaId, password);
     return null;
   };
 
@@ -128,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLocation('');
     setSessionRemainingMs(0);
     localStorage.removeItem(SESSION_STORAGE_KEY);
+    clearLookupSession();
   }, []);
 
   // Activity monitor for session timeout (1 hour of inactivity)

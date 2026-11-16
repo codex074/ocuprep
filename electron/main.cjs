@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, net } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -8,23 +8,14 @@ const https = require('https');
 const urlLib = require('url');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
-const os = require('os');
-const { DEFAULT_EMR_LOOKUP_URL, lookupPatientViaEmr, yataUserHeader } = require('./emrLookup.cjs');
 
 // Fixed port so localStorage persists across launches
 const APP_PORT = 37200;
 
 // --- Settings ---
 const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
-let embeddedSecrets = {};
-try {
-  embeddedSecrets = require('./secrets.cjs');
-} catch {
-  console.warn('[HN] electron/secrets.cjs is not present');
-}
-// Patient names come from EMR Viewer (HIS-connect). The old direct HOSxP API (172.17.1.70:3000) is gone.
-const EMR_LOOKUP_TOKEN = embeddedSecrets.emrLookupToken || '';
-const EMR_LOOKUP_URL = embeddedSecrets.emrLookupUrl || DEFAULT_EMR_LOOKUP_URL;
+// Patient-name lookup is no longer done here: the renderer asks the Vercel functions in /api
+// (src/lib/patientLookup.ts), so this app embeds no token.
 
 const DEFAULT_SETTINGS = {
   updateManifestUrl: '',
@@ -129,32 +120,11 @@ function serveStatic(distPath, port) {
 }
 
 // --- IPC Handlers ---
-// `user` is the signed-in pha_id; EMR Viewer audits and rate-limits the lookup by it.
-ipcMain.handle('lookup-hn', async (_event, hn, user) => {
-  const digits = String(hn).replace(/\D/g, '');
-  if (digits.length < 7 || digits.length > 9) {
-    return { ok: false, message: 'HN ต้องมี 7–9 หลัก' };
-  }
-  try {
-    return await lookupPatientViaEmr({
-      // net.fetch goes through Chromium's network stack, so it follows the PC's proxy settings.
-      fetchImpl: (url, init) => net.fetch(url, init),
-      baseUrl: EMR_LOOKUP_URL,
-      token: EMR_LOOKUP_TOKEN,
-      hn: digits.padStart(9, '0'),
-      user: yataUserHeader(user, `desktop:${os.hostname()}`),
-    });
-  } catch (e) {
-    return { ok: false, failure: true, message: String(e.message) };
-  }
-});
-
-ipcMain.handle('get-hn-settings', () => ({
-  lookupUrl: EMR_LOOKUP_URL,
-  // A v2.0.3 renderer still cached by the service worker reads this field on the profile page.
-  hosxpApiUrl: EMR_LOOKUP_URL,
-  hasToken: Boolean(EMR_LOOKUP_TOKEN),
+// A v2.0.3 renderer still cached by the service worker calls these two; keep them answering.
+ipcMain.handle('lookup-hn', () => ({
+  ok: false, failure: true, message: 'กรุณาปิดแล้วเปิดแอปใหม่เพื่อใช้การค้นชื่อแบบใหม่',
 }));
+ipcMain.handle('get-hn-settings', () => ({ hosxpApiUrl: '', hasToken: false, hasTokenHis: false }));
 
 ipcMain.handle('save-hn-settings', (_event, s) => {
   if (typeof s?.updateManifestUrl === 'string') {

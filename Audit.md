@@ -274,6 +274,17 @@ Severity: 🔴 high · 🟠 medium · 🟡 low. Line refs are as of this audit d
   again, add an explicit origin allowlist checked against `req.headers.origin` — a wildcard
   on a localhost service that returns PHI is a drive-by data leak, not a convenience.
 
+### 🟡 SEC-6 — Patient-name lookup now runs through Vercel functions (2026-11-16)
+- **What:** the old HOSxP API (172.17.1.70:3000) was shut down. Lookup is now `/api/patient` on Vercel
+  (`api/_lib/lookupCore.js`) → EMR Viewer `/api/yata/patient`. The EMR token is a Vercel env var; the exe
+  embeds no token from v2.0.4 on (this supersedes SEC-3 once the HOSxP admin rotates the old tokens).
+- **Gate:** `POST /api/lookup-session` checks pha_id + password against Firestore and signs a 12-hour session.
+  That is only as strong as SEC-1: whoever can read passwords from Firestore can get a session and look up names.
+  EMR Viewer still rate-limits (60/min per user, 600/min total) and audits every lookup as `yata:<pha_id>`.
+- **CORS:** explicit origin allowlist (`LOOKUP_ALLOWED_ORIGINS`), never `*` — the SEC-5 rule still holds.
+- **Open:** HN + names now pass through Vercel; the PDPA sign-off covered the home server only. No rate limit on
+  `/api/lookup-session` itself. Both go away at the yata-api cutover.
+
 ### 🟠 SEC-3 — HOSxP API tokens embedded in the exe
 - `electron/secrets.cjs` is correctly gitignored, but it is bundled into `app.asar` and
   trivially extractable from the portable exe.

@@ -15,7 +15,8 @@
     "!*.ts",
     "!*.config.*",
     "!tsconfig*",
-    "!electron/vendor/**"
+    "!electron/vendor/**",
+    "!electron/secrets*.cjs"
   ],
   "extraMetadata": {
     "main": "electron/main.cjs",

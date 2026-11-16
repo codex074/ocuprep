@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Modal from './ui/Modal';
 import Combobox from './ui/Combobox';
 import { useToast } from '../contexts/ToastContext';
-import { useAuth } from '../contexts/AuthContext';
+import { lookupPatientName } from '../lib/patientLookup';
 import { openLoadingModal, closeLoadingModal } from '../lib/loadingModal';
 import { addDays } from '../lib/utils';
 import { cleanChemicalItems, normalizeChemicalItems } from '../lib/chemicalItems';
@@ -24,7 +24,7 @@ const STATION_OPTIONS = [
   { value: 'ห้องเคมีบำบัด', label: 'ห้องเคมีบำบัด' },
 ];
 
-type HnStatus = 'idle' | 'loading' | 'found' | 'notfound' | 'offline';
+type HnStatus = 'idle' | 'loading' | 'found' | 'notfound' | 'offline' | 'relogin';
 
 const normalizeHn = (raw: string): string => {
   const digits = raw.replace(/\D/g, '');
@@ -34,7 +34,6 @@ const normalizeHn = (raw: string): string => {
 
 export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdate }: EditPrepModalProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [hnStatus, setHnStatus] = useState<HnStatus>('idle');
   const [form, setForm] = useState({
@@ -111,42 +110,16 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
     if (digits.length < 7 || digits.length > 9) return;
 
     setHnStatus('loading');
-    try {
-      let ok = false;
-      let fullName = '';
-
-      let failure = false;
-
-      if (window.electronAPI?.lookupHN) {
-        const result = await window.electronAPI.lookupHN(digits, user?.pha_id);
-        ok = result.ok;
-        fullName = result.patient?.fullName ?? '';
-        failure = Boolean(result.failure);
-      } else {
-        const response = await fetch(
-          `http://127.0.0.1:3100/api/patient?q=${encodeURIComponent(digits)}`,
-          { signal: AbortSignal.timeout(5000) },
-        );
-        const data = await response.json() as { ok: boolean; patient?: { fullName: string } };
-        ok = data.ok;
-        fullName = data.patient?.fullName ?? '';
-      }
-
-      if (ok && fullName) {
-        setForm((current) => (
-          current.hn.replace(/\D/g, '') === digits
-            ? { ...current, patient_name: fullName }
-            : current
-        ));
-        setHnStatus('found');
-      } else if (failure) {
-        setHnStatus('offline');
-      } else {
-        setHnStatus('notfound');
-      }
-    } catch {
-      setHnStatus('offline');
+    const result = await lookupPatientName(digits);
+    if (result.status === 'found') {
+      const { fullName } = result;
+      setForm((current) => (
+        current.hn.replace(/\D/g, '') === digits
+          ? { ...current, patient_name: fullName }
+          : current
+      ));
     }
+    setHnStatus(result.status);
   };
 
   const handleSave = async () => {
@@ -319,14 +292,8 @@ export default function EditPrepModal({ isOpen, onClose, prep, formulas, onUpdat
             </div>
             {hnStatus === 'found' && <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px' }}>พบข้อมูลผู้ป่วย — กรอกชื่อโดยอัตโนมัติแล้ว</p>}
             {hnStatus === 'notfound' && <p style={{ fontSize: '12px', color: '#f59e0b', marginTop: '4px' }}>ไม่พบ HN นี้ในระบบ — กรอกชื่อด้วยตนเอง</p>}
-            {hnStatus === 'offline' && (
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-                {window.electronAPI
-                  ? 'ไม่สามารถเชื่อมต่อ HOSxP — ตรวจสอบเครือข่ายภายในหรือติดต่อผู้ดูแลระบบ'
-                  : 'ไม่สามารถเชื่อมต่อ HN Lookup — กรุณาเปิดแอป HN Lookup ก่อน'
-                }
-              </p>
-            )}
+            {hnStatus === 'offline' && <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>ค้นชื่อจาก HOSxP ไม่ได้ในขณะนี้ — ตรวจสอบอินเทอร์เน็ต หรือกรอกชื่อด้วยตนเอง</p>}
+            {hnStatus === 'relogin' && <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>ออกจากระบบแล้วเข้าใหม่เพื่อใช้การค้นชื่อจาก HN — หรือกรอกชื่อด้วยตนเอง</p>}
           </div>
           <div className="form-group">
             <label>ชื่อ-นามสกุล <span className="req">*</span></label>

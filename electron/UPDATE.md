@@ -30,10 +30,9 @@
 5. ในแอปหน้าโปรไฟล์ ตั้ง Manifest URL เช่น
    `https://your-project.vercel.app/updates/latest.json`
 
-Token ค้นชื่อผู้ป่วย (EMR Viewer) ถูกฝังเฉพาะใน portable executable ที่ build ภายในองค์กรและไม่ถูกส่งไป Vercel
+## การค้นชื่อผู้ป่วยจาก HN
 
-## Token สำหรับ build ภายในองค์กร
-
-คัดลอก `electron/secrets.example.cjs` เป็น `electron/secrets.cjs` แล้วใส่ Token จริง
-ก่อน build ไฟล์ `electron/secrets.cjs` ถูก `.gitignore` และต้องไม่ commit ขึ้น GitHub
-แต่ electron-builder จะนำไฟล์นี้เข้า portable executable จากเครื่อง build
+ตั้งแต่ v2.0.4 แอปไม่ฝัง Token ใด ๆ การค้นชื่อเรียก Vercel function `/api/patient`
+(ดู `api/_lib/lookupCore.js`) ก่อน build ต้องตั้ง `VITE_LOOKUP_BASE_URL` ใน `.env.production`
+เป็น URL ของ Vercel project ไม่เช่นนั้นปุ่มค้นชื่อในแอปจะใช้ไม่ได้
+ไฟล์ `electron/secrets.cjs` เดิม (Token HOSxP เก่า) ไม่ถูกใช้และไม่ถูกนำเข้า exe แล้ว ลบทิ้งได้

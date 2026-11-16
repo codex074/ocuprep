@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import ProfileCard from '../components/ProfileCard';
 
 function HnSettingsCard() {
-  const [lookup, setLookup] = useState<{ lookupUrl: string; hasToken: boolean } | null>(null);
   const [version, setVersion] = useState('');
   const [updateManifestUrl, setUpdateManifestUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -11,9 +10,6 @@ function HnSettingsCard() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    void window.electronAPI!.getHnSettings().then((s) => {
-      setLookup(s);
-    });
     void window.electronAPI!.getAppInfo().then((info) => {
       setVersion(info.version);
       setUpdateManifestUrl(info.updateManifestUrl);
@@ -45,23 +41,9 @@ function HnSettingsCard() {
   return (
     <div className="card" style={{ maxWidth: '480px', marginTop: '16px' }}>
       <div className="card-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <h3>ค้นชื่อผู้ป่วยจาก HN</h3>
-        {lookup && (
-          <span style={{
-            fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px',
-            background: lookup.hasToken ? '#f0fdf4' : '#fef2f2',
-            color: lookup.hasToken ? '#15803d' : '#b91c1c',
-            border: `1px solid ${lookup.hasToken ? '#86efac' : '#fecaca'}`,
-          }}>
-            {lookup.hasToken ? 'พร้อมใช้งาน' : 'แอปชุดนี้ไม่ได้ฝัง Token'}
-          </span>
-        )}
+        <h3>อัปเดตแอป</h3>
       </div>
       <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          ค้นผ่าน EMR Viewer ({lookup?.lookupUrl ?? '—'}) ต้องต่ออินเทอร์เน็ตได้ ผู้ใช้ไม่ต้องตั้งค่าเพิ่มเติม
-        </p>
-        <hr style={{ width: '100%', border: 0, borderTop: '1px solid var(--border)' }} />
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label>Vercel Update Manifest URL</label>
           <input

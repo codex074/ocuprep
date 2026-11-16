@@ -1,28 +1,4 @@
-interface HnPatient {
-  fullName: string;
-  hn: string;
-  vn?: string;
-  qn?: string;
-  pname?: string;
-  fname?: string;
-  lname?: string;
-  source?: string;
-}
-
 interface ElectronAPI {
-  /** `user` is the signed-in pha_id — EMR Viewer audits the lookup under it. */
-  lookupHN: (hn: string, user?: string) => Promise<{
-    ok: boolean;
-    patient?: HnPatient;
-    message?: string;
-    /** true when the lookup service could not be reached or refused the request
-     *  (e.g. a wrong embedded token) — distinct from a genuine "not found". */
-    failure?: boolean;
-  }>;
-  getHnSettings: () => Promise<{
-    lookupUrl: string;
-    hasToken: boolean;
-  }>;
   saveHnSettings: (settings: {
     updateManifestUrl?: string;
   }) => Promise<{ ok: true }>;
