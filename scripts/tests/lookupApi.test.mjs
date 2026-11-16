@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SESSION_TTL_MS, SESSION_RENEW_BELOW_MS, corsFor, handleLookupSession, handlePatient,
-  issueSession, normalizeHn, readConfig, verifySession,
+  issueSession, normalizeHn, passwordVersion, readConfig, verifySession,
 } from '../../api/_lib/lookupCore.js';
 
 const SECRET = 's'.repeat(40);
@@ -82,7 +82,7 @@ test('preflight: 204 with the Authorization header allowed', async () => {
 test('a session verifies until it expires, and not after tampering or with another secret', () => {
   const { token, expiresAt } = issueSession('pha01', SECRET, NOW);
   assert.equal(expiresAt, NOW + SESSION_TTL_MS);
-  assert.deepEqual(verifySession(token, SECRET, NOW), { phaId: 'pha01', expiresAt });
+  assert.deepEqual(verifySession(token, SECRET, NOW), { phaId: 'pha01', expiresAt, version: '' });
   assert.equal(verifySession(token, SECRET, expiresAt), null);
   assert.equal(verifySession(token, 'x'.repeat(40), NOW), null);
   const forged = `${Buffer.from(JSON.stringify({ u: 'admin', exp: NOW + 1e9 })).toString('base64url')}.${token.split('.')[1]}`;
@@ -169,12 +169,28 @@ test('lookup: EMR 404 with its own body is "not found"; everything else is a fai
   }
 });
 
-test('lookup: a session with under 6 hours left comes back renewed', async () => {
+test('lookup: a session with under 6 hours left is renewed only while the user is active with the same password', async () => {
   const fresh = await ask();
   assert.equal(fresh.body.session, undefined);
   const later = NOW + SESSION_TTL_MS - SESSION_RENEW_BELOW_MS + 1;
-  const result = await ask({ now: later });
-  assert.equal(verifySession(result.body.session.token, SECRET, later).expiresAt, later + SESSION_TTL_MS);
+  const authorization = `Bearer ${issueSession('pha01', SECRET, NOW, passwordVersion('secret1', SECRET)).token}`;
+  const at = (firestore) => ask({ now: later, authorization }, stubFetch({ emr: FOUND, firestore }));
+
+  const result = await at(userDoc({ password: 'secret1', active: true }));
+  const renewed = verifySession(result.body.session.token, SECRET, later);
+  assert.equal(renewed.expiresAt, later + SESSION_TTL_MS);
+  assert.equal(renewed.version, passwordVersion('secret1', SECRET));
+
+  for (const firestore of [
+    userDoc({ password: 'secret1', active: false }), userDoc({ password: 'changed', active: true }),
+    json(404, {}), new Error('network'),
+  ]) {
+    const refused = await at(firestore);
+    assert.equal(refused.body.ok, true); // the lookup itself still answers until the session runs out
+    assert.equal(refused.body.session, undefined);
+  }
+  // A session with no password fingerprint is never renewed.
+  assert.equal((await ask({ now: later }, stubFetch({ emr: FOUND, firestore: userDoc({ password: 'secret1' }) }))).body.session, undefined);
 });
 
 test('lookup: only GET', async () => {

@@ -60,23 +60,26 @@ export function corsFor(origin, host, allowedOrigins) {
   };
 }
 
-// --- Session: "<payload>.<hmac>", payload = base64url JSON { u: pha_id, exp: ms } ---
+// --- Session: "<payload>.<hmac>", payload = base64url JSON { u: pha_id, exp: ms, v: password fingerprint } ---
 
-export function issueSession(phaId, secret, now = Date.now()) {
+/** A keyed fingerprint of the password the session was issued for; a renewal is refused once the password changes. */
+export const passwordVersion = (password, secret) => sign(`pw:${password}`, secret).slice(0, 22);
+
+export function issueSession(phaId, secret, now = Date.now(), version = '') {
   const expiresAt = now + SESSION_TTL_MS;
-  const payload = b64url(JSON.stringify({ u: phaId, exp: expiresAt }));
+  const payload = b64url(JSON.stringify({ u: phaId, exp: expiresAt, v: version }));
   return { token: `${payload}.${sign(payload, secret)}`, expiresAt };
 }
 
-/** Returns { phaId, expiresAt } or null. */
+/** Returns { phaId, expiresAt, version } or null. */
 export function verifySession(token, secret, now = Date.now()) {
   const [payload, mac, extra] = String(token ?? '').split('.');
   if (!payload || !mac || extra !== undefined) return null;
   if (!sameString(mac, sign(payload, secret))) return null;
   try {
-    const { u, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    const { u, exp, v } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (typeof u !== 'string' || !u || typeof exp !== 'number' || exp <= now) return null;
-    return { phaId: u, expiresAt: exp };
+    return { phaId: u, expiresAt: exp, version: typeof v === 'string' ? v : '' };
   } catch {
     return null;
   }
@@ -86,12 +89,8 @@ export function verifySession(token, secret, now = Date.now()) {
 
 const firestoreValue = (field) => (field && typeof field === 'object' ? Object.values(field)[0] : undefined);
 
-/** Resolves to { ok: true, phaId } | { ok: false, reason: 'invalid' | 'disabled' | 'unavailable' }. */
-export async function verifyCredentials({ fetchImpl, phaId, password }) {
-  const normalized = String(phaId ?? '').trim().toLowerCase();
-  if (!normalized || normalized.includes('/') || typeof password !== 'string' || !password) {
-    return { ok: false, reason: 'invalid' };
-  }
+/** Reads one user: { ok: true, password, active } | { ok: false, reason: 'invalid' | 'unavailable' }. */
+async function loadUser(fetchImpl, normalized) {
   const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/users/${encodeURIComponent(normalized)}`;
   let res;
   try {
@@ -103,9 +102,27 @@ export async function verifyCredentials({ fetchImpl, phaId, password }) {
   if (res.status !== 200) return { ok: false, reason: 'unavailable' };
   let fields;
   try { fields = (await res.json())?.fields ?? {}; } catch { return { ok: false, reason: 'unavailable' }; }
-  if (!sameString(String(firestoreValue(fields.password) ?? ''), password)) return { ok: false, reason: 'invalid' };
-  if (firestoreValue(fields.active) === false) return { ok: false, reason: 'disabled' };
+  return { ok: true, password: String(firestoreValue(fields.password) ?? ''), active: firestoreValue(fields.active) !== false };
+}
+
+/** Resolves to { ok: true, phaId } | { ok: false, reason: 'invalid' | 'disabled' | 'unavailable' }. */
+export async function verifyCredentials({ fetchImpl, phaId, password }) {
+  const normalized = String(phaId ?? '').trim().toLowerCase();
+  if (!normalized || normalized.includes('/') || typeof password !== 'string' || !password) {
+    return { ok: false, reason: 'invalid' };
+  }
+  const user = await loadUser(fetchImpl, normalized);
+  if (!user.ok) return user;
+  if (!sameString(user.password, password)) return { ok: false, reason: 'invalid' };
+  if (!user.active) return { ok: false, reason: 'disabled' };
   return { ok: true, phaId: normalized };
+}
+
+/** A session is renewed only while its user still exists, is active and has the password it was issued for. */
+export async function canRenew({ fetchImpl, session, secret }) {
+  if (!session.version) return false;
+  const user = await loadUser(fetchImpl, session.phaId);
+  return user.ok && user.active && sameString(passwordVersion(user.password, secret), session.version);
 }
 
 // --- EMR Viewer: GET {emrUrl}/api/yata/patient?hn= ---
@@ -178,7 +195,8 @@ export async function handleLookupSession({ method, origin, host, body, env, fet
     }
     return reply(401, { ok: false, message: 'รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' }, pre.cors.headers);
   }
-  return reply(200, { ok: true, ...issueSession(result.phaId, pre.config.secret, now) }, pre.cors.headers);
+  const version = passwordVersion(body.password, pre.config.secret);
+  return reply(200, { ok: true, ...issueSession(result.phaId, pre.config.secret, now, version) }, pre.cors.headers);
 }
 
 /** GET /api/patient?hn=  with `Authorization: Bearer <session>` */
@@ -195,8 +213,10 @@ export async function handlePatient({ method, origin, host, authorization, hn, e
   const result = await lookupPatient({
     fetchImpl, emrUrl: pre.config.emrUrl, emrToken: pre.config.emrToken, hn: normalized, phaId: session.phaId,
   });
+  // Renewal re-reads the user, so a disabled account or a changed password stops within 12 hours at most.
   const renewed = session.expiresAt - now < SESSION_RENEW_BELOW_MS
-    ? { session: issueSession(session.phaId, pre.config.secret, now) }
+    && await canRenew({ fetchImpl, session, secret: pre.config.secret })
+    ? { session: issueSession(session.phaId, pre.config.secret, now, session.version) }
     : {};
   return reply(200, { ...result, ...renewed }, pre.cors.headers);
 }

@@ -279,7 +279,8 @@ Severity: 🔴 high · 🟠 medium · 🟡 low. Line refs are as of this audit d
   (`api/_lib/lookupCore.js`) → EMR Viewer `/api/yata/patient`. The EMR token is a Vercel env var; the exe
   embeds no token from v2.0.4 on (this supersedes SEC-3 once the HOSxP admin rotates the old tokens).
 - **Gate:** `POST /api/lookup-session` checks pha_id + password against Firestore and signs a 12-hour session.
-  That is only as strong as SEC-1: whoever can read passwords from Firestore can get a session and look up names.
+  That is only as strong as SEC-1: Firestore is readable and writable by anyone and this repo is public, so anyone who reads a password or adds a
+  user can get a session and look up the name for any HN from the internet (the old API was LAN-only).
   EMR Viewer still rate-limits (60/min per user, 600/min total) and audits every lookup as `yata:<pha_id>`.
 - **CORS:** explicit origin allowlist (`LOOKUP_ALLOWED_ORIGINS`), never `*` — the SEC-5 rule still holds.
 - **Open:** HN + names now pass through Vercel; the PDPA sign-off covered the home server only. No rate limit on
