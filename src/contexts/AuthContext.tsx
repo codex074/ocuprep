@@ -17,6 +17,8 @@ interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined);
 const SESSION_TIMEOUT = 60 * 60 * 1000;
 const SESSION_STORAGE_KEY = 'ed-extemp-session';
+/** Stations nobody can work in any more. Their old records stay visible in History. */
+const CLOSED_STATIONS = ['ห้องจ่ายยาผู้ป่วยนอก'];
 
 function readSessionTimestamp(): number | null {
   const stored = localStorage.getItem(SESSION_STORAGE_KEY);
@@ -61,7 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(SESSION_STORAGE_KEY);
     if (stored) {
       try {
-        const { user: u, location: loc, timestamp } = JSON.parse(stored);
+        const { user: u, location: storedLoc, timestamp } = JSON.parse(stored);
+        // A session saved in a station that has since been closed goes back to station selection.
+        const loc = CLOSED_STATIONS.includes(storedLoc) ? '' : storedLoc;
 
         if (timestamp && Date.now() - timestamp > SESSION_TIMEOUT) {
           localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -88,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (loc) setLocation(loc);
       } catch {
         localStorage.removeItem(SESSION_STORAGE_KEY);
-clearLookupSession();
+        clearLookupSession();
       }
     }
     setLoading(false);

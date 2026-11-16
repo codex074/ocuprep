@@ -23,12 +23,6 @@ export default function Layout() {
       tone: 'blue',
     },
     {
-      value: 'ห้องจ่ายยาผู้ป่วยนอก',
-      label: 'ห้องจ่ายยาผู้ป่วยนอก',
-      subtitle: 'OPD Pharmacy',
-      tone: 'green',
-    },
-    {
       value: 'ห้องเคมีบำบัด',
       label: 'ห้องเคมีบำบัด',
       subtitle: 'Chemotherapy Unit',
